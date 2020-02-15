@@ -1328,9 +1328,7 @@ Recent Update History
   #include "keyer_settings.h"
 #endif
 
-#if defined(ESP32)
-  #include "keyer_esp32.h"
-#endif
+
 
 #if defined(FEATURE_COMMAND_BUTTONS)
   #include "src/buttonarray/buttonarray.h"
@@ -1487,7 +1485,9 @@ struct config_t {  // 111 bytes total
 
 } configuration;
 
-
+#if defined(ESP32)
+  #include "keyer_esp32.h"
+#endif
 
 byte sending_mode = UNDEFINED_SENDING;
 byte command_mode_disable_tx = 0;
@@ -5846,6 +5846,8 @@ void write_settings_to_eeprom(int initialize_eeprom) {
     }
   
   #endif //!defined(ARDUINO_SAM_DUE) || (defined(ARDUINO_SAM_DUE) && defined(FEATURE_EEPROM_E24C1024))
+  #else
+    writeConfigurationToFile();
   #endif
   config_dirty = 0;
   
@@ -5941,7 +5943,16 @@ int read_settings_from_eeprom() {
     } else {
       return 1;
     }
-  #endif
+    #endif
+  #else
+    if (configFileExists())
+    {
+    setConfigurationFromFile();
+    return 0;
+    }
+    else {
+      return 1;
+    }
   #endif //!defined(ARDUINO_SAM_DUE) || (defined(ARDUINO_SAM_DUE) && defined(FEATURE_EEPROM_E24C1024))
 
 
