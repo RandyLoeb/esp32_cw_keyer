@@ -1,0 +1,32 @@
+{
+  "cli_mode": 1,
+  "ptt_buffer_hold_active": 1,
+  "wpm": 1,
+  "hz_sidetone": 1,
+  "dah_to_dit_ratio": 1,
+  "wpm_farnsworth": 1,
+  "memory_repeat_time": 1,
+  "wpm_command_mode": 1,
+  "link_receive_udp_port": 1,
+  "wpm_ps2_usb_keyboard": 1,
+  "wpm_cli": 1,
+  "wpm_winkey": 1,
+  "ip": [4, 4, 4, 4],
+  "gateway": [4, 4, 4, 4],
+  "subnet": [4, 4, 4, 4],
+  "link_send_ip": [
+    [2, 2],
+    [2, 2],
+    [2, 2],
+    [2, 2]
+  ],
+  "link_send_enabled": [2, 2],
+  "link_send_udp_port": [2, 2],
+
+  "ptt_lead_time": [6, 6, 6, 6, 6, 6],
+  "ptt_tail_time": [6, 6, 6, 6, 6, 6],
+  "ptt_active_to_sequencer_active_time": [5, 5, 5, 5, 5],
+  "ptt_inactive_to_sequencer_inactive_time": [5, 5, 5, 5, 5],
+
+  "sidetone_volume": 1
+}
