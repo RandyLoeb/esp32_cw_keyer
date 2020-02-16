@@ -2,21 +2,88 @@
 #include "SPIFFS.h"
 #include "ArduinoJson.h"
 #define CONFIG_JSON_FILENAME "/configuration.json"
+#define FORMAT_SPIFFS_IF_FAILED true
+#define SPIFFS_LOG_SERIAL false
+#define SOUND_PWM_CHANNEL 0
+#define SOUND_RESOLUTION 8                     // 8 bit resolution
+#define SOUND_ON (1 << (SOUND_RESOLUTION - 1)) // 50% duty cycle
+#define SOUND_OFF 0                            // 0% duty cycle
+PRIMARY_SERIAL_CLS *esp32_port_to_use;
+int _SPIFFS_MADE_READY = 0;
 
-void tone(uint8_t pin, unsigned short freq, unsigned duration = 0) {}
+void tone(uint8_t pin, unsigned short freq, unsigned duration = 0)
+{
+    ledcSetup(SOUND_PWM_CHANNEL, freq, SOUND_RESOLUTION); // Set up PWM channel
+    ledcAttachPin(pin, SOUND_PWM_CHANNEL);
+    ledcWriteTone(SOUND_PWM_CHANNEL, freq); // Attach channel to pin
+    //ledcWrite(SOUND_PWM_CHANNEL, SOUND_ON);
+
+    delay(duration);
+    //ledcWrite(SOUND_PWM_CHANNEL, SOUND_OFF);
+}
 void noTone(uint8_t pin)
 {
     tone(pin, -1);
 }
 
+void makeSpiffsReady()
+{
+    if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED))
+    {
+        //Serial.println("SPIFFS Mount Failed");
+        if (SPIFFS_LOG_SERIAL)
+        {
+            esp32_port_to_use->println("SPIFFS Mount Failed");
+        }
+    }
+    else
+    {
+        File root = SPIFFS.open("/");
+
+        File file = root.openNextFile();
+
+        while (file)
+        {
+
+            //Serial.print("FILE: ");
+            if (SPIFFS_LOG_SERIAL)
+            {
+                esp32_port_to_use->print("FILE: ");
+            }
+            //Serial.println(file.name());
+            if (SPIFFS_LOG_SERIAL)
+            {
+                esp32_port_to_use->println(file.name());
+            }
+            file = root.openNextFile();
+        }
+
+        _SPIFFS_MADE_READY = 1;
+    }
+}
+
 int configFileExists()
 {
+    if (!_SPIFFS_MADE_READY)
+    {
+        makeSpiffsReady();
+    }
     File file = SPIFFS.open(CONFIG_JSON_FILENAME, FILE_READ);
     int exists = 1;
     if (!file || file.isDirectory())
     {
-        Serial.println("Config file doesn't exist");
+        if (SPIFFS_LOG_SERIAL)
+        {
+            esp32_port_to_use->println("Config file doesn't exist");
+        }
         exists = 0;
+    }
+    else
+    {
+        if (SPIFFS_LOG_SERIAL)
+        {
+            esp32_port_to_use->println("Config file was found.");
+        }
     }
     file.close();
     return exists;
@@ -24,6 +91,10 @@ int configFileExists()
 
 String getConfigFileJsonString()
 {
+    if (!_SPIFFS_MADE_READY)
+    {
+        makeSpiffsReady();
+    }
     File file = SPIFFS.open(CONFIG_JSON_FILENAME, FILE_READ);
     String jsonReturn;
     while (file.available())
@@ -47,16 +118,21 @@ void setConfigurationFromFile()
 
     configuration.cli_mode = doc["cli_mode"];                             // 1
     configuration.ptt_buffer_hold_active = doc["ptt_buffer_hold_active"]; // 1
-    configuration.wpm = doc["wpm"];                                       // 1
-    configuration.hz_sidetone = doc["hz_sidetone"];                       // 1
-    configuration.dah_to_dit_ratio = doc["dah_to_dit_ratio"];             // 1
-    configuration.wpm_farnsworth = doc["wpm_farnsworth"];                 // 1
-    configuration.memory_repeat_time = doc["memory_repeat_time"];         // 1
-    configuration.wpm_command_mode = doc["wpm_command_mode"];             // 1
-    configuration.link_receive_udp_port = doc["link_receive_udp_port"];   // 1
-    configuration.wpm_ps2_usb_keyboard = doc["wpm_ps2_usb_keyboard"];     // 1
-    configuration.wpm_cli = doc["wpm_cli"];                               // 1
-    configuration.wpm_winkey = doc["wpm_winkey"];                         // 1
+    configuration.wpm = doc["wpm"];
+    if (SPIFFS_LOG_SERIAL)
+    {
+        esp32_port_to_use->print("Configuration.wpm was just set from json to:");
+        esp32_port_to_use->println(configuration.wpm);
+    }                                                                   // 1
+    configuration.hz_sidetone = doc["hz_sidetone"];                     // 1
+    configuration.dah_to_dit_ratio = doc["dah_to_dit_ratio"];           // 1
+    configuration.wpm_farnsworth = doc["wpm_farnsworth"];               // 1
+    configuration.memory_repeat_time = doc["memory_repeat_time"];       // 1
+    configuration.wpm_command_mode = doc["wpm_command_mode"];           // 1
+    configuration.link_receive_udp_port = doc["link_receive_udp_port"]; // 1
+    configuration.wpm_ps2_usb_keyboard = doc["wpm_ps2_usb_keyboard"];   // 1
+    configuration.wpm_cli = doc["wpm_cli"];                             // 1
+    configuration.wpm_winkey = doc["wpm_winkey"];                       // 1
 
     /*
     JsonArray ip = doc["ip"];
@@ -138,6 +214,11 @@ String getJsonStringFromConfiguration()
 
     doc["cli_mode"] = configuration.cli_mode;
     doc["ptt_buffer_hold_active"] = configuration.ptt_buffer_hold_active;
+    if (SPIFFS_LOG_SERIAL)
+    {
+        esp32_port_to_use->print("Configuration.wpm is about to set json to:");
+        esp32_port_to_use->println(configuration.wpm);
+    }
     doc["wpm"] = configuration.wpm;
     doc["hz_sidetone"] = configuration.hz_sidetone;
     doc["dah_to_dit_ratio"] = configuration.dah_to_dit_ratio;
@@ -234,21 +315,39 @@ String getJsonStringFromConfiguration()
 
 void writeConfigurationToFile()
 {
+    if (!_SPIFFS_MADE_READY)
+    {
+        makeSpiffsReady();
+    }
     String jsonToWrite = getJsonStringFromConfiguration();
     File newfile = SPIFFS.open(CONFIG_JSON_FILENAME, FILE_WRITE);
     if (!newfile)
     {
-        Serial.println("- failed to open file for writing");
+        if (SPIFFS_LOG_SERIAL)
+        {
+            esp32_port_to_use->println("- failed to open file for writing");
+        }
         //return;
     }
     if (newfile.print(jsonToWrite))
     {
-        Serial.println("- file written");
+        if (SPIFFS_LOG_SERIAL)
+        {
+            esp32_port_to_use->println("- file written");
+        }
         newfile.close();
     }
     else
     {
-        Serial.println("- write failed");
+        if (SPIFFS_LOG_SERIAL)
+        {
+            esp32_port_to_use->println("- write failed");
+        }
     }
     delay(200);
+}
+
+void initializeSpiffs(PRIMARY_SERIAL_CLS *port_to_use)
+{
+    esp32_port_to_use = port_to_use;
 }

@@ -2059,8 +2059,10 @@ byte async_eeprom_write = 0;
 
 void setup()
 {
-
+  
   initialize_pins();
+  initialize_serial_ports();
+  initializeSpiffs(primary_serial_port);
   // initialize_serial_ports();        // Goody - this is available for testing startup issues
   // initialize_debug_startup();       // Goody - this is available for testing startup issues
   // debug_blink();                    // Goody - this is available for testing startup issues
@@ -2074,8 +2076,7 @@ void setup()
   check_for_beacon_mode();
   check_for_debug_modes();
   initialize_analog_button_array();
-  initialize_serial_ports();
-
+  
   // #if defined(FEATURE_SINEWAVE_SIDETONE)  // UNDER DEVELOPMENT
   //   initialize_tonsin();
   // #endif  
@@ -3423,6 +3424,7 @@ void check_for_dirty_configuration()
   #endif
 
   //if ((config_dirty) && ((millis()-last_config_write)>30000) && (!send_buffer_bytes) && (!ptt_line_activated)) {
+  #if !defined(ESP32)
   if ((config_dirty) && ((millis()-last_config_write)>eeprom_write_time_ms) && (!send_buffer_bytes) && (!ptt_line_activated) && (!dit_buffer) && (!dah_buffer) && (!async_eeprom_write) && (paddle_pin_read(paddle_left) == HIGH)  && (paddle_pin_read(paddle_right) == HIGH) ) {
     write_settings_to_eeprom(0);
     last_config_write = millis();
@@ -3430,6 +3432,12 @@ void check_for_dirty_configuration()
       debug_serial_port->println(F("check_for_dirty_configuration: wrote config\n"));
     #endif
   }
+  #else
+    if (config_dirty) 
+    {
+      write_settings_to_eeprom(0);
+    }
+  #endif
 
 }
 
@@ -5948,9 +5956,11 @@ int read_settings_from_eeprom() {
     if (configFileExists())
     {
     setConfigurationFromFile();
+    //all good, return 0
     return 0;
     }
     else {
+      //no file so initialize it
       return 1;
     }
   #endif //!defined(ARDUINO_SAM_DUE) || (defined(ARDUINO_SAM_DUE) && defined(FEATURE_EEPROM_E24C1024))
@@ -16747,7 +16757,7 @@ int memory_end(byte memory_number) {
 
 void initialize_pins() {
   
-#if defined (ARDUINO_MAPLE_MINI)||defined(ARDUINO_GENERIC_STM32F103C) //sp5iou 20180329
+#if defined (ARDUINO_MAPLE_MINI)||defined(ARDUINO_GENERIC_STM32F103C)||defined(ESP32) //sp5iou 20180329
   pinMode (paddle_left, INPUT_PULLUP);
   pinMode (paddle_right, INPUT_PULLUP);
 #else
@@ -17442,11 +17452,13 @@ void initialize_watchdog(){
 
 void check_eeprom_for_initialization(){
 
+#if !defined(ESP32)
   // do an eeprom reset to defaults if paddles are squeezed
   if (paddle_pin_read(paddle_left) == LOW && paddle_pin_read(paddle_right) == LOW) {
     while (paddle_pin_read(paddle_left) == LOW && paddle_pin_read(paddle_right) == LOW) {}
     initialize_eeprom();
   }
+#endif
 
   // read settings from eeprom and initialize eeprom if it has never been written to
   if (read_settings_from_eeprom()) {
