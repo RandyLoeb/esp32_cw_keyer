@@ -2063,6 +2063,7 @@ void setup()
   initialize_pins();
   initialize_serial_ports();
   initializeSpiffs(primary_serial_port);
+  initDisplay();
   // initialize_serial_ports();        // Goody - this is available for testing startup issues
   // initialize_debug_startup();       // Goody - this is available for testing startup issues
   // debug_blink();                    // Goody - this is available for testing startup issues
@@ -13199,7 +13200,10 @@ void service_paddle_echo()
             #endif
             configuration.cli_mode = CLI_MILL_MODE_PADDLE_SEND;
           }
-          primary_serial_port->write(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
+          //REL BOOKMARK
+          int convertedCwNumberToAscii=convert_cw_number_to_ascii(paddle_echo_buffer);
+          primary_serial_port->write(byte(convertedCwNumberToAscii));
+          displayUpdate(convertedCwNumberToAscii);
           #ifdef FEATURE_COMMAND_LINE_INTERFACE_ON_SECONDARY_PORT      
             secondary_serial_port->write(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
           #endif
@@ -13236,6 +13240,7 @@ void service_paddle_echo()
     
     #if defined(FEATURE_SERIAL) && defined(FEATURE_COMMAND_LINE_INTERFACE)
        if (cli_paddle_echo){
+         //REL BOOKMARK
          primary_serial_port->write(" ");
 
         #ifdef FEATURE_COMMAND_LINE_INTERFACE_ON_SECONDARY_PORT
