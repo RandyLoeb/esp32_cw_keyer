@@ -1486,7 +1486,10 @@ struct config_t {  // 111 bytes total
 } configuration;
 
 #if defined(ESP32)
+  void add_to_send_buffer(byte incoming_serial_byte);
   #include "keyer_esp32.h"
+  #include "keyer_esp32now.h"
+  
 #endif
 
 byte sending_mode = UNDEFINED_SENDING;
@@ -2091,6 +2094,10 @@ void setup()
   initialize_web_server();
   initialize_sd_card();  
   initialize_debug_startup();
+
+  #ifdef ESPNOW_WIRELESS_KEYER
+    initialize_espnow_wireless();
+  #endif
 
 }
 
@@ -9682,6 +9689,12 @@ void service_send_buffer(byte no_print)
             service_display();
           }
         #endif //FEATURE_DISPLAY
+
+        #ifdef OLED_DISPLAY_64_128
+      
+          displayUpdate(send_buffer_array[0]);
+          //displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
+        #endif
 
         #if defined(DEBUG_SERVICE_SEND_BUFFER)
           debug_serial_port->print("service_send_buffer: send_char:");
