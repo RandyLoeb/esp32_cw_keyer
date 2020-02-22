@@ -14,6 +14,8 @@
 #define SOUND_OFF 0                            // 0% duty cycle
 PRIMARY_SERIAL_CLS *esp32_port_to_use;
 int _SPIFFS_MADE_READY = 0;
+
+#define OLED_DISPLAY_64_128
 int _DISPLAY_INITIALIZED = 0;
 int _DISPLAY_HEIGHT = 0; //my little sisplay is 64x128
 int _DISPLAY_WIDTH = 0;  //128
@@ -22,6 +24,8 @@ int _DISPLAY_WIDTH = 0;  //128
 #define MYSDL 19
 SSD1306Wire display(0x3c, MYSDA, MYSDL);
 String displayContents = "";
+
+//#define DEBUG_LOOP
 
 void tone(uint8_t pin, unsigned short freq, unsigned duration = 0)
 {

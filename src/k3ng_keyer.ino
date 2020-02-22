@@ -13151,6 +13151,12 @@ void service_paddle_echo()
       }
     #endif //FEATURE_DISPLAY
     
+    #ifdef OLED_DISPLAY_64_128
+      
+          
+          displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
+    #endif
+
     #if defined(FEATURE_SERIAL) && defined(FEATURE_COMMAND_LINE_INTERFACE)
       #if defined(OPTION_PROSIGN_SUPPORT)
         byte_temp = convert_cw_number_to_ascii(paddle_echo_buffer);
@@ -13200,10 +13206,9 @@ void service_paddle_echo()
             #endif
             configuration.cli_mode = CLI_MILL_MODE_PADDLE_SEND;
           }
-          //REL BOOKMARK
-          int convertedCwNumberToAscii=convert_cw_number_to_ascii(paddle_echo_buffer);
-          primary_serial_port->write(byte(convertedCwNumberToAscii));
-          displayUpdate(convertedCwNumberToAscii);
+          
+          primary_serial_port->write(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
+          
           #ifdef FEATURE_COMMAND_LINE_INTERFACE_ON_SECONDARY_PORT      
             secondary_serial_port->write(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
           #endif
@@ -13238,9 +13243,13 @@ void service_paddle_echo()
       }
     #endif //FEATURE_DISPLAY
     
+    #ifdef OLED_DISPLAY_64_128
+      displayUpdate(' ');
+    #endif
+
     #if defined(FEATURE_SERIAL) && defined(FEATURE_COMMAND_LINE_INTERFACE)
        if (cli_paddle_echo){
-         //REL BOOKMARK
+         
          primary_serial_port->write(" ");
 
         #ifdef FEATURE_COMMAND_LINE_INTERFACE_ON_SECONDARY_PORT
