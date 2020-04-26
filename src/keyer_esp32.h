@@ -1,9 +1,19 @@
 #include "FS.h"
 #include "SPIFFS.h"
 #include "ArduinoJson.h"
+//#define OLED_DISPLAY_64_128
+#ifdef OLED_DISPLAY_64_128
 // For a connection via I2C using the Arduino Wire include:
 #include <Wire.h>        // Only needed for Arduino 1.6.5 and earlier
 #include "SSD1306Wire.h" // legacy: #include "SSD1306.h"
+int _DISPLAY_INITIALIZED = 0;
+int _DISPLAY_HEIGHT = 0; //my little sisplay is 64x128
+int _DISPLAY_WIDTH = 0;  //128
+
+#define MYSDA 18
+#define MYSDL 19
+SSD1306Wire display(0x3c, MYSDA, MYSDL);
+#endif
 
 #define CONFIG_JSON_FILENAME "/configuration.json"
 #define FORMAT_SPIFFS_IF_FAILED true
@@ -15,14 +25,6 @@
 PRIMARY_SERIAL_CLS *esp32_port_to_use;
 int _SPIFFS_MADE_READY = 0;
 
-#define OLED_DISPLAY_64_128
-int _DISPLAY_INITIALIZED = 0;
-int _DISPLAY_HEIGHT = 0; //my little sisplay is 64x128
-int _DISPLAY_WIDTH = 0;  //128
-
-#define MYSDA 18
-#define MYSDL 19
-SSD1306Wire display(0x3c, MYSDA, MYSDL);
 String displayContents = "";
 
 //#define DEBUG_LOOP
@@ -370,6 +372,7 @@ void initializeSpiffs(PRIMARY_SERIAL_CLS *port_to_use)
 
 void initDisplay()
 {
+#ifdef OLED_DISPLAY_64_128
     esp32_port_to_use->println("displayinitcalled");
     display.init();
 
@@ -391,11 +394,12 @@ void initDisplay()
     // write the buffer to the display
     display.display();
     displayContents = "";
+#endif
 }
 
 void displayUpdate(char character)
 {
-
+#ifdef OLED_DISPLAY_64_128
     displayContents += character;
     //esp32_port_to_use->println("displayupdatecalled");
     if (!_DISPLAY_INITIALIZED)
@@ -464,4 +468,5 @@ void displayUpdate(char character)
     //display.drawString(0, 24, String(h) + " %");
     // write the buffer to the display
     display.display();
+#endif
 }
