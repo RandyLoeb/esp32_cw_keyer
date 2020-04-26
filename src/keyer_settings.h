@@ -69,7 +69,7 @@
 #define tx_key_dit_and_dah_pins_inactive_state LOW
 #define potentiometer_check_interval_ms 150
 #ifdef ESP32
-#define potentiometer_reading_threshold 150
+#define potentiometer_reading_threshold 200
 #elif
 #define potentiometer_reading_threshold 1
 #endif
