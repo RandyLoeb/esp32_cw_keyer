@@ -25,7 +25,7 @@
 #define wpm_limit_low 5
 #define wpm_limit_high 60
 #ifdef ESP32
-#define potentiometer_change_threshold 1
+#define potentiometer_change_threshold 0.9
 #elif
 #define potentiometer_change_threshold 0.9 // don't change the keyer speed until pot wpm has changed more than this
 #endif
@@ -68,7 +68,11 @@
 #define tx_key_dit_and_dah_pins_active_state HIGH
 #define tx_key_dit_and_dah_pins_inactive_state LOW
 #define potentiometer_check_interval_ms 150
+#ifdef ESP32
+#define potentiometer_reading_threshold 150
+#elif
 #define potentiometer_reading_threshold 1
+#endif
 #define default_paddle_interruption_quiet_time_element_lengths 0
 #define default_wordsworth_wordspace 6
 #define default_wordsworth_repetition 1
