@@ -2,16 +2,16 @@
 #ifndef keyer_pin_settings_h
 #define keyer_pin_settings_h
 
-#define paddle_left 14   //2  //Note this is Dn, i.e. 14=D14 which is esp32 pin 13
-#define paddle_right 27  //5 //Note this means D27, i.e. pin 12
+#define paddle_left 25   //2  //Note this is Dn, i.e. 14=D14 which is esp32 pin 13
+#define paddle_right 33  //5 //Note this means D27, i.e. pin 12
 #define tx_key_line_1 11 // (high = key down/tx on)
 #define tx_key_line_2 12
 #define tx_key_line_3 0
 #define tx_key_line_4 0
 #define tx_key_line_5 0
 #define tx_key_line_6 0
-#define sidetone_line 22 //4  // connect a speaker for sidetone
-#define potentiometer A0 // Speed potentiometer (0 to 5 V) Use pot from 1k to 10k
+#define sidetone_line 32 //esp 34,35 not works --22,32 works  4  // connect a speaker for sidetone
+#define potentiometer 36 // (seems to need to be on adc0 26 Speed potentiometer (0 to 5 V) Use pot from 1k to 10k
 #define ptt_tx_1 0       // PTT ("push to talk") lines
 #define ptt_tx_2 0       //   Can be used for keying fox transmitter, T/R switch, or keying slow boatanchors
 #define ptt_tx_3 0       //   These are optional - set to 0 if unused
@@ -22,6 +22,11 @@
 #define tx_key_dah 0 // if defined, goes active for dah (any transmitter) - customized with tx_key_dit_and_dah_pins_active_state and tx_key_dit_and_dah_pins_inactive_state
 
 #define potentiometer_enable_pin 0 // if defined, the potentiometer will be enabled only when this pin is held low; set to 0 to ignore this pin
+
+#ifdef ESP32
+#define I2C_SDA 21
+#define I2C_SCL 22
+#endif
 
 #ifdef FEATURE_COMMAND_BUTTONS
 #define analog_buttons_pin A1
