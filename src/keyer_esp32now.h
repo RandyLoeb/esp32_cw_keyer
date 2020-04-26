@@ -34,7 +34,13 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     Serial.println(myData.e);
     Serial.println();
 
-    add_to_send_buffer(myData.a[0]);
+    for (int i = 0; i <= (32 - 1); i++)
+    {
+        if (myData.a[i] != NULL)
+        {
+            add_to_send_buffer(myData.a[i]);
+        }
+    }
 }
 
 void initialize_espnow_wireless()
