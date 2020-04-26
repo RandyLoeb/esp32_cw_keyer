@@ -1790,7 +1790,8 @@ byte send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
 
 #if defined(FEATURE_LCD_YDv1)
   //LiquidCrystal_I2C lcd(0x38);
-  LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // for FEATURE_LCD_YDv1; set the LCD I2C address needed for LCM1602 IC V1
+  //LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // for FEATURE_LCD_YDv1; set the LCD I2C address needed for LCM1602 IC V1
+  LiquidCrystal_I2C lcd(0x27,16,2);
 #endif
 
 #if defined(FEATURE_LCD_FABO_PCF8574)
@@ -5069,13 +5070,17 @@ void check_potentiometer()
       return; 
     }
     byte pot_value_wpm_read = pot_value_wpm();
+    #ifdef ESP32
     if (((abs(pot_value_wpm_read - last_pot_wpm_read) * 10) > (potentiometer_change_threshold * 10))) {
-      #ifdef DEBUG_POTENTIOMETER
+    #elif
+    if (((abs(pot_value_wpm_read - last_pot_wpm_read) * 10) > (potentiometer_change_threshold * 10))) {
+    #endif
+      //#ifdef DEBUG_POTENTIOMETER
         debug_serial_port->print(F("check_potentiometer: speed change: "));
         debug_serial_port->print(pot_value_wpm_read);
         debug_serial_port->print(F(" analog read: "));
         debug_serial_port->println(analogRead(potentiometer));
-      #endif
+      //#endif
       if (keyer_machine_mode == KEYER_COMMAND_MODE) command_speed_set(pot_value_wpm_read);
       else speed_set(pot_value_wpm_read);
       last_pot_wpm_read = pot_value_wpm_read;
@@ -6746,6 +6751,24 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 
 } //void loop_element_lengths
 
+//-------------------------------------------------------------------------------------------------------
+
+#ifdef FEATURE_DISPLAY
+  void lcd_center_print_timed_wpm(){
+
+
+    #if defined(OPTION_ADVANCED_SPEED_DISPLAY)
+      lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm*5) + " cpm", 0, default_display_msg_delay);
+      lcd_center_print_timed(String(1200/configuration.wpm) + ":" + (((1200/configuration.wpm)*configuration.dah_to_dit_ratio)/100) + "ms 1:" + (float(configuration.dah_to_dit_ratio)/100.00), 1, default_display_msg_delay);
+    #else
+      lcd_center_print_timed(String(configuration.wpm) + " wpm", 0, default_display_msg_delay);
+    #endif
+
+  }
+#endif
+//-------------------------------------------------------------------------------------------------------
+
+
 
 //-------------------------------------------------------------------------------------------------------
 
@@ -6816,22 +6839,6 @@ void command_speed_set(int wpm_set) {
   }                                                        // end if
 }                                                          // end command_speed_set
 
-//-------------------------------------------------------------------------------------------------------
-
-#ifdef FEATURE_DISPLAY
-  void lcd_center_print_timed_wpm(){
-
-
-    #if defined(OPTION_ADVANCED_SPEED_DISPLAY)
-      lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm*5) + " cpm", 0, default_display_msg_delay);
-      lcd_center_print_timed(String(1200/configuration.wpm) + ":" + (((1200/configuration.wpm)*configuration.dah_to_dit_ratio)/100) + "ms 1:" + (float(configuration.dah_to_dit_ratio)/100.00), 1, default_display_msg_delay);
-    #else
-      lcd_center_print_timed(String(configuration.wpm) + " wpm", 0, default_display_msg_delay);
-    #endif
-
-  }
-#endif
-//-------------------------------------------------------------------------------------------------------
 
 long get_cw_input_from_user(unsigned int exit_time_milliseconds) {
 
@@ -7624,6 +7631,7 @@ void command_mode() {
 
 void command_display_memory(byte memory_number) {
  
+ /*
   #ifdef FEATURE_DISPLAY
     byte eeprom_byte_read = 0;
     char memory_char[LCD_COLUMNS];                                                        // an array of char to hold the retrieved memory from EEPROM
@@ -7640,7 +7648,8 @@ void command_display_memory(byte memory_number) {
       j++;                                                                                // move to the next character to be stored in the array
     }                                                                                     // end for
     lcd_center_print_timed(memory_char, 1, default_display_msg_delay);                    // write the retrieved char array to line 2 of LCD display
-  #endif                                                                                  // FEATURE_DISPLAY
+  #endif     
+  */                                                                             // FEATURE_DISPLAY
 }                                                                                         // end command_display_memory
 
 //-------------------------------------------------------------------------------------------------------
@@ -17713,7 +17722,12 @@ void initialize_display(){
       lcd.begin();
       lcd.home();
     #else
-      lcd.begin(LCD_COLUMNS, LCD_ROWS);
+      //lcd.begin(LCD_COLUMNS, LCD_ROWS);
+      // initialize LCD
+      Wire.begin(I2C_SDA, I2C_SCL);
+      lcd.init();
+      // turn on LCD backlight                      
+      lcd.backlight();
     #endif
     #ifdef FEATURE_LCD_ADAFRUIT_I2C
       lcd.setBacklight(lcdcolor);
