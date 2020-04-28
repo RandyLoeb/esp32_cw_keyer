@@ -1,8 +1,11 @@
 #include "FS.h"
 #include "SPIFFS.h"
 #include "ArduinoJson.h"
+
+#define GENERIC_CHARGRAB
 //#define OLED_DISPLAY_64_128
 #ifdef OLED_DISPLAY_64_128
+
 // For a connection via I2C using the Arduino Wire include:
 #include <Wire.h>        // Only needed for Arduino 1.6.5 and earlier
 #include "SSD1306Wire.h" // legacy: #include "SSD1306.h"
@@ -399,6 +402,7 @@ void initDisplay()
 
 void displayUpdate(char character)
 {
+    sendEspNowData(character);
 #ifdef OLED_DISPLAY_64_128
     displayContents += character;
     //esp32_port_to_use->println("displayupdatecalled");

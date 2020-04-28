@@ -1487,8 +1487,9 @@ struct config_t {  // 111 bytes total
 
 #if defined(ESP32)
   void add_to_send_buffer(byte incoming_serial_byte);
-  #include "keyer_esp32.h"
   #include "keyer_esp32now.h"
+  #include "keyer_esp32.h"
+  
   
 #endif
 
@@ -2063,7 +2064,9 @@ byte async_eeprom_write = 0;
 
 void setup()
 {
-  
+  #ifdef ESPNOW_WIRELESS_KEYER
+    initialize_espnow_wireless(speed_set);
+  #endif
   initialize_pins();
   initialize_serial_ports();
   initializeSpiffs(primary_serial_port);
@@ -2096,9 +2099,7 @@ void setup()
   initialize_sd_card();  
   initialize_debug_startup();
 
-  #ifdef ESPNOW_WIRELESS_KEYER
-    initialize_espnow_wireless();
-  #endif
+  
 
 }
 
@@ -6003,7 +6004,7 @@ void check_dit_paddle()
     dit_paddle = paddle_right;
   }
 
-  pin_value = paddle_pin_read(dit_paddle);
+  pin_value = getEspNowBuff(ESPNOW_DIT) && paddle_pin_read(dit_paddle);
 
   
   #if defined(FEATURE_USB_MOUSE) || defined(FEATURE_USB_KEYBOARD)
@@ -6084,7 +6085,7 @@ void check_dah_paddle()
     dah_paddle = paddle_left;
   }
 
-  pin_value = paddle_pin_read(dah_paddle);
+  pin_value = getEspNowBuff(ESPNOW_DAH) && paddle_pin_read(dah_paddle);
   
   #if defined(FEATURE_USB_MOUSE) || defined(FEATURE_USB_KEYBOARD)
     if (usb_dah) {pin_value = 0;}
@@ -6123,7 +6124,7 @@ void check_dah_paddle()
 //-------------------------------------------------------------------------------------------------------
 
 void send_dit(){
-
+  sendEspNowDitDah(ESPNOW_DIT);
   // notes: key_compensation is a straight x mS lengthening or shortening of the key down time
   //        weighting is
 
@@ -6229,7 +6230,7 @@ void send_dit(){
 //-------------------------------------------------------------------------------------------------------
 
 void send_dah(){
-
+  sendEspNowDitDah(ESPNOW_DAH);
   unsigned int character_wpm  = configuration.wpm;
 
   #ifdef FEATURE_FARNSWORTH
@@ -8784,11 +8785,13 @@ void service_dit_dah_buffers()
       if (dit_buffer) {
         dit_buffer = 0;
         sending_mode = MANUAL_SENDING;
+        //sendEspNowDitDah(ESPNOW_DIT);
         send_dit();
       }
       if (dah_buffer) {
         dah_buffer = 0;
         sending_mode = MANUAL_SENDING;
+        //sendEspNowDitDah(ESPNOW_DAH);
         send_dah();
       }
     }
@@ -9699,7 +9702,7 @@ void service_send_buffer(byte no_print)
           }
         #endif //FEATURE_DISPLAY
 
-        #ifdef OLED_DISPLAY_64_128
+        #ifdef GENERIC_CHARGRAB
       
           displayUpdate(send_buffer_array[0]);
           //displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
@@ -13173,7 +13176,7 @@ void service_paddle_echo()
       }
     #endif //FEATURE_DISPLAY
     
-    #ifdef OLED_DISPLAY_64_128
+    #ifdef GENERIC_CHARGRAB
       
           
           displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
@@ -13265,7 +13268,7 @@ void service_paddle_echo()
       }
     #endif //FEATURE_DISPLAY
     
-    #ifdef OLED_DISPLAY_64_128
+    #ifdef GENERIC_CHARGRAB
       displayUpdate(' ');
     #endif
 
