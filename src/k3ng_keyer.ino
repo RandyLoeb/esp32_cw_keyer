@@ -63,15 +63,6 @@ struct config_t {  // 111 bytes total
   unsigned int wpm_winkey;
     // 20 bytes 
 
-  uint8_t ip[4];
-  uint8_t gateway[4];  
-  uint8_t subnet[4]; 
-    // 12 bytes
-
-  uint8_t link_send_ip[4][FEATURE_INTERNET_LINK_MAX_LINKS];   // FEATURE_INTERNET_LINK_MAX_LINKS = 2
-  uint8_t link_send_enabled[FEATURE_INTERNET_LINK_MAX_LINKS];
-  unsigned int link_send_udp_port[FEATURE_INTERNET_LINK_MAX_LINKS];
-    // 14 bytes
 
   unsigned int ptt_lead_time[6];
   unsigned int ptt_tail_time[6];
@@ -216,36 +207,17 @@ void setup()
   initialize_serial_ports();
   initializeSpiffs(primary_serial_port);
   initDisplay();
-  // initialize_serial_ports();        // Goody - this is available for testing startup issues
-  // initialize_debug_startup();       // Goody - this is available for testing startup issues
-  // debug_blink();                    // Goody - this is available for testing startup issues
+                     // Goody - this is available for testing startup issues
   initialize_keyer_state();
   initialize_potentiometer();
-  initialize_rotary_encoder();
+  
   initialize_default_modes();
-  initialize_watchdog();
-  initialize_ethernet_variables();
+  
+  
   check_eeprom_for_initialization();
   check_for_beacon_mode();
-  check_for_debug_modes();
-  initialize_analog_button_array();
-  
-  // #if defined(FEATURE_SINEWAVE_SIDETONE)  // UNDER DEVELOPMENT
-  //   initialize_tonsin();
-  // #endif  
-  
-  initialize_ps2_keyboard();
-  initialize_usb();
-  
   initialize_display();
-  initialize_ethernet();
-  initialize_udp();
-  initialize_web_server();
-  initialize_sd_card();  
-  initialize_debug_startup();
-
   
-
 }
 
 // --------------------------------------------------------------------------------------------
@@ -361,9 +333,7 @@ byte service_tx_inhibit_and_pause(){
 #ifdef FEATURE_DISPLAY
 void service_display() {
 
-  #ifdef DEBUG_LOOP
-  debug_serial_port->println(F("loop: entering service_display"));
-  #endif    
+  
 
   #define SCREEN_REFRESH_IDLE 0
   #define SCREEN_REFRESH_INIT 1
@@ -576,35 +546,19 @@ void clear_display_row(byte row_number)
 
 void check_for_dirty_configuration()
 {
-  #ifdef DEBUG_LOOP
-    debug_serial_port->println(F("loop: entering check_for_dirty_configuration"));
-  #endif
-
-  //if ((config_dirty) && ((millis()-last_config_write)>30000) && (!send_buffer_bytes) && (!ptt_line_activated)) {
-  #if !defined(ESP32)
-  if ((config_dirty) && ((millis()-last_config_write)>eeprom_write_time_ms) && (!send_buffer_bytes) && (!ptt_line_activated) && (!dit_buffer) && (!dah_buffer) && (!async_eeprom_write) && (paddle_pin_read(paddle_left) == HIGH)  && (paddle_pin_read(paddle_right) == HIGH) ) {
-    write_settings_to_eeprom(0);
-    last_config_write = millis();
-    #ifdef DEBUG_EEPROM
-      debug_serial_port->println(F("check_for_dirty_configuration: wrote config\n"));
-    #endif
-  }
-  #else
+  
     if (config_dirty) 
     {
       write_settings_to_eeprom(0);
     }
-  #endif
-
+  
 }
 
 
 #ifdef FEATURE_POTENTIOMETER
 void check_potentiometer()
 {
-  #ifdef DEBUG_LOOP
-    debug_serial_port->println(F("loop: entering check_potentiometer")); 
-  #endif
+  
 
   static unsigned long last_pot_check_time = 0;
   
@@ -628,15 +582,7 @@ void check_potentiometer()
       if (keyer_machine_mode == KEYER_COMMAND_MODE) command_speed_set(pot_value_wpm_read);
       else speed_set(pot_value_wpm_read);
       last_pot_wpm_read = pot_value_wpm_read;
-      #ifdef FEATURE_WINKEY_EMULATION
-        if ((primary_serial_port_mode == SERIAL_WINKEY_EMULATION) && (winkey_host_open)) {
-          winkey_port_write(((pot_value_wpm_read-pot_wpm_low_value)|128),0);
-          winkey_last_unbuffered_speed_wpm = configuration.wpm;
-        }
-      #endif
-      #ifdef FEATURE_SLEEP
-        last_activity_time = millis(); 
-      #endif //FEATURE_SLEEP
+      
     }
   }
 }
@@ -896,116 +842,30 @@ void ptt_key(){
   #endif 
 
   if (ptt_line_activated == 0) {   // if PTT is currently deactivated, bring it up and insert PTT lead time delay
-    #ifdef FEATURE_SO2R_BASE
-        if (current_tx_ptt_line) {
-
-
-          #if defined(FEATURE_WINKEY_EMULATION) && !defined(OPTION_WINKEY_PINCONFIG_PTT_CONTROLS_PTT_HOLD)
-            if (winkey_pinconfig_ptt_bit){
-              digitalWrite (configuration.current_ptt_line, ptt_line_active_state);
-            }
-          #else
-            digitalWrite (configuration.current_ptt_line, ptt_line_active_state);  
-          #endif // defined(FEATURE_WINKEY_EMULATION) && !defined(OPTION_WINKEY_PINCONFIG_PTT_CONTROLS_PTT_HOLD) 
-
-
-          //digitalWrite (current_tx_ptt_line, ptt_line_active_state);
-          #ifdef FEATURE_SEQUENCER
-            sequencer_ptt_inactive_time = 0;
-          #endif  
-        }
-    #else
+    
       if (configuration.current_ptt_line) {
-        #if defined(FEATURE_WINKEY_EMULATION) && !defined(OPTION_WINKEY_PINCONFIG_PTT_CONTROLS_PTT_HOLD)
-          if (winkey_pinconfig_ptt_bit){
-            digitalWrite (configuration.current_ptt_line, ptt_line_active_state);
-          }
-        #else
+        
           digitalWrite (configuration.current_ptt_line, ptt_line_active_state);  
-        #endif // defined(FEATURE_WINKEY_EMULATION) && !defined(OPTION_WINKEY_PINCONFIG_PTT_CONTROLS_PTT_HOLD)   
-        #if defined(OPTION_WINKEY_2_SUPPORT) && defined(FEATURE_WINKEY_EMULATION)
-          if ((wk2_both_tx_activated) && (ptt_tx_2)) {
-            digitalWrite (ptt_tx_2, ptt_line_active_state);
-          }
-        #endif
-        #ifdef FEATURE_SEQUENCER
-          sequencer_ptt_inactive_time = 0;
-        #endif  
+        
+        
       }
-    #endif //FEATURE_SO2R_BASE
+   
 
 
 
 
     ptt_line_activated = 1;
 
-    #ifdef FEATURE_SO2R_BASE
-      so2r_set_rx();
-    #endif
+    
 
     while (!all_delays_satisfied){
-      #ifdef FEATURE_SEQUENCER
-        if (sequencer_1_pin){
-          if (((millis() - ptt_activation_time) >= configuration.ptt_active_to_sequencer_active_time[0]) || sequencer_1_active){
-            digitalWrite(sequencer_1_pin,sequencer_pins_active_state);
-            sequencer_1_ok = 1;
-            sequencer_1_active = 1;
-          }          
-        } else {
-          sequencer_1_ok = 1;
-        }
-        if (sequencer_2_pin){
-          if (((millis() - ptt_activation_time) >= configuration.ptt_active_to_sequencer_active_time[1]) || sequencer_2_active){
-            digitalWrite(sequencer_2_pin,sequencer_pins_active_state);
-            sequencer_2_ok = 1;
-            sequencer_2_active = 1;
-          } 
-        } else {
-          sequencer_2_ok = 1;
-        }
-        if (sequencer_3_pin){
-          if (((millis() - ptt_activation_time) >= configuration.ptt_active_to_sequencer_active_time[2]) || sequencer_3_active){
-            digitalWrite(sequencer_3_pin,sequencer_pins_active_state);
-            sequencer_3_ok = 1;
-            sequencer_3_active = 1;
-          } 
-        } else {
-          sequencer_3_ok = 1;
-        }
-        if (sequencer_4_pin){
-          if (((millis() - ptt_activation_time) >= configuration.ptt_active_to_sequencer_active_time[3]) || sequencer_4_active){
-            digitalWrite(sequencer_4_pin,sequencer_pins_active_state);
-            sequencer_4_ok = 1;
-            sequencer_4_active = 1;
-          } 
-        } else {
-          sequencer_4_ok = 1;
-        }
-        if (sequencer_5_pin){
-          if (((millis() - ptt_activation_time) >= configuration.ptt_active_to_sequencer_active_time[4]) || sequencer_5_active){
-            digitalWrite(sequencer_5_pin,sequencer_pins_active_state);
-            sequencer_5_ok = 1;
-            sequencer_5_active = 1;
-          } 
-        } else {
-          sequencer_5_ok = 1;
-        }
-
-        if (((millis() - ptt_activation_time) >= configuration.ptt_lead_time[configuration.current_tx-1]) && sequencer_1_ok && sequencer_2_ok && sequencer_3_ok && sequencer_4_ok && sequencer_5_ok){
-          all_delays_satisfied = 1;
-        }
-
-      #else //FEATURE_SEQUENCER
-        #if defined(FEATURE_WINKEY_EMULATION) && !defined(OPTION_WINKEY_PINCONFIG_PTT_CONTROLS_PTT_HOLD)
-          if (((millis() - ptt_activation_time) >= configuration.ptt_lead_time[configuration.current_tx-1]) || (winkey_host_open && !winkey_pinconfig_ptt_bit) ) {
-            all_delays_satisfied = 1;
-          }
-        #else
+      
+        
           if ((millis() - ptt_activation_time) >= configuration.ptt_lead_time[configuration.current_tx-1]){
             all_delays_satisfied = 1;
           }
-        #endif
-      #endif //FEATURE_SEQUENCER
+        
+      
 
     } //while (!all_delays_satisfied)
 
@@ -1026,27 +886,11 @@ void ptt_unkey(){
     #else
       if (configuration.current_ptt_line) {
         digitalWrite (configuration.current_ptt_line, ptt_line_inactive_state);
-        #if defined(OPTION_WINKEY_2_SUPPORT) && defined(FEATURE_WINKEY_EMULATION)
-          if ((wk2_both_tx_activated) && (ptt_tx_2)) {
-            digitalWrite (ptt_tx_2, ptt_line_inactive_state);
-          }
-        #endif
+       
       #endif //FEATURE_SO2R_BASE
     }
     ptt_line_activated = 0;
-    #ifdef FEATURE_SEQUENCER
-      sequencer_ptt_inactive_time = millis();
-    #endif
-
-    #ifdef FEATURE_SO2R_BASE
-      if (so2r_pending_tx) {
-        so2r_tx = so2r_pending_tx;
-        so2r_pending_tx = 0;
-        so2r_set_tx();
-      }
-
-      so2r_set_rx();
-    #endif //FEATURE_SO2R_BASE
+    
 
   }
 }
@@ -1054,15 +898,7 @@ void ptt_unkey(){
 //-------------------------------------------------------------------------------------------------------
 void check_ptt_tail()
 {
-  #ifdef DEBUG_LOOP
-    debug_serial_port->println(F("loop: entering check_ptt_tail"));
-  #endif
-
-  #ifdef FEATURE_SO2R_BASE
-    if (so2r_ptt) {
-      return;
-    }
-  #endif
+ 
 
   static byte manual_ptt_invoke_ptt_input_pin = 0;
 
@@ -1125,75 +961,7 @@ void check_ptt_tail()
         }
       }
     }
-  #else //FEATURE_WINKEY_EMULATION
-
-    if (key_state) {
-      ptt_time = millis();
-    } else {
-      if ((ptt_line_activated) && (manual_ptt_invoke == 0)) {
-        //if ((millis() - ptt_time) > ptt_tail_time) {
-        if (last_sending_mode == MANUAL_SENDING) {
-          #ifndef OPTION_INCLUDE_PTT_TAIL_FOR_MANUAL_SENDING
-
-            // PTT Tail Time: N     PTT Hang Time: Y
-
-            if ((millis() - ptt_time) >= ((configuration.length_wordspace*ptt_hang_time_wordspace_units)*float(1200/configuration.wpm)) ) {
-              ptt_unkey();
-            }          
-          #else //ndef OPTION_INCLUDE_PTT_TAIL_FOR_MANUAL_SENDING
-            #ifndef OPTION_EXCLUDE_PTT_HANG_TIME_FOR_MANUAL_SENDING
-
-              // PTT Tail Time: Y     PTT Hang Time: Y
-              
-            if (winkey_host_open){
-              if ((millis() - ptt_time) >= (((configuration.length_wordspace*ptt_hang_time_wordspace_units)*float(1200/configuration.wpm))+ (int(winkey_session_ptt_tail) * 10) + (3 * (1200/configuration.wpm)) )) {       
-                ptt_unkey();
-              }
-            } else { 
-              if ((millis() - ptt_time) >= (((configuration.length_wordspace*ptt_hang_time_wordspace_units)*float(1200/configuration.wpm))+configuration.ptt_tail_time[configuration.current_tx-1])) {       
-                ptt_unkey();
-              }
-            }
-
-
-
-            #else //OPTION_EXCLUDE_PTT_HANG_TIME_FOR_MANUAL_SENDING
-            if (winkey_host_open){
-              if ((millis() - ptt_time) >= ((int(winkey_session_ptt_tail) * 10) + (3 * (1200/configuration.wpm)))) {  
-
-                // PTT Tail Time: Y    PTT Hang Time: N
-
-                ptt_unkey();
-              }
-            } else {
-              if ((millis() - ptt_time) >= configuration.ptt_tail_time[configuration.current_tx-1]) {  
-
-
-                // PTT Tail Time: Y    PTT Hang Time: N
-
-                ptt_unkey();
-              }
-            }
-
-
-
-
-
-            #endif //OPTION_EXCLUDE_PTT_HANG_TIME_FOR_MANUAL_SENDING
-          #endif //ndef OPTION_INCLUDE_PTT_TAIL_FOR_MANUAL_SENDING
-        } else { // automatic sending
-          if (winkey_host_open){
-            if (((millis() - ptt_time) > ((int(winkey_session_ptt_tail) * 10) + (3 * (1200/configuration.wpm)))) && ( !configuration.ptt_buffer_hold_active || ((!send_buffer_bytes) && configuration.ptt_buffer_hold_active) || (pause_sending_buffer))) {
-              ptt_unkey();
-            }
-          } else {
-            if (((millis() - ptt_time) > configuration.ptt_tail_time[configuration.current_tx-1]) && ( !configuration.ptt_buffer_hold_active || ((!send_buffer_bytes) && configuration.ptt_buffer_hold_active) || (pause_sending_buffer))){
-              ptt_unkey();
-            }            
-          }  
-        }
-      }
-    }
+  
   #endif //FEATURE_WINKEY_EMULATION  
 
 }
@@ -1625,75 +1393,7 @@ void send_dah(){
 void tx_and_sidetone_key (int state)
 {
 
-  #if defined(FEATURE_COMPETITION_COMPRESSION_DETECTION)
-
-    byte i;
-
-    if ((state == 0) && (key_state) && (compression_detection_key_up_time == 0) && (compression_detection_key_down_time == 0)){
-      compression_detection_key_up_time = millis();
-      //debug_serial_port->println("UP");
-    }  
-    if ((state) && (key_state == 0) && (compression_detection_key_up_time > 0) && (compression_detection_key_down_time == 0)) {
-      compression_detection_key_down_time = millis();
-      //debug_serial_port->println("DOWN");
-    }
-
-    unsigned long key_up_to_key_down_time = 0;
-  
-    if ((compression_detection_key_down_time != 0) && (compression_detection_key_up_time != 0)){  // do we have a measurement waiting for us?
-      key_up_to_key_down_time = compression_detection_key_down_time - compression_detection_key_up_time;
-      #if defined(DEBUG_FEATURE_COMPETITION_COMPRESSION_DETECTION)
-       // debug_serial_port->print("service_competition_compression_detection: key_up_to_key_down_time:");
-        //debug_serial_port->println(key_up_to_key_down_time);
-      #endif 
-      // is the time within the limits of what would be inter-character time?
-      if ((key_up_to_key_down_time > ((1200/configuration.wpm)*COMPETITION_COMPRESSION_DETECTION_TIME_INTERCHAR_LOWER_LIMIT)) && (key_up_to_key_down_time < ((1200/configuration.wpm)*COMPETITION_COMPRESSION_DETECTION_TIME_INTERCHAR_UPPER_LIMIT))){
-        // add it to the array
-        if (time_array_index < COMPETITION_COMPRESSION_DETECTION_ARRAY_SIZE){ 
-
-          #if defined(DEBUG_FEATURE_COMPETITION_COMPRESSION_DETECTION)
-            debug_serial_port->print("tx_and_sidetone_key: service_competition_compression_detection: array entry ");
-            debug_serial_port->print(time_array_index);
-            debug_serial_port->print(":");
-            debug_serial_port->println(key_up_to_key_down_time);
-          #endif 
-
-          time_array[time_array_index] = key_up_to_key_down_time;
-          time_array_index++;
-
-        } else { // if time array is completely filled up, we do a first in, first out
-          for(i = 0;i < (COMPETITION_COMPRESSION_DETECTION_ARRAY_SIZE-1);i++){
-            time_array[i]=time_array[i+1];
-          }
-          time_array[COMPETITION_COMPRESSION_DETECTION_ARRAY_SIZE-1] = key_up_to_key_down_time;
-
-
-          #if defined(DEBUG_FEATURE_COMPETITION_COMPRESSION_DETECTION)
-            debug_serial_port->print("tx_and_sidetone_key: service_competition_compression_detection: FIFO array entry ");
-            debug_serial_port->print(time_array_index);
-            debug_serial_port->print(":");
-            debug_serial_port->println(key_up_to_key_down_time);
-          #endif 
-
-        }
-
-      } else {
-        #if defined(DEBUG_FEATURE_COMPETITION_COMPRESSION_DETECTION)
-          //debug_serial_port->print("tx_and_sidetone_key: service_competition_compression_detection: discarded entry: ");
-          //debug_serial_port->println(key_up_to_key_down_time);
-        #endif         
-      }
-      compression_detection_key_down_time = 0;
-      compression_detection_key_up_time = 0;
-    }
-
-
-
-
-
-  #endif //defined(FEATURE_COMPETITION_COMPRESSION_DETECTION)
-
-
+ 
   #if !defined(FEATURE_PTT_INTERLOCK)
     if ((state) && (key_state == 0)) {
       if (key_tx) {
@@ -1742,58 +1442,7 @@ void tx_and_sidetone_key (int state)
         key_state = 0;
       }
     }
-  #else  //FEATURE_PTT_INTERLOCK
-    if ((state) && (key_state == 0)) {
-      if (key_tx) {
-        byte previous_ptt_line_activated = ptt_line_activated;
-        if (!ptt_interlock_active) {
-          ptt_key();
-        }
-        if (current_tx_key_line) {digitalWrite (current_tx_key_line, tx_key_line_active_state);}
-        #if defined(OPTION_WINKEY_2_SUPPORT) && defined(FEATURE_WINKEY_EMULATION) && !defined(FEATURE_SO2R_BASE)
-          if ((wk2_both_tx_activated) && (tx_key_line_2)) {
-            digitalWrite (tx_key_line_2, HIGH);
-          }
-        #endif
-        if ((first_extension_time) && (previous_ptt_line_activated == 0)) {
-          delay(first_extension_time);
-        }
-      }
-      if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING))) {
-        #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-          tone(sidetone_line, configuration.hz_sidetone);
-        #else
-          if (sidetone_line) {
-            digitalWrite(sidetone_line, HIGH);
-          }
-        #endif          
-      }
-      key_state = 1;
-    } else {
-      if ((state == 0) && (key_state)) {
-        if (key_tx) {
-          if (current_tx_key_line) {digitalWrite (current_tx_key_line, tx_key_line_inactive_state);}
-          #if defined(OPTION_WINKEY_2_SUPPORT) && defined(FEATURE_WINKEY_EMULATION) && !defined(FEATURE_SO2R_BASE)
-            if ((wk2_both_tx_activated) && (tx_key_line_2)) {
-              digitalWrite (tx_key_line_2, LOW);
-            }
-          #endif        
-          if (!ptt_interlock_active) {
-            ptt_key();
-          }
-        }
-        if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING))) {
-          #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-            noTone(sidetone_line);
-          #else
-            if (sidetone_line) {
-              digitalWrite(sidetone_line, LOW);
-            }
-          #endif
-        }
-        key_state = 0;
-      }
-    }
+  
 
   #endif //FEATURE_PTT_INTERLOCK
 
@@ -2199,28 +1848,7 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds) {
 
 //-------------------------------------------------------------------------------------------------------
 
-void command_display_memory(byte memory_number) {
- 
- /*
-  #ifdef FEATURE_DISPLAY
-    byte eeprom_byte_read = 0;
-    char memory_char[LCD_COLUMNS];                                                        // an array of char to hold the retrieved memory from EEPROM
-    int j;
-    int fill_char;                                                                        // a flag that is set if we need to fill the char array with spaces
- 
-    j = 0;
-    fill_char = 0;
-    for(int y = (memory_start(memory_number)); y < (memory_start(memory_number)) + LCD_COLUMNS; y++) {
-      eeprom_byte_read = EEPROM.read(y);                                                  // read memory characters from EEPROM
-      if (eeprom_byte_read == 255) fill_char = 1;                                         // if it is the 'end of stored memory' character set a flag
-      if (!fill_char) memory_char[j] = eeprom_byte_read;                                  // save the retrieved character in the character array
-      else memory_char[j] = ' ';                                                          // else fill the rest of the array with spaces
-      j++;                                                                                // move to the next character to be stored in the array
-    }                                                                                     // end for
-    lcd_center_print_timed(memory_char, 1, default_display_msg_delay);                    // write the retrieved char array to line 2 of LCD display
-  #endif     
-  */                                                                             // FEATURE_DISPLAY
-}                                                                                         // end command_display_memory
+                                                                                      // end command_display_memory
 
 //-------------------------------------------------------------------------------------------------------
 	
@@ -2322,43 +1950,6 @@ void switch_to_tx(byte tx)
 
 
 //------------------------------------------------------------------
-
-void initialize_analog_button_array() {
-#ifdef FEATURE_COMMAND_BUTTONS  
-  
-  #ifdef DEBUG_BUTTONS
-      debug_serial_port->print("initialize_analog_button_array: ");
-  #endif
-
-  #if defined(FEATURE_DL2SBA_BANKSWITCH)
-    button_array.Add(0,0);
-    button_array.Add(1,3);
-    button_array.Add(2,2);
-    button_array.Add(3,1);
-    button_array.Add(4,9);
-    button_array.Add(5,8);
-    button_array.Add(6,7);
-    button_array.Add(7,6);
-    button_array.Add(8,5);
-    button_array.Add(9,4);
-
-  #elif defined(OPTION_DFROBOT_LCD_COMMAND_BUTTONS)
-    button_array.Add(0,dfrobot_btnSELECT, dfrobot_btnLEFT_analog, dfrobot_btnSELECT_analog);
-    button_array.Add(1,dfrobot_btnLEFT, dfrobot_btnDOWN_analog, dfrobot_btnLEFT_analog);
-    button_array.Add(2,dfrobot_btnDOWN, dfrobot_btnUP_analog, dfrobot_btnDOWN_analog);
-    button_array.Add(3,dfrobot_btnUP, dfrobot_btnRIGHT_analog, dfrobot_btnUP_analog);
-    button_array.Add(4,dfrobot_btnRIGHT, 0, dfrobot_btnRIGHT_analog);
-  #else //FEATURE_DL2SBA_BANKSWITCH
-    button_array.AddAll();
-
-      
-  #endif //FEATURE_DL2SBA_BANKSWITCH
-#endif //FEATURE_COMMAND_BUTTONS
-}
-
-                                    // FEATURE_COMMAND_BUTTONS
-
-//-------------------------------------------------------------------------------------------------------
 
 void service_dit_dah_buffers()
 {
@@ -3461,18 +3052,7 @@ void remove_from_send_buffer()
     #endif
   }
 
-  #if defined(DEBUG_SERVICE_SEND_BUFFER)
-    debug_serial_port->print("remove_from_send_buffer: send_buffer_bytes:");
-    debug_serial_port->println(send_buffer_bytes);
-    debug_serial_port->print("send_buffer:");
-    for (int x = 0;x < send_buffer_bytes;x++){
-      debug_serial_port->write(send_buffer_array[x]);
-      debug_serial_port->print("[");
-      debug_serial_port->print(send_buffer_array[x]);
-      debug_serial_port->print("]");
-    }
-    debug_serial_port->println();    
-  #endif
+  
 
 }
 
@@ -5251,9 +4831,7 @@ void initialize_pins() {
 
 //---------------------------------------------------------------------
 
-void initialize_debug_startup(){
- 
-}
+
 
  
 //--------------------------------------------------------------------- 
@@ -5325,11 +4903,7 @@ void initialize_potentiometer(){
 }
   
 //---------------------------------------------------------------------   
-void initialize_rotary_encoder(){  
-  
- 
-  
-}
+
 
 //---------------------------------------------------------------------   
 
@@ -5356,13 +4930,7 @@ void initialize_default_modes(){
 
 }  
 
-//--------------------------------------------------------------------- 
-
-void initialize_watchdog(){
   
-  
-
-}  
 
 //--------------------------------------------------------------------- 
 
@@ -5421,10 +4989,7 @@ void check_for_beacon_mode(){
 
 //--------------------------------------------------------------------- 
 
-void check_for_debug_modes(){
 
- 
-}
 
 //--------------------------------------------------------------------- 
 
@@ -5530,18 +5095,6 @@ void initialize_serial_ports(){
   
 }
 
-//--------------------------------------------------------------------- 
-void initialize_ps2_keyboard(){
-
-  
-  
-}
-//--------------------------------------------------------------------- 
-
-
-
-//--------------------------------------------------------------------- 
-
 void initialize_display(){
 
   #ifdef FEATURE_DISPLAY    
@@ -5642,44 +5195,6 @@ void initialize_display(){
 
 //--------------------------------------------------------------------- 
 
-void initialize_usb()
-{
-
-    #if defined(FEATURE_USB_KEYBOARD) || defined(FEATURE_USB_MOUSE)    
-    if (Usb.Init() == -1) {
-      #ifdef DEBUG_USB
-      debug_serial_port->println(F("\rinitialize_usb: OSC did not start."));
-      #endif //DEBUG_USB
-      return;
-    } else {
-      #ifdef DEBUG_USB
-      debug_serial_port->println(F("\rinitialize_usb: initializing"));
-      #endif //DEBUG_USB
-    }      
-    delay(200);
-    next_time = millis() + 5000;
-    #endif // (FEATURE_USB_KEYBOARD) || defined(FEATURE_USB_MOUSE)
-    
-    #ifdef FEATURE_USB_KEYBOARD
-    HidKeyboard.SetReportParser(0, (HIDReportParser*)&KeyboardPrs);
-    #endif //FEATURE_USB_KEYBOARD
-    
-    #ifdef FEATURE_USB_MOUSE
-    HidMouse.SetReportParser(0,(HIDReportParser*)&MousePrs);
-    #endif //FEATURE_USB_MOUSE
-    
-    #if defined(FEATURE_USB_KEYBOARD) || defined(FEATURE_USB_MOUSE)
-    unsigned long start_init = millis();
-    while ((millis() - start_init) < 2000){
-      Usb.Task();
-    }
-    #ifdef DEBUG_USB
-    debug_serial_port->println(F("intialize_usb: initialized"));
-    #endif //DEBUG_USB 
-    #endif // (FEATURE_USB_KEYBOARD) || defined(FEATURE_USB_MOUSE)
-}
-//--------------------------------------------------------------------- 
-
 
 //--------------------------------------------------------------------- 
 
@@ -5732,47 +5247,6 @@ int paddle_pin_read(int pin_to_read){
     
 
 }
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
-void initialize_ethernet_variables(){
-
- 
-}
-
-//-------------------------------------------------------------------------------------------------------
-void initialize_ethernet(){
-
- 
-
-}
-
-
-
-//-------------------------------------------------------------------------------------------------------
-
-void initialize_udp(){
-
-  
-}
-
-
-//-------------------------------------------------------------------------------------------------------
-
-
-void initialize_web_server(){
-   
-}
-
-
-//-------------------------------------------------------------------------------------------------------
-
-
-
-
-
-//-------------------------------------------------------------------------------------------------------
 
 void service_millis_rollover(){
 
@@ -5789,11 +5263,7 @@ void service_millis_rollover(){
 
 //-------------------------------------------------------------------------------------------------------
 
-void initialize_sd_card(){
 
-  
-
-}
 
 //-------------------------------------------------------------------------------------------------------
 
