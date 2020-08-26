@@ -3286,26 +3286,6 @@ void service_paddle_echo()
 
 
 
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
-
-//---------------------------------------------------------------------
-void check_button0()
-{
-#ifdef FEATURE_COMMAND_BUTTONS
-  if (analogbuttonread(0))
-  {
-    button0_buffer = 1;
-  }
-#endif
-}
-
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
 
 void initialize_pins()
 {
@@ -3320,13 +3300,7 @@ void initialize_pins()
   digitalWrite(paddle_right, HIGH);
 #endif //defined (ARDUINO_MAPLE_MINI)||defined(ARDUINO_GENERIC_STM32F103C) sp5iou 20180329
 
-#if defined(FEATURE_CAPACITIVE_PADDLE_PINS)
-  if (capactive_paddle_pin_inhibit_pin)
-  {
-    pinMode(capactive_paddle_pin_inhibit_pin, INPUT);
-    digitalWrite(capactive_paddle_pin_inhibit_pin, LOW);
-  }
-#endif //FEATURE_CAPACITIVE_PADDLE_PINS
+
 
   if (tx_key_line_1)
   {

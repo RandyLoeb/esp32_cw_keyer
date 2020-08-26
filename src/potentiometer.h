@@ -1,13 +1,18 @@
 #include "display.h"
+
+class wpmPotentiometer {
+
+};
+
 byte pot_wpm_low_value;
 
-#ifdef FEATURE_POTENTIOMETER
+
 byte pot_wpm_high_value;
 byte last_pot_wpm_read;
 int pot_full_scale_reading = default_pot_full_scale_reading;
-#endif //FEATURE_POTENTIOMETER
 
-#ifdef FEATURE_POTENTIOMETER
+
+
 byte pot_value_wpm()
 {
     // int pot_read = analogRead(potentiometer);
@@ -25,7 +30,7 @@ byte pot_value_wpm()
     return return_value;
 }
 
-#endif
+
 void speed_set(int wpm_set)
 {
 
@@ -51,7 +56,7 @@ void speed_set(int wpm_set)
 #endif
     }
 }
-//-------------------------------------------------------------------------------------------------------
+
 
 void command_speed_set(int wpm_set)
 {
@@ -66,7 +71,7 @@ void command_speed_set(int wpm_set)
     }  // end if
 } // end command_speed_set
 
-#ifdef FEATURE_POTENTIOMETER
+
 void check_potentiometer()
 {
 
@@ -87,12 +92,7 @@ void check_potentiometer()
         if (((abs(pot_value_wpm_read - last_pot_wpm_read) * 10) > (potentiometer_change_threshold * 10)))
         {
 #endif
-            //#ifdef DEBUG_POTENTIOMETER
-            debug_serial_port->print(F("check_potentiometer: speed change: "));
-            debug_serial_port->print(pot_value_wpm_read);
-            debug_serial_port->print(F(" analog read: "));
-            debug_serial_port->println(analogRead(potentiometer));
-            //#endif
+            
             if (keyer_machine_mode == KEYER_COMMAND_MODE)
                 command_speed_set(pot_value_wpm_read);
             else
@@ -102,5 +102,5 @@ void check_potentiometer()
     }
 }
 
-#endif
-//-------------------------------------------------------------------------------------------------------
+
+
