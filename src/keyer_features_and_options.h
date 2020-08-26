@@ -2,7 +2,7 @@
 // FEATURES add more bytes to the compiled binary, OPTIONS change code behavior
 
 // #define FEATURE_COMMAND_BUTTONS
-#define FEATURE_COMMAND_LINE_INTERFACE // Command Line Interface functionality                                                                                                                    \
+//#define FEATURE_COMMAND_LINE_INTERFACE // Command Line Interface functionality                                                                                                                    \
                                        // #define FEATURE_MEMORIES             // on the Arduino Due, you must have FEATURE_EEPROM_E24C1024 and E24C1024 EEPROM hardware in order to compile this \
                                        // #define FEATURE_MEMORY_MACROS                                                                                                                           \
                                        // #define FEATURE_WINKEY_EMULATION    // disabling Automatic Software Reset is highly recommended (see documentation)                                     \
@@ -10,7 +10,7 @@
                                        // #define FEATURE_TRAINING_COMMAND_LINE_INTERFACE
 #define FEATURE_POTENTIOMETER          // do not enable unless you have a potentiometer connected, otherwise noise will falsely trigger wpm changes
 // #define FEATURE_SIDETONE_SWITCH   // adds switch control for the sidetone output. requires an external toggle switch (assigned to an arduino pin - see keyer_pin_settings.h).
-#define FEATURE_SERIAL_HELP
+//#define FEATURE_SERIAL_HELP
 // #define FEATURE_HELL
 // #define FEATURE_PS2_KEYBOARD        // Use a PS2 keyboard to send code - Change keyboard layout (non-US) in K3NG_PS2Keyboard.h.  Additional options below.
 // #define FEATURE_USB_KEYBOARD          // Use a USB keyboard to send code - Uncomment three lines in k3ng_keyer.ino (search for note_usb_uncomment_lines)
