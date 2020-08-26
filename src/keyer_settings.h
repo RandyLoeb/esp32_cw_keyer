@@ -4,41 +4,32 @@
 #define initial_sidetone_freq 600         // "factory default" sidetone frequency setting
 #define sidetone_hz_limit_low 299
 #define sidetone_hz_limit_high 2001
-#define hz_high_beep 1500             // frequency in hertz of high beep
-#define hz_low_beep 400               // frequency in hertz of low beep
-#define initial_dah_to_dit_ratio 300  // 300 = 3 / normal 3:1 ratio
-#define initial_ptt_lead_time_tx1 0   // PTT lead time in mS
-#define initial_ptt_tail_time_tx1 10  // PTT tail time in mS
-#define initial_ptt_lead_time_tx2 0   // PTT lead time in mS
-#define initial_ptt_tail_time_tx2 10  // PTT tail time in mS
-#define initial_ptt_lead_time_tx3 0   // PTT lead time in mS
-#define initial_ptt_tail_time_tx3 10  // PTT tail time in mS
-#define initial_ptt_lead_time_tx4 0   // PTT lead time in mS
-#define initial_ptt_tail_time_tx4 10  // PTT tail time in mS
-#define initial_ptt_lead_time_tx5 0   // PTT lead time in mS
-#define initial_ptt_tail_time_tx5 10  // PTT tail time in mS
-#define initial_ptt_lead_time_tx6 0   // PTT lead time in mS
-#define initial_ptt_tail_time_tx6 10  // PTT tail time in mS
-#define initial_qrss_dit_length 1     // QRSS dit length in seconds
-#define initial_pot_wpm_low_value 13  // Potentiometer WPM fully CCW
-#define initial_pot_wpm_high_value 35 // Potentiometer WPM fully CW
+#define hz_high_beep 1500            // frequency in hertz of high beep
+#define hz_low_beep 400              // frequency in hertz of low beep
+#define initial_dah_to_dit_ratio 300 // 300 = 3 / normal 3:1 ratio
+#define initial_ptt_lead_time_tx1 0  // PTT lead time in mS
+#define initial_ptt_tail_time_tx1 10 // PTT tail time in mS
+#define initial_ptt_lead_time_tx2 0  // PTT lead time in mS
+#define initial_ptt_tail_time_tx2 10 // PTT tail time in mS
+#define initial_ptt_lead_time_tx3 0  // PTT lead time in mS
+#define initial_ptt_tail_time_tx3 10 // PTT tail time in mS
+#define initial_ptt_lead_time_tx4 0  // PTT lead time in mS
+#define initial_ptt_tail_time_tx4 10 // PTT tail time in mS
+#define initial_ptt_lead_time_tx5 0  // PTT lead time in mS
+#define initial_ptt_tail_time_tx5 10 // PTT tail time in mS
+#define initial_ptt_lead_time_tx6 0  // PTT lead time in mS
+#define initial_ptt_tail_time_tx6 10 // PTT tail time in mS
+#define initial_qrss_dit_length 1    // QRSS dit length in seconds
+
 #define wpm_limit_low 5
 #define wpm_limit_high 60
-#ifdef ESP32
-#define potentiometer_change_threshold 0.9
-#elif
-#define potentiometer_change_threshold 0.9 // don't change the keyer speed until pot wpm has changed more than this
-#endif
+
 #define send_buffer_size 150
 #define default_length_letterspace 3
 #define default_length_wordspace 7
 #define default_keying_compensation 0  // number of milliseconds to extend all dits and dahs - for QSK on boatanchors
 #define default_first_extension_time 0 // number of milliseconds to extend first sent dit or dah
-#ifdef ESP32
-#define default_pot_full_scale_reading 4095
-#elif
-#define default_pot_full_scale_reading 1023
-#endif
+
 #define default_weighting 50 // 50 = weighting factor of 1 (normal)
 #define default_ptt_hang_time_wordspace_units 0.0
 #define memory_area_end 1023  // the eeprom location where memory space ends
@@ -59,7 +50,7 @@
 #define default_cmos_super_keyer_iambic_b_timing_percent 33 // use with FEATURE_CMOS_SUPER_KEYER_IAMBIC_B_TIMING; should be between 0 to 99 % (0% = true iambic b;100% = iambic a behavior)
 #define cw_echo_timing_factor 0.25
 #define winkey_paddle_echo_buffer_decode_timing_factor 0.25
-#define potentiometer_always_on 0
+
 #define ptt_interlock_check_every_ms 100
 #define ptt_interlock_active_state HIGH
 #define unknown_cw_character '*'
@@ -68,11 +59,7 @@
 #define tx_key_dit_and_dah_pins_active_state HIGH
 #define tx_key_dit_and_dah_pins_inactive_state LOW
 #define potentiometer_check_interval_ms 150
-#ifdef ESP32
-#define potentiometer_reading_threshold 200
-#elif
-#define potentiometer_reading_threshold 1
-#endif
+
 #define default_paddle_interruption_quiet_time_element_lengths 0
 #define default_wordsworth_wordspace 6
 #define default_wordsworth_repetition 1

@@ -16,14 +16,23 @@
 
 #define memory_area_start 113
 
-// Variables and stuff
-
 #if defined(ESP32)
 void add_to_send_buffer(byte incoming_serial_byte);
 #include "keyer_esp32now.h"
 #include "keyer_esp32.h"
-
 #endif
+
+// Different hardware might need different tone control capabilities,
+// so the approach is to use a global object that implements
+// .tone and .noTone.
+#if defined(ESP32)
+#include "esp32Tone.h"
+esp32Tone derivedFromToneBase;
+#endif
+
+// make sure your derived object is named derivedFromToneBase
+// and implements toneBase's .tone and .noTone
+toneBase &toneControl{derivedFromToneBase};
 
 void setup()
 {
@@ -56,13 +65,12 @@ void loop()
     check_paddles();
     service_dit_dah_buffers();
 
-
-
     service_send_buffer(PRINTCHAR);
     check_ptt_tail();
 
 #ifdef FEATURE_POTENTIOMETER
-    check_potentiometer();
+    wpmPot.checkPotentiometer(wpmSetCallBack);
+    //check_potentiometer();
 #endif //FEATURE_POTENTIOMETER
 
     check_for_dirty_configuration();
@@ -167,8 +175,6 @@ void check_paddles()
 
   check_dit_paddle();
   check_dah_paddle();
-
-
 
   if (configuration.keyer_mode == ULTIMATIC)
   {
@@ -445,8 +451,6 @@ void ptt_key()
   unsigned long ptt_activation_time = millis();
   byte all_delays_satisfied = 0;
 
-
-
   if (ptt_line_activated == 0)
   { // if PTT is currently deactivated, bring it up and insert PTT lead time delay
 
@@ -720,12 +724,7 @@ void check_dit_paddle()
 
     dit_buffer = 1;
 
-
-
     manual_ptt_invoke = 0;
-
-    
-
   }
 }
 
@@ -748,13 +747,10 @@ void check_dah_paddle()
 
   pin_value = getEspNowBuff(ESPNOW_DAH) && paddle_pin_read(dah_paddle);
 
-
-
   if (pin_value == 0)
   {
 
     dah_buffer = 1;
-
 
     manual_ptt_invoke = 0;
   }
@@ -1022,7 +1018,7 @@ void tx_and_sidetone_key(int state)
     if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
     {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-      tone(sidetone_line, configuration.hz_sidetone);
+      toneControl.tone(sidetone_line, configuration.hz_sidetone);
 #else
       if (sidetone_line)
       {
@@ -1053,7 +1049,7 @@ void tx_and_sidetone_key(int state)
       if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
       {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-        noTone(sidetone_line);
+        toneControl.noTone(sidetone_line);
 #else
         if (sidetone_line)
         {
@@ -1078,8 +1074,6 @@ void tx_and_sidetone_key(int state)
 
 void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm_in)
 {
-
-
 
   float element_length;
 
@@ -1140,8 +1134,6 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
       }
     }
 #endif //FEATURE_SERIAL
-
-
 
 #if defined(FEATURE_DISPLAY)
     if ((ticks - (micros() - start)) > (10 * 1000))
@@ -1243,8 +1235,6 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
       }
     }
 
-
-
 // blow out prematurely if we're automatic sending and a paddle gets hit
 #ifdef FEATURE_COMMAND_BUTTONS
     if (sending_mode == AUTOMATIC_SENDING && (paddle_pin_read(paddle_left) == LOW || paddle_pin_read(paddle_right) == LOW || analogbuttonread(0) || dit_buffer || dah_buffer))
@@ -1264,14 +1254,10 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
         sending_mode = AUTOMATIC_SENDING_INTERRUPTED;
         automatic_sending_interruption_time = millis();
 
-
-
         return;
       }
     }
 #endif
-
-
 
   } //while ((millis() < endtime) && (millis() > 200))
 
@@ -1297,7 +1283,6 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 } //void loop_element_lengths
 
 //-------------------------------------------------------------------------------------------------------
-
 
 //-------------------------------------------------------------------------------------------------------
 
@@ -1352,13 +1337,10 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds)
 #ifdef FEATURE_POTENTIOMETER
     if (configuration.pot_activated)
     {
-      check_potentiometer();
+      wpmPot.checkPotentiometer(wpmSetCallBack);
+      //check_potentiometer();
     }
 #endif
-
-#ifdef FEATURE_ROTARY_ENCODER
-    check_rotary_encoder();
-#endif //FEATURE_ROTARY_ENCODER
 
     check_paddles();
 
@@ -1392,8 +1374,6 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds)
     { // if we were passed an exit time and no paddle was hit, blow out of here
       return 0;
     }
-
-
 
   } //while (looping)
 
@@ -1802,7 +1782,7 @@ void beep()
   //   delay(200);
   //   noTone(sidetone_line);
   // #else
-  tone(sidetone_line, hz_high_beep, 200);
+  toneControl.tone(sidetone_line, hz_high_beep, 200);
   // #endif
 #else
   if (sidetone_line)
@@ -1819,9 +1799,9 @@ void beep()
 void boop()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-  tone(sidetone_line, hz_low_beep);
+  toneControl.tone(sidetone_line, hz_low_beep);
   delay(100);
-  noTone(sidetone_line);
+  toneControl.noTone(sidetone_line);
 #else
   if (sidetone_line)
   {
@@ -1837,11 +1817,11 @@ void boop()
 void beep_boop()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-  tone(sidetone_line, hz_high_beep);
+  toneControl.tone(sidetone_line, hz_high_beep);
   delay(100);
-  tone(sidetone_line, hz_low_beep);
+  toneControl.tone(sidetone_line, hz_low_beep);
   delay(100);
-  noTone(sidetone_line);
+  toneControl.noTone(sidetone_line);
 #else
   if (sidetone_line)
   {
@@ -1857,11 +1837,11 @@ void beep_boop()
 void boop_beep()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-  tone(sidetone_line, hz_low_beep);
+  toneControl.tone(sidetone_line, hz_low_beep);
   delay(100);
-  tone(sidetone_line, hz_high_beep);
+  toneControl.tone(sidetone_line, hz_high_beep);
   delay(100);
-  noTone(sidetone_line);
+  toneControl.noTone(sidetone_line);
 #else
   if (sidetone_line)
   {
@@ -1981,7 +1961,6 @@ void send_the_dits_and_dahs(char const *cw_to_send)
 
 void send_char(byte cw_char, byte omit_letterspace)
 {
-
 
   if ((cw_char == 10) || (cw_char == 13))
   {
@@ -2625,7 +2604,6 @@ int uppercase(int charbytein)
   return charbytein;
 }
 
-
 void service_send_buffer(byte no_print)
 {
   // send one character out of the send buffer
@@ -2927,8 +2905,6 @@ void service_send_buffer(byte no_print)
       else
       { // if ((send_buffer_array[0] > SERIAL_SEND_BUFFER_SPECIAL_START) && (send_buffer_array[0] < SERIAL_SEND_BUFFER_SPECIAL_END))
 
-
-
 #ifdef FEATURE_DISPLAY
         if (lcd_send_echo)
         {
@@ -2943,25 +2919,17 @@ void service_send_buffer(byte no_print)
         //displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
 #endif
 
-
-
         send_char(send_buffer_array[0], KEYER_NORMAL); //****************
 
         if (!pause_sending_buffer)
         {
 
-
-
           if (!((send_buffer_array[0] > SERIAL_SEND_BUFFER_SPECIAL_START) && (send_buffer_array[0] < SERIAL_SEND_BUFFER_SPECIAL_END)))
           { // this is a friggin hack to fix something I can't explain with SO2R - Goody 20191217
             remove_from_send_buffer();
-
-
           }
           else
           {
-
-
           }
         }
       }
@@ -2979,16 +2947,12 @@ void service_send_buffer(byte no_print)
         tx_and_sidetone_key(0);
         timed_command_in_progress = 0;
         send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
-
-
       }
 
       if ((timed_command_in_progress == SERIAL_SEND_BUFFER_TIMED_WAIT) && (millis() > timed_command_end_time))
       {
         timed_command_in_progress = 0;
         send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
-
-
       }
     }
 
@@ -3018,13 +2982,10 @@ void service_send_buffer(byte no_print)
   if (((dit_buffer || dah_buffer) && (send_buffer_bytes)) && (keyer_machine_mode != BEACON))
   {
 
-
-
     clear_send_buffer();
     send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
     dit_buffer = 0;
     dah_buffer = 0;
-
   }
 }
 
@@ -3039,8 +3000,6 @@ void clear_send_buffer()
 void remove_from_send_buffer()
 {
 
-
-
   if (send_buffer_bytes)
   {
     send_buffer_bytes--;
@@ -3051,7 +3010,6 @@ void remove_from_send_buffer()
     {
       send_buffer_array[x] = send_buffer_array[x + 1];
     }
-
   }
 }
 
@@ -3066,8 +3024,6 @@ void add_to_send_buffer(byte incoming_serial_byte)
     {
       send_buffer_bytes++;
       send_buffer_array[send_buffer_bytes - 1] = incoming_serial_byte;
-
-
     }
     else
     { // we got a backspace
@@ -3076,13 +3032,9 @@ void add_to_send_buffer(byte incoming_serial_byte)
         send_buffer_bytes--;
       }
     }
-
-
   }
   else
   {
-
-
   }
 }
 //-------------------------------------------------------------------------------------------------------
@@ -3091,13 +3043,9 @@ void add_to_send_buffer(byte incoming_serial_byte)
 
 //-------------------------------------------------------------------------------------------------------
 
-
 //-------------------------------------------------------------------------------------------------------
 
-
-
 //---------------------------------------------------------------------
-
 
 #ifdef FEATURE_PADDLE_ECHO
 void service_paddle_echo()
@@ -3231,7 +3179,6 @@ void service_paddle_echo()
     displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
 #endif
 
-
     paddle_echo_buffer = 0;
     paddle_echo_buffer_decode_time = millis() + (float(600 / configuration.wpm) * length_letterspace);
     paddle_echo_space_sent = 0;
@@ -3284,9 +3231,6 @@ void service_paddle_echo()
 }
 #endif //FEATURE_PADDLE_ECHO
 
-
-
-
 void initialize_pins()
 {
 
@@ -3299,8 +3243,6 @@ void initialize_pins()
   pinMode(paddle_right, INPUT);
   digitalWrite(paddle_right, HIGH);
 #endif //defined (ARDUINO_MAPLE_MINI)||defined(ARDUINO_GENERIC_STM32F103C) sp5iou 20180329
-
-
 
   if (tx_key_line_1)
   {
@@ -3414,7 +3356,7 @@ void initialize_keyer_state()
   key_tx = 1;
 
   configuration.wpm = initial_speed_wpm;
-  pot_wpm_low_value = initial_pot_wpm_low_value;
+
   configuration.paddle_interruption_quiet_time_element_lengths = default_paddle_interruption_quiet_time_element_lengths;
   configuration.hz_sidetone = initial_sidetone_freq;
   configuration.memory_repeat_time = default_memory_repeat_time;
@@ -3461,9 +3403,12 @@ void initialize_potentiometer()
 {
 
 #ifdef FEATURE_POTENTIOMETER
+  wpmPot.initialize(potentiometer);
+  /*
   pinMode(potentiometer, INPUT);
   pot_wpm_high_value = initial_pot_wpm_high_value;
   last_pot_wpm_read = pot_value_wpm();
+  */
   configuration.pot_activated = 1;
 #endif
 }
@@ -3564,8 +3509,6 @@ void check_for_beacon_mode()
 
 void initialize_serial_ports()
 {
-
-
 }
 
 void initialize_display()

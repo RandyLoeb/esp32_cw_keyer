@@ -21,31 +21,11 @@ SSD1306Wire display(0x3c, MYSDA, MYSDL);
 #define CONFIG_JSON_FILENAME "/configuration.json"
 #define FORMAT_SPIFFS_IF_FAILED true
 #define SPIFFS_LOG_SERIAL false
-#define SOUND_PWM_CHANNEL 0
-#define SOUND_RESOLUTION 8                     // 8 bit resolution
-#define SOUND_ON (1 << (SOUND_RESOLUTION - 1)) // 50% duty cycle
-#define SOUND_OFF 0                            // 0% duty cycle
+
 PRIMARY_SERIAL_CLS *esp32_port_to_use;
 int _SPIFFS_MADE_READY = 0;
 
 String displayContents = "";
-
-//#define DEBUG_LOOP
-
-void tone(uint8_t pin, unsigned short freq, unsigned duration = 0)
-{
-    ledcSetup(SOUND_PWM_CHANNEL, freq, SOUND_RESOLUTION); // Set up PWM channel
-    ledcAttachPin(pin, SOUND_PWM_CHANNEL);
-    ledcWriteTone(SOUND_PWM_CHANNEL, freq); // Attach channel to pin
-    //ledcWrite(SOUND_PWM_CHANNEL, SOUND_ON);
-
-    delay(duration);
-    //ledcWrite(SOUND_PWM_CHANNEL, SOUND_OFF);
-}
-void noTone(uint8_t pin)
-{
-    tone(pin, -1);
-}
 
 void makeSpiffsReady()
 {
