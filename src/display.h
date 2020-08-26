@@ -252,8 +252,6 @@ void display_scroll_print_char(char charin)
 
 #endif //FEATURE_DISPLAY
 
-
-
 //-------------------------------------------------------------------------------------------------------
 
 #ifdef FEATURE_DISPLAY
@@ -289,4 +287,17 @@ void lcd_center_print_timed(String lcd_print_string, byte row_number, unsigned i
     lcd.print(lcd_print_string);
     lcd_timed_message_clear_time = millis() + duration;
 }
+#endif
+#ifdef FEATURE_DISPLAY
+  void lcd_center_print_timed_wpm(){
+
+
+    #if defined(OPTION_ADVANCED_SPEED_DISPLAY)
+      lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm*5) + " cpm", 0, default_display_msg_delay);
+      lcd_center_print_timed(String(1200/configuration.wpm) + ":" + (((1200/configuration.wpm)*configuration.dah_to_dit_ratio)/100) + "ms 1:" + (float(configuration.dah_to_dit_ratio)/100.00), 1, default_display_msg_delay);
+    #else
+      lcd_center_print_timed(String(configuration.wpm) + " wpm", 0, default_display_msg_delay);
+    #endif
+
+  }
 #endif

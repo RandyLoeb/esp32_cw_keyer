@@ -9,58 +9,13 @@
 #include "keyer_debug.h"
 #include "keyer_pin_settings.h"
 #include "keyer_settings.h"
-#include "display.h"
+//#include "display.h"
+#include "config.h"
+#include "potentiometer.h"
 
 #define memory_area_start 113
 
 // Variables and stuff
-struct config_t
-{ // 111 bytes total
-
-  uint8_t paddle_mode;
-  uint8_t keyer_mode;
-  uint8_t sidetone_mode;
-  uint8_t pot_activated;
-  uint8_t length_wordspace;
-  uint8_t autospace_active;
-  uint8_t current_ptt_line;
-  uint8_t current_tx;
-  uint8_t weighting;
-  uint8_t dit_buffer_off;
-  uint8_t dah_buffer_off;
-  uint8_t cmos_super_keyer_iambic_b_timing_percent;
-  uint8_t cmos_super_keyer_iambic_b_timing_on;
-  uint8_t link_receive_enabled;
-  uint8_t paddle_interruption_quiet_time_element_lengths;
-  uint8_t wordsworth_wordspace;
-  uint8_t wordsworth_repetition;
-  uint8_t cli_mode;
-  uint8_t ptt_buffer_hold_active;
-  // 19 bytes
-
-  unsigned int wpm;
-  unsigned int hz_sidetone;
-  unsigned int dah_to_dit_ratio;
-  unsigned int wpm_farnsworth;
-  unsigned int memory_repeat_time;
-  unsigned int wpm_command_mode;
-  unsigned int link_receive_udp_port;
-
-  unsigned int wpm_ps2_usb_keyboard;
-  unsigned int wpm_cli;
-  unsigned int wpm_winkey;
-  // 20 bytes
-
-  unsigned int ptt_lead_time[6];
-  unsigned int ptt_tail_time[6];
-  unsigned int ptt_active_to_sequencer_active_time[5];
-  unsigned int ptt_inactive_to_sequencer_inactive_time[5];
-  // 44 bytes
-
-  int sidetone_volume;
-  // 2 bytes
-
-} configuration;
 
 #if defined(ESP32)
 void add_to_send_buffer(byte incoming_serial_byte);
@@ -68,88 +23,6 @@ void add_to_send_buffer(byte incoming_serial_byte);
 #include "keyer_esp32.h"
 
 #endif
-
-byte sending_mode = UNDEFINED_SENDING;
-byte command_mode_disable_tx = 0;
-byte current_tx_key_line = tx_key_line_1;
-
-byte manual_ptt_invoke = 0;
-byte qrss_dit_length = initial_qrss_dit_length;
-byte keyer_machine_mode = KEYER_NORMAL; // KEYER_NORMAL, BEACON, KEYER_COMMAND_MODE
-byte char_send_mode = 0;                // CW, HELL, AMERICAN_MORSE
-byte key_tx = 0;                        // 0 = tx_key_line control suppressed
-byte dit_buffer = 0;                    // used for buffering paddle hits in iambic operation
-byte dah_buffer = 0;                    // used for buffering paddle hits in iambic operation
-byte button0_buffer = 0;
-byte being_sent = 0; // SENDING_NOTHING, SENDING_DIT, SENDING_DAH
-byte key_state = 0;  // 0 = key up, 1 = key down
-byte config_dirty = 0;
-unsigned long ptt_time = 0;
-byte ptt_line_activated = 0;
-byte speed_mode = SPEED_NORMAL;
-#if defined(FEATURE_COMMAND_LINE_INTERFACE) || defined(FEATURE_PS2_KEYBOARD) || defined(FEATURE_MEMORY_MACROS) || defined(FEATURE_MEMORIES) || defined(FEATURE_COMMAND_BUTTONS)
-unsigned int serial_number = 1;
-#endif
-byte pause_sending_buffer = 0;
-byte length_letterspace = default_length_letterspace;
-byte keying_compensation = default_keying_compensation;
-byte first_extension_time = default_first_extension_time;
-byte ultimatic_mode = ULTIMATIC_NORMAL;
-float ptt_hang_time_wordspace_units = default_ptt_hang_time_wordspace_units;
-byte last_sending_mode = MANUAL_SENDING;
-byte zero = 0;
-byte iambic_flag = 0;
-unsigned long last_config_write = 0;
-
-byte pot_wpm_low_value;
-
-#ifdef FEATURE_POTENTIOMETER
-byte pot_wpm_high_value;
-byte last_pot_wpm_read;
-int pot_full_scale_reading = default_pot_full_scale_reading;
-#endif //FEATURE_POTENTIOMETER
-
-#if defined(FEATURE_SERIAL)
-#if !defined(OPTION_DISABLE_SERIAL_PORT_CHECKING_WHILE_SENDING_CW)
-byte loop_element_lengths_breakout_flag;
-byte dump_current_character_flag;
-#endif
-byte incoming_serial_byte;
-long primary_serial_port_baud_rate;
-byte cw_send_echo_inhibit = 0;
-#ifdef FEATURE_COMMAND_LINE_INTERFACE
-byte serial_backslash_command;
-byte cli_paddle_echo = cli_paddle_echo_on_at_boot;
-byte cli_prosign_flag = 0;
-byte cli_wait_for_cr_to_send_cw = 0;
-#if defined(FEATURE_STRAIGHT_KEY_ECHO)
-byte cli_straight_key_echo = cli_straight_key_echo_on_at_boot;
-#endif
-#endif //FEATURE_COMMAND_LINE_INTERFACE
-#endif //FEATURE_SERIAL
-
-byte send_buffer_array[send_buffer_size];
-byte send_buffer_bytes = 0;
-byte send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
-
-#if defined(FEATURE_SERIAL)
-byte primary_serial_port_mode = SERIAL_CLI;
-#endif //FEATURE_SERIAL
-
-PRIMARY_SERIAL_CLS *primary_serial_port;
-
-PRIMARY_SERIAL_CLS *debug_serial_port;
-
-#if defined(FEATURE_PADDLE_ECHO)
-byte paddle_echo = 0;
-long paddle_echo_buffer = 0;
-unsigned long paddle_echo_buffer_decode_time = 0;
-#endif //FEATURE_PADDLE_ECHO
-
-unsigned long automatic_sending_interruption_time = 0;
-
-byte async_eeprom_write = 0;
-unsigned long millis_rollover = 0;
 
 void setup()
 {
@@ -230,17 +103,6 @@ byte service_tx_inhibit_and_pause()
       {
         clear_send_buffer();
         send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
-#ifdef FEATURE_MEMORIES
-        play_memory_prempt = 1;
-        repeat_memory = 255;
-#endif
-#ifdef FEATURE_WINKEY_EMULATION
-        if (winkey_sending && winkey_host_open)
-        {
-          winkey_port_write(0xc2 | winkey_sending | winkey_xoff, 0); // 0xc2 - BREAKIN bit set high
-          winkey_interrupted = 1;
-        }
-#endif
       }
     }
   }
@@ -281,64 +143,6 @@ void check_for_dirty_configuration()
     write_settings_to_eeprom(0);
   }
 }
-
-#ifdef FEATURE_POTENTIOMETER
-void check_potentiometer()
-{
-
-  static unsigned long last_pot_check_time = 0;
-
-  if ((configuration.pot_activated || potentiometer_always_on) && ((millis() - last_pot_check_time) > potentiometer_check_interval_ms))
-  {
-    last_pot_check_time = millis();
-    if ((potentiometer_enable_pin) && (digitalRead(potentiometer_enable_pin) == HIGH))
-    {
-      return;
-    }
-    byte pot_value_wpm_read = pot_value_wpm();
-#ifdef ESP32
-    if (((abs(pot_value_wpm_read - last_pot_wpm_read) * 10) > (potentiometer_change_threshold * 10)))
-    {
-#elif
-    if (((abs(pot_value_wpm_read - last_pot_wpm_read) * 10) > (potentiometer_change_threshold * 10)))
-    {
-#endif
-      //#ifdef DEBUG_POTENTIOMETER
-      debug_serial_port->print(F("check_potentiometer: speed change: "));
-      debug_serial_port->print(pot_value_wpm_read);
-      debug_serial_port->print(F(" analog read: "));
-      debug_serial_port->println(analogRead(potentiometer));
-      //#endif
-      if (keyer_machine_mode == KEYER_COMMAND_MODE)
-        command_speed_set(pot_value_wpm_read);
-      else
-        speed_set(pot_value_wpm_read);
-      last_pot_wpm_read = pot_value_wpm_read;
-    }
-  }
-}
-
-#endif
-//-------------------------------------------------------------------------------------------------------
-#ifdef FEATURE_POTENTIOMETER
-byte pot_value_wpm()
-{
-  // int pot_read = analogRead(potentiometer);
-  // byte return_value = map(pot_read, 0, pot_full_scale_reading, pot_wpm_low_value, pot_wpm_high_value);
-  // return return_value;
-
-  static int last_pot_read = 0;
-  static byte return_value = 0;
-  int pot_read = analogRead(potentiometer);
-  if (abs(pot_read - last_pot_read) > potentiometer_reading_threshold)
-  {
-    return_value = map(pot_read, 0, pot_full_scale_reading, pot_wpm_low_value, pot_wpm_high_value);
-    last_pot_read = pot_read;
-  }
-  return return_value;
-}
-
-#endif
 
 //-------------------------------------------------------------------------------------------------------
 
@@ -1616,18 +1420,7 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 
 //-------------------------------------------------------------------------------------------------------
 
-#ifdef FEATURE_DISPLAY
-void lcd_center_print_timed_wpm()
-{
 
-#if defined(OPTION_ADVANCED_SPEED_DISPLAY)
-  lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm * 5) + " cpm", 0, default_display_msg_delay);
-  lcd_center_print_timed(String(1200 / configuration.wpm) + ":" + (((1200 / configuration.wpm) * configuration.dah_to_dit_ratio) / 100) + "ms 1:" + (float(configuration.dah_to_dit_ratio) / 100.00), 1, default_display_msg_delay);
-#else
-  lcd_center_print_timed(String(configuration.wpm) + " wpm", 0, default_display_msg_delay);
-#endif
-}
-#endif
 //-------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------
@@ -1660,46 +1453,6 @@ void speed_change_command_mode(int change)
 }
 
 //-------------------------------------------------------------------------------------------------------
-
-void speed_set(int wpm_set)
-{
-
-  if ((wpm_set > 0) && (wpm_set < 1000))
-  {
-    configuration.wpm = wpm_set;
-    config_dirty = 1;
-
-#ifdef FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
-    if ((configuration.wpm >= DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_WPM) && (configuration.wpm <= DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_WPM))
-    {
-      int dynamicweightvalue = map(configuration.wpm, DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_WPM, DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_WPM, DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_RATIO, DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_RATIO);
-      configuration.dah_to_dit_ratio = dynamicweightvalue;
-    }
-#endif //FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
-
-#ifdef FEATURE_LED_RING
-    update_led_ring();
-#endif //FEATURE_LED_RING
-
-#ifdef FEATURE_DISPLAY
-    lcd_center_print_timed_wpm();
-#endif
-  }
-}
-//-------------------------------------------------------------------------------------------------------
-
-void command_speed_set(int wpm_set)
-{
-  if ((wpm_set > 0) && (wpm_set < 1000))
-  {
-    configuration.wpm_command_mode = wpm_set;
-    config_dirty = 1;
-
-#ifdef FEATURE_DISPLAY
-    lcd_center_print_timed("Cmd Spd " + String(configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
-#endif // FEATURE_DISPLAY
-  }    // end if
-} // end command_speed_set
 
 long get_cw_input_from_user(unsigned int exit_time_milliseconds)
 {
@@ -6355,73 +6108,10 @@ void initialize_display()
   }
 }
 
-//-------------------------------------------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
 int paddle_pin_read(int pin_to_read)
 {
 
-  // Updated code provided by Fred, VK2EFL
-  //
-  // Note on OPTION_DIRECT_PADDLE_PIN_READS_MEGA, OPTION_DIRECT_PADDLE_PIN_READS_UNO, OPTION_SAVE_MEMORY_NANOKEYER
-  // For Mega2560 and Uno/Nano speed up paddle pin reads by direct read of the register
-  // it saves about 340 bytes of code too
-
-#ifndef FEATURE_CAPACITIVE_PADDLE_PINS
-#ifndef OPTION_INVERT_PADDLE_PIN_LOGIC
-#ifdef OPTION_DIRECT_PADDLE_PIN_READS_MEGA // after April 2019, if this option is not defined then a direct read of the pins can never occur
-  switch (pin_to_read)
-  {
-  case 2:
-    return (bitRead(PINE, 4));
-    break;
-  case 5:
-    return (bitRead(PINE, 3));
-    break;
-  }                                       // end switch
-#endif                                    // OPTION_DIRECT_PADDLE_READS_MEGA
-#ifdef OPTION_DIRECT_PADDLE_PIN_READS_UNO // since with this verion, April 2019, this option is not defined then a direct read of the pins can never occur
-  return (bitRead(PIND, pin_to_read));    // use this line on Unos and Nanos
-#endif                                    // OPTION_DIRECT_PADDLE_PIN_READS_UNO
-#ifdef OPTION_SAVE_MEMORY_NANOKEYER       //
-  switch (pin_to_read)
-  {
-  case 2:
-    return (bitRead(PIND, 2));
-    break;
-  case 5:
-    return (bitRead(PIND, 5));
-    break;
-  case 8:
-    return (bitRead(PINB, 0));
-    break;
-  }    // end switch
-#endif // OPTION_SAVE_MEMORY_NANOKEYER
-#if !defined(OPTION_DIRECT_PADDLE_PIN_READS_UNO) && !defined(OPTION_DIRECT_PADDLE_PIN_READS_MEGA) && !defined(OPTION_SAVE_MEMORY_NANOKEYER)
-  return digitalRead(pin_to_read); // code using digitalRead
-#endif                             // !defined(OPTION_DIRECT_PADDLE_PIN_READS_UNO) && !defined(OPTION_DIRECT_PADDLE_PIN_READS_MEGA)
-#else                              // !OPTION_INVERT_PADDLE_PIN_LOGIC
-  return !digitalRead(pin_to_read); // we do the regular digitalRead() if none of the direct register read options are valid
-#endif                             // !OPTION_INVERT_PADDLE_PIN_LOGIC
-#else                              // !FEATURE_CAPACITIVE_PADDLE_PINS
-  if (capactive_paddle_pin_inhibit_pin)
-  {
-    if (digitalRead(capactive_paddle_pin_inhibit_pin) == HIGH)
-    {
-      return digitalRead(pin_to_read);
-    } // end if
-  }   // end if (capactive_paddle_pin_inhibit_pin)
-  if (read_capacitive_pin(pin_to_read) > capacitance_threshold)
-    return LOW;
-  else
-    return HIGH;
-#endif                             // !FEATURE_CAPACITIVE_PADDLE_PINS
+  return digitalRead(pin_to_read);
 }
 
 void service_millis_rollover()
@@ -6435,13 +6125,7 @@ void service_millis_rollover()
   }
   last_millis = millis();
 }
-//-------------------------------------------------------------------------------------------------------
 
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
 byte is_visible_character(byte char_in)
 {
 
@@ -6453,18 +6137,4 @@ byte is_visible_character(byte char_in)
   {
     return 0;
   }
-}
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-void debug_blink()
-{
-#if defined(DEBUG_STARTUP_BLINKS)
-  digitalWrite(13, HIGH);
-  delay(250);
-  digitalWrite(13, LOW);
-  delay(1000);
-#endif //DEBUG_STARTUP
 }
