@@ -26,7 +26,7 @@ void add_to_send_buffer(byte incoming_serial_byte);
 // so the approach is to use a global object that implements
 // .tone and .noTone.
 #if defined(ESP32)
-#include "esp32Tone.h"
+#include "tone/esp32Tone.h"
 esp32Tone derivedFromToneBase;
 #endif
 
@@ -2586,23 +2586,7 @@ void send_char(byte cw_char, byte omit_letterspace)
 
 //-------------------------------------------------------------------------------------------------------
 
-int uppercase(int charbytein)
-{
-  if (((charbytein > 96) && (charbytein < 123)) || ((charbytein > 223) && (charbytein < 255)))
-  {
-    charbytein = charbytein - 32;
-  }
-  if (charbytein == 158)
-  {
-    charbytein = 142;
-  } // ž -> Ž
-  if (charbytein == 154)
-  {
-    charbytein = 138;
-  } // š -> Š
 
-  return charbytein;
-}
 
 void service_send_buffer(byte no_print)
 {
