@@ -12,6 +12,7 @@
 //#include "display.h"
 #include "config.h"
 #include "potentiometer.h"
+#include "cw_utils.h"
 
 #define memory_area_start 113
 
@@ -55,11 +56,7 @@ void loop()
     check_paddles();
     service_dit_dah_buffers();
 
-#if defined(FEATURE_SERIAL)
-    check_serial();
-    check_paddles();
-    service_dit_dah_buffers();
-#endif //FEATURE_SERIAL
+
 
     service_send_buffer(PRINTCHAR);
     check_ptt_tail();
@@ -171,16 +168,7 @@ void check_paddles()
   check_dit_paddle();
   check_dah_paddle();
 
-#ifdef FEATURE_WINKEY_EMULATION
-  if (winkey_dit_invoke)
-  {
-    dit_buffer = 1;
-  }
-  if (winkey_dah_invoke)
-  {
-    dah_buffer = 1;
-  }
-#endif //FEATURE_WINKEY_EMULATION
+
 
   if (configuration.keyer_mode == ULTIMATIC)
   {
@@ -729,48 +717,15 @@ void check_dit_paddle()
   if (pin_value == 0)
   {
 #endif
-#ifdef FEATURE_DEAD_OP_WATCHDOG
-    if (dit_buffer == 0)
-    {
-      dit_counter++;
-      dah_counter = 0;
-    }
-#endif
+
     dit_buffer = 1;
 
-#if defined(OPTION_WINKEY_SEND_BREAKIN_STATUS_BYTE) && defined(FEATURE_WINKEY_EMULATION)
-    if (!winkey_interrupted && winkey_host_open && !winkey_breakin_status_byte_inhibit)
-    {
-      send_winkey_breakin_byte_flag = 1;
-      // winkey_port_write(0xc2|winkey_sending|winkey_xoff); // 0xc2 - BREAKIN bit set high
-      // winkey_interrupted = 1;
 
-      // tone(sidetone_line,1000);
-      // delay(500);
-      // noTone(sidetone_line);
 
-      dit_buffer = 0;
-    }
-#endif //defined(OPTION_WINKEY_SEND_BREAKIN_STATUS_BYTE) && defined(FEATURE_WINKEY_EMULATION)
-
-#ifdef FEATURE_SLEEP
-    last_activity_time = millis();
-#endif //FEATURE_SLEEP
     manual_ptt_invoke = 0;
-#ifdef FEATURE_MEMORIES
-    if (repeat_memory < 255)
-    {
-      repeat_memory = 255;
-      clear_send_buffer();
-#ifdef OPTION_DIT_PADDLE_NO_SEND_ON_MEM_RPT
-      dit_buffer = 0;
-      while (!paddle_pin_read(dit_paddle))
-      {
-      };
-      memory_rpt_interrupt_flag = 1;
-#endif
-    }
-#endif
+
+    
+
   }
 }
 
@@ -793,38 +748,14 @@ void check_dah_paddle()
 
   pin_value = getEspNowBuff(ESPNOW_DAH) && paddle_pin_read(dah_paddle);
 
-#if defined(FEATURE_USB_MOUSE) || defined(FEATURE_USB_KEYBOARD)
-  if (usb_dah)
-  {
-    pin_value = 0;
-  }
-#endif
+
 
   if (pin_value == 0)
   {
-#ifdef FEATURE_DEAD_OP_WATCHDOG
-    if (dah_buffer == 0)
-    {
-      dah_counter++;
-      dit_counter = 0;
-    }
-#endif
+
     dah_buffer = 1;
 
-#if defined(OPTION_WINKEY_SEND_BREAKIN_STATUS_BYTE) && defined(FEATURE_WINKEY_EMULATION)
-    if (!winkey_interrupted && winkey_host_open && !winkey_breakin_status_byte_inhibit)
-    {
-      send_winkey_breakin_byte_flag = 1;
-      dah_buffer = 0;
-    }
-#endif //defined(OPTION_WINKEY_SEND_BREAKIN_STATUS_BYTE) && defined(FEATURE_WINKEY_EMULATION)
 
-#ifdef FEATURE_SLEEP
-    last_activity_time = millis();
-#endif //FEATURE_SLEEP
-#ifdef FEATURE_MEMORIES
-    repeat_memory = 255;
-#endif
     manual_ptt_invoke = 0;
   }
 }
@@ -1148,9 +1079,7 @@ void tx_and_sidetone_key(int state)
 void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm_in)
 {
 
-#if defined(FEATURE_SERIAL) && !defined(OPTION_DISABLE_SERIAL_PORT_CHECKING_WHILE_SENDING_CW)
-  loop_element_lengths_breakout_flag = 1;
-#endif //FEATURE_SERIAL
+
 
   float element_length;
 
@@ -1212,35 +1141,7 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
     }
 #endif //FEATURE_SERIAL
 
-#if defined(FEATURE_INTERNET_LINK) /*&& !defined(OPTION_INTERNET_LINK_NO_UDP_SVC_DURING_KEY_DOWN)*/
-    //if ((millis() > 1000)  && ((millis()-start) > FEATURE_INTERNET_LINK_SVC_DURING_LOOP_TIME_MS)){
-    if ((ticks - (micros() - start)) > (FEATURE_INTERNET_LINK_SVC_DURING_LOOP_TIME_MS * 1000))
-    {
-      service_udp_send_buffer();
-      service_udp_receive();
-      service_internet_link_udp_receive_buffer();
-    }
-#endif //FEATURE_INTERNET_LINK
 
-#if defined(OPTION_WATCHDOG_TIMER)
-    wdt_reset();
-#endif //OPTION_WATCHDOG_TIMER
-
-#if defined(FEATURE_ROTARY_ENCODER)
-    check_rotary_encoder();
-#endif //FEATURE_ROTARY_ENCODER
-
-#if defined(FEATURE_USB_KEYBOARD) || defined(FEATURE_USB_MOUSE)
-    service_usb();
-#endif //FEATURE_USB_KEYBOARD || FEATURE_USB_MOUSE
-
-#if defined(FEATURE_PTT_INTERLOCK)
-    service_ptt_interlock();
-#endif //FEATURE_PTT_INTERLOCK
-
-#if defined(FEATURE_4x4_KEYPAD) || defined(FEATURE_3x4_KEYPAD)
-    service_keypad();
-#endif
 
 #if defined(FEATURE_DISPLAY)
     if ((ticks - (micros() - start)) > (10 * 1000))
@@ -1342,9 +1243,7 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
       }
     }
 
-#if defined(FEATURE_MEMORIES) && defined(FEATURE_COMMAND_BUTTONS)
-    check_the_memory_buttons();
-#endif
+
 
 // blow out prematurely if we're automatic sending and a paddle gets hit
 #ifdef FEATURE_COMMAND_BUTTONS
@@ -1365,29 +1264,14 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
         sending_mode = AUTOMATIC_SENDING_INTERRUPTED;
         automatic_sending_interruption_time = millis();
 
-#ifdef FEATURE_SO2R_BASE
-        so2r_set_rx();
-#endif
+
 
         return;
       }
     }
 #endif
 
-#ifdef FEATURE_STRAIGHT_KEY
-    service_straight_key();
-#endif //FEATURE_STRAIGHT_KEY
 
-#if defined(FEATURE_WEB_SERVER)
-    if (speed_mode == SPEED_QRSS)
-    {
-      service_web_server();
-    }
-#endif //FEATURE_WEB_SERVER
-
-#ifdef FEATURE_SO2R_SWITCHES
-    so2r_switches();
-#endif
 
   } //while ((millis() < endtime) && (millis() > 200))
 
@@ -1509,17 +1393,7 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds)
       return 0;
     }
 
-#ifdef FEATURE_COMMAND_BUTTONS
-    while (analogbuttonread(0))
-    { // hit the button to get out of command mode if no paddle was hit
-      looping = 0;
-      button_hit = 1;
-    }
-#endif
 
-#if defined(FEATURE_SERIAL)
-    check_serial();
-#endif
 
   } //while (looping)
 
@@ -2107,19 +1981,7 @@ void send_the_dits_and_dahs(char const *cw_to_send)
 
 void send_char(byte cw_char, byte omit_letterspace)
 {
-#ifdef DEBUG_SEND_CHAR
-  debug_serial_port->print(F("send_char: called with cw_char:"));
-  debug_serial_port->print((byte)cw_char);
-  if (omit_letterspace)
-  {
-    debug_serial_port->print(F(" OMIT_LETTERSPACE"));
-  }
-  debug_serial_port->println();
-#endif
 
-#ifdef FEATURE_SLEEP
-  last_activity_time = millis();
-#endif //FEATURE_SLEEP
 
   if ((cw_char == 10) || (cw_char == 13))
   {
@@ -2763,91 +2625,6 @@ int uppercase(int charbytein)
   return charbytein;
 }
 
-//-------------------------------------------------------------------------------------------------------
-#if defined(FEATURE_SERIAL)
-#ifdef FEATURE_COMMAND_LINE_INTERFACE
-void serial_qrss_mode()
-{
-  byte looping = 1;
-  byte incoming_serial_byte;
-  byte numbers[4];
-  byte numberindex = 0;
-  String numberstring;
-  byte error = 0;
-
-  while (looping)
-  {
-    if (primary_serial_port->available() == 0)
-    { // wait for the next keystroke
-      if (keyer_machine_mode == KEYER_NORMAL)
-      { // might as well do something while we're waiting
-        check_paddles();
-        service_dit_dah_buffers();
-        //check_the_memory_buttons();
-      }
-    }
-    else
-    {
-
-      incoming_serial_byte = primary_serial_port->read();
-      if ((incoming_serial_byte > 47) && (incoming_serial_byte < 58))
-      { // ascii 48-57 = "0" - "9")
-        numberstring = numberstring + incoming_serial_byte;
-        numbers[numberindex] = incoming_serial_byte;
-        //        primary_serial_port->write("numberindex:");
-        //        primary_serial_port->print(numberindex,DEC);
-        //        primary_serial_port->write("     numbers:");
-        //        primary_serial_port->println(numbers[numberindex],DEC);
-        numberindex++;
-        if (numberindex > 2)
-        {
-          looping = 0;
-          error = 1;
-        }
-      }
-      else
-      {
-        if (incoming_serial_byte == 13)
-        { // carriage return - get out
-          looping = 0;
-        }
-        else
-        { // bogus input - error out
-          looping = 0;
-          error = 1;
-        }
-      }
-    }
-  }
-
-  if (error)
-  {
-    primary_serial_port->println(F("Error..."));
-    while (primary_serial_port->available() > 0)
-    {
-      incoming_serial_byte = primary_serial_port->read();
-    } // clear out buffer
-    return;
-  }
-  else
-  {
-    primary_serial_port->print(F("Setting keyer to QRSS Mode. Dit length: "));
-    primary_serial_port->print(numberstring);
-    primary_serial_port->println(F(" seconds"));
-    int y = 1;
-    int set_dit_length = 0;
-    for (int x = (numberindex - 1); x >= 0; x = x - 1)
-    {
-      set_dit_length = set_dit_length + ((numbers[x] - 48) * y);
-      y = y * 10;
-    }
-    qrss_dit_length = set_dit_length;
-    speed_mode = SPEED_QRSS;
-  }
-}
-#endif
-#endif
-//-------------------------------------------------------------------------------------------------------
 
 void service_send_buffer(byte no_print)
 {
@@ -3513,293 +3290,6 @@ void service_paddle_echo()
 
 //---------------------------------------------------------------------
 
-int convert_cw_number_to_ascii(long number_in)
-{
-
-  // number_in:  1 = dit, 2 = dah, 9 = a space
-
-  switch (number_in)
-  {
-  case 12:
-    return 65;
-    break; // A
-  case 2111:
-    return 66;
-    break;
-  case 2121:
-    return 67;
-    break;
-  case 211:
-    return 68;
-    break;
-  case 1:
-    return 69;
-    break;
-  case 1121:
-    return 70;
-    break;
-  case 221:
-    return 71;
-    break;
-  case 1111:
-    return 72;
-    break;
-  case 11:
-    return 73;
-    break;
-  case 1222:
-    return 74;
-    break;
-  case 212:
-    return 75;
-    break;
-  case 1211:
-    return 76;
-    break;
-  case 22:
-    return 77;
-    break;
-  case 21:
-    return 78;
-    break;
-  case 222:
-    return 79;
-    break;
-  case 1221:
-    return 80;
-    break;
-  case 2212:
-    return 81;
-    break;
-  case 121:
-    return 82;
-    break;
-  case 111:
-    return 83;
-    break;
-  case 2:
-    return 84;
-    break;
-  case 112:
-    return 85;
-    break;
-  case 1112:
-    return 86;
-    break;
-  case 122:
-    return 87;
-    break;
-  case 2112:
-    return 88;
-    break;
-  case 2122:
-    return 89;
-    break;
-  case 2211:
-    return 90;
-    break; // Z
-
-  case 22222:
-    return 48;
-    break; // 0
-  case 12222:
-    return 49;
-    break;
-  case 11222:
-    return 50;
-    break;
-  case 11122:
-    return 51;
-    break;
-  case 11112:
-    return 52;
-    break;
-  case 11111:
-    return 53;
-    break;
-  case 21111:
-    return 54;
-    break;
-  case 22111:
-    return 55;
-    break;
-  case 22211:
-    return 56;
-    break;
-  case 22221:
-    return 57;
-    break;
-  case 112211:
-    return '?';
-    break; // ?
-  case 21121:
-    return 47;
-    break; // /
-#if !defined(OPTION_PROSIGN_SUPPORT)
-  case 2111212:
-    return '*';
-    break; // BK
-#endif
-    //    case 221122: return 44; break;  // ,
-    //    case 221122: return '!'; break;  // ! sp5iou 20180328
-  case 221122:
-    return ',';
-    break;
-  case 121212:
-    return '.';
-    break;
-  case 122121:
-    return '@';
-    break;
-  case 222222:
-    return 92;
-    break; // special hack; six dahs = \ (backslash)
-  case 21112:
-    return '=';
-    break; // BT
-  //case 2222222: return '+'; break;
-  case 9:
-    return 32;
-    break; // special 9 = space
-
-#ifndef OPTION_PS2_NON_ENGLISH_CHAR_LCD_DISPLAY_SUPPORT
-  case 12121:
-    return '+';
-    break;
-#else
-  case 211112:
-    return 45;
-    break; // - // sp5iou
-  case 212122:
-    return 33;
-    break; // ! //sp5iou
-  case 1112112:
-    return 36;
-    break; // $ //sp5iou
-#if !defined(OPTION_PROSIGN_SUPPORT)
-  case 12111:
-    return 38;
-    break; // & // sp5iou
-#endif
-  case 122221:
-    return 39;
-    break; // ' // sp5iou
-  case 121121:
-    return 34;
-    break; // " // sp5iou
-  case 112212:
-    return 95;
-    break; // _ // sp5iou
-  case 212121:
-    return 59;
-    break; // ; // sp5iou
-  case 222111:
-    return 58;
-    break; // : // sp5iou
-  case 212212:
-    return 41;
-    break; // KK (stored as ascii ) ) // sp5iou
-#if !defined(OPTION_PROSIGN_SUPPORT)
-  case 111212:
-    return 62;
-    break; // SK (stored as ascii > ) // sp5iou
-#endif
-  case 12121:
-    return 60;
-    break; // AR (store as ascii < ) // sp5iou
-#endif //OPTION_PS2_NON_ENGLISH_CHAR_LCD_DISPLAY_SUPPORT
-
-#if defined(OPTION_PROSIGN_SUPPORT)
-#if !defined(OPTION_NON_ENGLISH_EXTENSIONS)
-  case 1212:
-    return PROSIGN_AA;
-    break;
-#endif
-  case 12111:
-    return PROSIGN_AS;
-    break;
-  case 2111212:
-    return PROSIGN_BK;
-    break;
-  case 21211211:
-    return PROSIGN_CL;
-    break;
-  case 21212:
-    return PROSIGN_CT;
-    break;
-  case 21221:
-    return PROSIGN_KN;
-    break;
-  case 211222:
-    return PROSIGN_NJ;
-    break;
-  case 111212:
-    return PROSIGN_SK;
-    break;
-  case 11121:
-    return PROSIGN_SN;
-    break;
-  case 11111111:
-    return PROSIGN_HH;
-    break; // iz0rus
-#else      //OPTION_PROSIGN_SUPPORT
-  case 21221:
-    return 40;
-    break; // (KN store as ascii ( ) //sp5iou //aaaaaaa
-#endif     //OPTION_PROSIGN_SUPPORT
-
-#ifdef OPTION_NON_ENGLISH_EXTENSIONS
-  // for English/Cyrillic/Western European font LCD controller (HD44780UA02):
-  case 12212:
-    return 197;
-    break; // 'Å' - AA_capital (OZ, LA, SM)
-  //case 12212: return 192; break;   // 'À' - A accent
-  case 1212:
-    return 198;
-    break; // 'Æ' - AE_capital   (OZ, LA)
-  //case 1212: return 196; break;    // 'Ä' - A_umlaut (D, SM, OH, ...)
-  case 2222:
-    return 138;
-    break; // CH  - (Russian letter symbol)
-  case 22122:
-    return 209;
-    break; // 'Ñ' - (EA)
-  //case 2221: return 214; break;    // 'Ö' – O_umlaut  (D, SM, OH, ...)
-  //case 2221: return 211; break;    // 'Ò' - O accent
-  case 2221:
-    return 216;
-    break; // 'Ø' - OE_capital    (OZ, LA)
-  case 1122:
-    return 220;
-    break; // 'Ü' - U_umlaut     (D, ...)
-  case 111111:
-    return 223;
-    break; // beta - double S    (D?, ...)
-  case 21211:
-    return 199;
-    break; // Ç
-  case 11221:
-    return 208;
-    break; // Ð
-  case 12112:
-    return 200;
-    break; // È
-  case 11211:
-    return 201;
-    break; // É
-  case 221121:
-    return 142;
-    break; // Ž
-#endif     //OPTION_NON_ENGLISH_EXTENSIONS
-
-  default:
-#ifdef OPTION_UNKNOWN_CHARACTER_ERROR_TONE
-    boop();
-#endif //OPTION_UNKNOWN_CHARACTER_ERROR_TONE
-    return unknown_cw_character;
-    break;
-  }
-}
 
 //---------------------------------------------------------------------
 void check_button0()
