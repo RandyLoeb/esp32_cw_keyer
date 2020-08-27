@@ -10,18 +10,16 @@
 #define tx_key_line_4 0
 #define tx_key_line_5 0
 #define tx_key_line_6 0
-#define sidetone_line 32 //esp 34,35 not works --22,32 works  4  // connect a speaker for sidetone
-#define potentiometer 36 // (seems to need to be on adc0 26 Speed potentiometer (0 to 5 V) Use pot from 1k to 10k
-#define ptt_tx_1 0       // PTT ("push to talk") lines
-#define ptt_tx_2 0       //   Can be used for keying fox transmitter, T/R switch, or keying slow boatanchors
-#define ptt_tx_3 0       //   These are optional - set to 0 if unused
+#define sidetone_line 32     //esp 34,35 not works --22,32 works  4  // connect a speaker for sidetone
+#define potentiometer_pin 36 // (seems to need to be on adc0 26 Speed potentiometer (0 to 5 V) Use pot from 1k to 10k
+#define ptt_tx_1 0           // PTT ("push to talk") lines
+#define ptt_tx_2 0           //   Can be used for keying fox transmitter, T/R switch, or keying slow boatanchors
+#define ptt_tx_3 0           //   These are optional - set to 0 if unused
 #define ptt_tx_4 0
 #define ptt_tx_5 0
 #define ptt_tx_6 0
 #define tx_key_dit 0 // if defined, goes active for dit (any transmitter) - customized with tx_key_dit_and_dah_pins_active_state and tx_key_dit_and_dah_pins_inactive_state
 #define tx_key_dah 0 // if defined, goes active for dah (any transmitter) - customized with tx_key_dit_and_dah_pins_active_state and tx_key_dit_and_dah_pins_inactive_state
-
-
 
 #ifdef ESP32
 #define I2C_SDA 21

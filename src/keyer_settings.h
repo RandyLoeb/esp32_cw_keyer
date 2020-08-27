@@ -39,8 +39,7 @@
 #define winkey_xoff_threshold 20        // the number of chars in the buffer when we begin sending XOFFs
 #define winkey_xon_threshold 10         // the number of chars in the buffer below which we deactivate XOFF
 #define default_memory_repeat_time 3000 // time in milliseconds
-#define LCD_COLUMNS 16
-#define LCD_ROWS 2
+
 #define lcd_i2c_address_mathertel_PCF8574 0x27 // I2C address of display
 #define hell_pixel_microseconds 4025
 #define program_memory_limit_consec_spaces 1

@@ -9,7 +9,7 @@
 #include "keyer_debug.h"
 #include "keyer_pin_settings.h"
 #include "keyer_settings.h"
-//#include "display.h"
+#include "display.h"
 #include "config.h"
 #include "potentiometer.h"
 #include "cw_utils.h"
@@ -49,6 +49,9 @@ persistentConfig &configControl{persistConfig};
 oled64x128 disp;
 displayBase &displayControl{disp};
 
+// move this later
+void lcd_center_print_timed_wpm();
+
 void setup()
 {
 
@@ -63,7 +66,9 @@ void setup()
   initialize_keyer_state();
   configControl.initialize(primary_serial_port);
 
-  initialize_potentiometer();
+  // potentiometer
+  wpmPot.initialize(potentiometer_pin);
+  configControl.configuration.pot_activated = 1;
 
   initialize_default_modes();
 
@@ -76,34 +81,21 @@ void setup()
 void loop()
 {
 
-  if (keyer_machine_mode == KEYER_NORMAL)
-  {
+  check_paddles();
+  service_dit_dah_buffers();
 
-    check_paddles();
-    service_dit_dah_buffers();
+  service_send_buffer(PRINTCHAR);
+  check_ptt_tail();
 
-    service_send_buffer(PRINTCHAR);
-    check_ptt_tail();
+  wpmPot.checkPotentiometer(wpmSetCallBack);
 
-#ifdef FEATURE_POTENTIOMETER
-    wpmPot.checkPotentiometer(wpmSetCallBack);
-    //check_potentiometer();
-#endif //FEATURE_POTENTIOMETER
+  check_for_dirty_configuration();
 
-    check_for_dirty_configuration();
+  check_paddles();
+  service_send_buffer(PRINTCHAR);
+  displayControl.service_display();
 
-#ifdef FEATURE_DISPLAY
-    check_paddles();
-    service_send_buffer(PRINTCHAR);
-    service_display();
-#endif //FEATURE_DISPLAY
-
-#ifdef FEATURE_PADDLE_ECHO
-    service_paddle_echo();
-#endif
-
-    service_async_eeprom_write();
-  }
+  service_paddle_echo();
 
   service_millis_rollover();
 }
@@ -173,9 +165,7 @@ void check_for_dirty_configuration()
 void check_paddles()
 {
 
-#ifdef DEBUG_LOOP
-  debug_serial_port->println(F("loop: entering check_paddles"));
-#endif
+
 
 #define NO_CLOSURE 0
 #define DIT_CLOSURE_DAH_OFF 1
@@ -455,7 +445,7 @@ void check_paddles()
       }
       break;
     }
-  } //if (configControl.configuration.keyer_mode == SINGLE_PADDLE)
+  } 
 
   service_tx_inhibit_and_pause();
 }
@@ -608,70 +598,6 @@ void save_persistent_configuration()
   config_dirty = 0;
 }
 
-//-------------------------------------------------------------------------------------------------------
-
-void service_async_eeprom_write()
-{
-
-  // This writes one byte out to EEPROM each time it is called
-
-  static byte last_async_eeprom_write_status = 0;
-  static int ee = 0;
-  static unsigned int i = 0;
-  static const byte *p;
-
-  if ((async_eeprom_write) && (!send_buffer_bytes) && (!ptt_line_activated) && (!dit_buffer) && (!dah_buffer) && (paddle_pin_read(paddle_left) == HIGH) && (paddle_pin_read(paddle_right) == HIGH))
-  {
-    if (last_async_eeprom_write_status)
-    { // we have an ansynchronous write to eeprom in progress
-
-#if defined(_BOARD_PIC32_PINGUINO_)
-      if (EEPROM.read(ee) != *p)
-      {
-        EEPROM.write(ee, *p);
-      }
-      ee++;
-      p++;
-#else
-#if !defined(ESP32)
-      EEPROM.update(ee++, *p++);
-#endif
-#endif
-
-      if (i < sizeof(configuration))
-      {
-#if defined(DEBUG_ASYNC_EEPROM_WRITE)
-        debug_serial_port->print(F("service_async_eeprom_write: write: "));
-        debug_serial_port->println(i);
-#endif
-        i++;
-      }
-      else
-      { // we're done
-        async_eeprom_write = 0;
-        last_async_eeprom_write_status = 0;
-#if defined(DEBUG_ASYNC_EEPROM_WRITE)
-        debug_serial_port->println(F("service_async_eeprom_write: complete"));
-#endif
-      }
-    }
-    else
-    { // we don't have one in progress - initialize things
-
-      p = (const byte *)(const void *)&configuration;
-      ee = 1; // starting point of configuration struct
-      i = 0;
-      last_async_eeprom_write_status = 1;
-#if defined(DEBUG_ASYNC_EEPROM_WRITE)
-      debug_serial_port->println(F("service_async_eeprom_write: init"));
-#endif
-    }
-  }
-}
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
 
 void check_dit_paddle()
 {
@@ -1134,7 +1060,7 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 #if defined(FEATURE_DISPLAY)
     if ((ticks - (micros() - start)) > (10 * 1000))
     {
-      service_display();
+      displayControl.service_display();
     }
 #endif
 
@@ -1278,12 +1204,6 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 
 } //void loop_element_lengths
 
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
 void speed_change(int change)
 {
   if (((configControl.configuration.wpm + change) > wpm_limit_low) && ((configControl.configuration.wpm + change) < wpm_limit_high))
@@ -1307,7 +1227,7 @@ void speed_change_command_mode(int change)
   }
 
 #ifdef FEATURE_DISPLAY
-  lcd_center_print_timed(String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
+  displayControl.lcd_center_print_timed(String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
 #endif
 }
 
@@ -1390,20 +1310,6 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds)
   }
 }
 
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-// end command_display_memory
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
 void adjust_dah_to_dit_ratio(int adjustment)
 {
 
@@ -1414,11 +1320,11 @@ void adjust_dah_to_dit_ratio(int adjustment)
 #ifdef OPTION_MORE_DISPLAY_MSGS
     if (LCD_COLUMNS < 9)
     {
-      lcd_center_print_timed("DDR:" + String(configControl.configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("DDR:" + String(configControl.configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
     }
     else
     {
-      lcd_center_print_timed("Dah/Dit: " + String(configControl.configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("Dah/Dit: " + String(configControl.configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
     }
     service_display();
 #endif
@@ -1440,11 +1346,11 @@ void sidetone_adj(int hz)
 #if defined(FEATURE_DISPLAY) && defined(OPTION_MORE_DISPLAY_MSGS)
     if (LCD_COLUMNS < 9)
     {
-      lcd_center_print_timed(String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed(String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
     }
     else
     {
-      lcd_center_print_timed("Sidetone " + String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("Sidetone " + String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
     }
 #endif
   }
@@ -1531,42 +1437,42 @@ void switch_to_tx(byte tx)
     if ((ptt_tx_1) || (tx_key_line_1))
     {
       switch_to_tx_silent(1);
-      lcd_center_print_timed("TX 1", 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("TX 1", 0, default_display_msg_delay);
     }
     break;
   case 2:
     if ((ptt_tx_2) || (tx_key_line_2))
     {
       switch_to_tx_silent(2);
-      lcd_center_print_timed("TX 2", 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("TX 2", 0, default_display_msg_delay);
     }
     break;
   case 3:
     if ((ptt_tx_3) || (tx_key_line_3))
     {
       switch_to_tx_silent(3);
-      lcd_center_print_timed("TX 3", 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("TX 3", 0, default_display_msg_delay);
     }
     break;
   case 4:
     if ((ptt_tx_4) || (tx_key_line_4))
     {
       switch_to_tx_silent(4);
-      lcd_center_print_timed("TX 4", 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("TX 4", 0, default_display_msg_delay);
     }
     break;
   case 5:
     if ((ptt_tx_5) || (tx_key_line_5))
     {
       switch_to_tx_silent(5);
-      lcd_center_print_timed("TX 5", 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("TX 5", 0, default_display_msg_delay);
     }
     break;
   case 6:
     if ((ptt_tx_6) || (tx_key_line_6))
     {
       switch_to_tx_silent(6);
-      lcd_center_print_timed("TX 6", 0, default_display_msg_delay);
+      displayControl.lcd_center_print_timed("TX 6", 0, default_display_msg_delay);
     }
     break;
   }
@@ -2884,18 +2790,13 @@ void service_send_buffer(byte no_print)
       { // if ((send_buffer_array[0] > SERIAL_SEND_BUFFER_SPECIAL_START) && (send_buffer_array[0] < SERIAL_SEND_BUFFER_SPECIAL_END))
 
 #ifdef FEATURE_DISPLAY
-        if (lcd_send_echo)
+        if (displayControl.lcd_send_echo)
         {
-          display_scroll_print_char(send_buffer_array[0]);
-          service_display();
+          displayControl.displayUpdate(send_buffer_array[0]);
+
+          displayControl.service_display();
         }
 #endif //FEATURE_DISPLAY
-
-#ifdef GENERIC_CHARGRAB
-
-        displayControl.displayUpdate(send_buffer_array[0]);
-        //displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
-#endif
 
         send_char(send_buffer_array[0], KEYER_NORMAL); //****************
 
@@ -3015,15 +2916,6 @@ void add_to_send_buffer(byte incoming_serial_byte)
   {
   }
 }
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//---------------------------------------------------------------------
 
 #ifdef FEATURE_PADDLE_ECHO
 void service_paddle_echo()
@@ -3063,7 +2955,7 @@ void service_paddle_echo()
   {
 
 #ifdef FEATURE_DISPLAY
-    if (lcd_paddle_echo)
+    if (displayControl.lcd_paddle_echo)
     {
 #if defined(OPTION_PROSIGN_SUPPORT)
 #ifndef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
@@ -3119,7 +3011,9 @@ void service_paddle_echo()
 #else // ! OPTION_PROSIGN_SUPPORT
 
 #ifndef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
-      display_scroll_print_char(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
+      //rel suspect byte might not be appropriate here?
+      displayControl.displayUpdate(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
+      //display_scroll_print_char(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
 #else  //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
       ascii_temp = byte(convert_cw_number_to_ascii(paddle_echo_buffer));
       switch (ascii_temp)
@@ -3152,11 +3046,6 @@ void service_paddle_echo()
     }
 #endif //FEATURE_DISPLAY
 
-#ifdef GENERIC_CHARGRAB
-
-    displayControl.displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
-#endif
-
     paddle_echo_buffer = 0;
     paddle_echo_buffer_decode_time = millis() + (float(600 / configControl.configuration.wpm) * length_letterspace);
     paddle_echo_space_sent = 0;
@@ -3178,15 +3067,11 @@ void service_paddle_echo()
 #endif //defined(FEATURE_CW_COMPUTER_KEYBOARD)
 
 #ifdef FEATURE_DISPLAY
-    if (lcd_paddle_echo)
+    if (displayControl.lcd_paddle_echo)
     {
-      display_scroll_print_char(' ');
+      displayControl.displayUpdate(' ');
     }
 #endif //FEATURE_DISPLAY
-
-#ifdef GENERIC_CHARGRAB
-    displayControl.displayUpdate(' ');
-#endif
 
 #if defined(FEATURE_SERIAL) && defined(FEATURE_COMMAND_LINE_INTERFACE)
     if (cli_paddle_echo)
@@ -3379,15 +3264,7 @@ void initialize_keyer_state()
 }
 
 //---------------------------------------------------------------------
-void initialize_potentiometer()
-{
 
-#ifdef FEATURE_POTENTIOMETER
-  wpmPot.initialize(potentiometer);
-
-  configControl.configuration.pot_activated = 1;
-#endif
-}
 
 //---------------------------------------------------------------------
 
@@ -3454,27 +3331,6 @@ void initialize_display()
 {
 
 #ifdef FEATURE_DISPLAY
-#if defined(FEATURE_LCD_SAINSMART_I2C)
-  lcd.begin();
-  lcd.home();
-#else
-  //lcd.begin(LCD_COLUMNS, LCD_ROWS);
-  // initialize LCD
-  Wire.begin(I2C_SDA, I2C_SCL);
-  lcd.init();
-  // turn on LCD backlight
-  lcd.backlight();
-#endif
-#ifdef FEATURE_LCD_ADAFRUIT_I2C
-  lcd.setBacklight(lcdcolor);
-#endif //FEATURE_LCD_ADAFRUIT_I2C
-
-#ifdef FEATURE_LCD_ADAFRUIT_BACKPACK
-  lcd.setBacklight(HIGH);
-#endif
-#ifdef FEATURE_LCD_MATHERTEL_PCF8574
-  lcd.setBacklight(HIGH);
-#endif
 
 #ifdef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS // OZ1JHM provided code, cleaned up by LA3ZA
   // Store bit maps, designed using editor at http://omerk.github.io/lcdchargen/
@@ -3500,25 +3356,25 @@ void initialize_display()
   lcd.clear();                   // you have to ;o)
 #endif                           //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
 
-  if (LCD_COLUMNS < 9)
+  if (displayControl.getColsCount() < 9)
   {
-    lcd_center_print_timed("K3NGKeyr", 0, 4000);
+    displayControl.lcd_center_print_timed("K3NGKeyr", 0, 4000);
   }
   else
   {
-    lcd_center_print_timed("K3NG Keyer", 0, 4000);
+    displayControl.lcd_center_print_timed("K3NG Keyer", 0, 4000);
 #ifdef OPTION_PERSONALIZED_STARTUP_SCREEN
     if (LCD_ROWS == 2)
     {
-#ifdef OPTION_DO_NOT_SAY_HI                                  // if we wish to display the custom field on the second line, we can't say 'hi'
-      lcd_center_print_timed(custom_startup_field, 1, 4000); // display the custom field on the second line of the display, maximum field length is the number of columns
-#endif                                                       // OPTION_DO_NOT_SAY_HI
+#ifdef OPTION_DO_NOT_SAY_HI                                                 // if we wish to display the custom field on the second line, we can't say 'hi'
+      displayControl.lcd_center_print_timed(custom_startup_field, 1, 4000); // display the custom field on the second line of the display, maximum field length is the number of columns
+#endif                                                                      // OPTION_DO_NOT_SAY_HI
     }
     else if (LCD_ROWS > 2)
-      lcd_center_print_timed(custom_startup_field, 2, 4000); // display the custom field on the third line of the display, maximum field length is the number of columns
-#endif                                                       // OPTION_PERSONALIZED_STARTUP_SCREEN
-    if (LCD_ROWS > 3)
-      lcd_center_print_timed("V: " + String(CODE_VERSION), 3, 4000); // display the code version on the fourth line of the display
+      displayControl.lcd_center_print_timed(custom_startup_field, 2, 4000); // display the custom field on the third line of the display, maximum field length is the number of columns
+#endif                                                                      // OPTION_PERSONALIZED_STARTUP_SCREEN
+    if (displayControl.getRowsCount() > 3)
+      displayControl.lcd_center_print_timed("V: " + String(CODE_VERSION), 3, 4000); // display the code version on the fourth line of the display
   }
 #endif //FEATURE_DISPLAY
 
@@ -3532,11 +3388,11 @@ void initialize_display()
     key_tx = 0;
     configControl.configuration.sidetone_mode = SIDETONE_ON;
 #ifdef FEATURE_DISPLAY
-    lcd_center_print_timed("h", 1, 4000);
+    displayControl.lcd_center_print_timed("h", 1, 4000);
 #endif
     send_char('H', KEYER_NORMAL);
 #ifdef FEATURE_DISPLAY
-    lcd_center_print_timed("hi", 1, 4000);
+    displayControl.lcd_center_print_timed("hi", 1, 4000);
 #endif
     send_char('I', KEYER_NORMAL);
     configControl.configuration.sidetone_mode = oldSideTone;
@@ -3577,4 +3433,64 @@ byte is_visible_character(byte char_in)
   {
     return 0;
   }
+}
+
+#ifdef FEATURE_DISPLAY
+void lcd_center_print_timed_wpm()
+{
+
+#if defined(OPTION_ADVANCED_SPEED_DISPLAY)
+  lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm * 5) + " cpm", 0, default_display_msg_delay);
+  lcd_center_print_timed(String(1200 / configuration.wpm) + ":" + (((1200 / configuration.wpm) * configuration.dah_to_dit_ratio) / 100) + "ms 1:" + (float(configuration.dah_to_dit_ratio) / 100.00), 1, default_display_msg_delay);
+#else
+  displayControl.lcd_center_print_timed(String(configuration.wpm) + " wpm", 0, default_display_msg_delay);
+#endif
+}
+#endif
+
+void speed_set(int wpm_set)
+{
+
+  if ((wpm_set > 0) && (wpm_set < 1000))
+  {
+    configuration.wpm = wpm_set;
+    config_dirty = 1;
+
+#ifdef FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
+    if ((configuration.wpm >= DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_WPM) && (configuration.wpm <= DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_WPM))
+    {
+      int dynamicweightvalue = map(configuration.wpm, DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_WPM, DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_WPM, DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_RATIO, DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_RATIO);
+      configuration.dah_to_dit_ratio = dynamicweightvalue;
+    }
+#endif //FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
+
+#ifdef FEATURE_LED_RING
+    update_led_ring();
+#endif //FEATURE_LED_RING
+
+#ifdef FEATURE_DISPLAY
+    lcd_center_print_timed_wpm();
+#endif
+  }
+}
+
+void command_speed_set(int wpm_set)
+{
+  if ((wpm_set > 0) && (wpm_set < 1000))
+  {
+    configuration.wpm_command_mode = wpm_set;
+    config_dirty = 1;
+
+#ifdef FEATURE_DISPLAY
+    displayControl.lcd_center_print_timed("Cmd Spd " + String(configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
+#endif // FEATURE_DISPLAY
+  }    // end if
+} // end command_speed_set
+
+void wpmSetCallBack(byte pot_value_wpm_read)
+{
+  if (keyer_machine_mode == KEYER_COMMAND_MODE)
+    command_speed_set(pot_value_wpm_read);
+  else
+    speed_set(pot_value_wpm_read);
 }
