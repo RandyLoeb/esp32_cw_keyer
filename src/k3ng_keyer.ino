@@ -54,6 +54,8 @@ void lcd_center_print_timed_wpm();
 
 void setup()
 {
+  Serial.begin(115200);
+  Serial.println("In setup()");
 
 #ifdef ESPNOW_WIRELESS_KEYER
   initialize_espnow_wireless(speed_set);
@@ -164,8 +166,6 @@ void check_for_dirty_configuration()
 
 void check_paddles()
 {
-
-
 
 #define NO_CLOSURE 0
 #define DIT_CLOSURE_DAH_OFF 1
@@ -445,7 +445,7 @@ void check_paddles()
       }
       break;
     }
-  } 
+  }
 
   service_tx_inhibit_and_pause();
 }
@@ -597,7 +597,6 @@ void save_persistent_configuration()
 
   config_dirty = 0;
 }
-
 
 void check_dit_paddle()
 {
@@ -940,6 +939,7 @@ void tx_and_sidetone_key(int state)
     if ((configControl.configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configControl.configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
     {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
+      Serial.println("About send tone #1");
       toneControl.tone(sidetone_line, configControl.configuration.hz_sidetone);
 #else
       if (sidetone_line)
@@ -1684,6 +1684,7 @@ void beep()
   //   delay(200);
   //   noTone(sidetone_line);
   // #else
+  Serial.println("About send tone #2");
   toneControl.tone(sidetone_line, hz_high_beep, 200);
   // #endif
 #else
@@ -1701,6 +1702,7 @@ void beep()
 void boop()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
+  Serial.println("About send tone #3");
   toneControl.tone(sidetone_line, hz_low_beep);
   delay(100);
   toneControl.noTone(sidetone_line);
@@ -1719,8 +1721,10 @@ void boop()
 void beep_boop()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
+  Serial.println("About send tone #4");
   toneControl.tone(sidetone_line, hz_high_beep);
   delay(100);
+  Serial.println("About send tone #5");
   toneControl.tone(sidetone_line, hz_low_beep);
   delay(100);
   toneControl.noTone(sidetone_line);
@@ -1739,8 +1743,10 @@ void beep_boop()
 void boop_beep()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
+  Serial.println("About send tone #6");
   toneControl.tone(sidetone_line, hz_low_beep);
   delay(100);
+  Serial.println("About send tone #7");
   toneControl.tone(sidetone_line, hz_high_beep);
   delay(100);
   toneControl.noTone(sidetone_line);
@@ -1785,6 +1791,7 @@ void send_the_dits_and_dahs(char const *cw_to_send)
     switch (cw_to_send[x])
     {
     case '.':
+      Serial.println("About to send dit...");
       send_dit();
       break;
     case '-':
@@ -3012,6 +3019,7 @@ void service_paddle_echo()
 
 #ifndef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
       //rel suspect byte might not be appropriate here?
+      Serial.println("About to call displayUpdate #1");
       displayControl.displayUpdate(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
       //display_scroll_print_char(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
 #else  //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
@@ -3265,7 +3273,6 @@ void initialize_keyer_state()
 
 //---------------------------------------------------------------------
 
-
 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
@@ -3390,6 +3397,7 @@ void initialize_display()
 #ifdef FEATURE_DISPLAY
     displayControl.lcd_center_print_timed("h", 1, 4000);
 #endif
+    Serial.println("About to say HI...");
     send_char('H', KEYER_NORMAL);
 #ifdef FEATURE_DISPLAY
     displayControl.lcd_center_print_timed("hi", 1, 4000);

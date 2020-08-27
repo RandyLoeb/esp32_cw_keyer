@@ -10,7 +10,8 @@
 #define tx_key_line_4 0
 #define tx_key_line_5 0
 #define tx_key_line_6 0
-#define sidetone_line 32     //esp 34,35 not works --22,32 works  4  // connect a speaker for sidetone
+//#define sidetone_line 32     //esp 34,35 not works --22,32 works  4  // connect a speaker for sidetone
+#define sidetone_line 22
 #define potentiometer_pin 36 // (seems to need to be on adc0 26 Speed potentiometer (0 to 5 V) Use pot from 1k to 10k
 #define ptt_tx_1 0           // PTT ("push to talk") lines
 #define ptt_tx_2 0           //   Can be used for keying fox transmitter, T/R switch, or keying slow boatanchors
