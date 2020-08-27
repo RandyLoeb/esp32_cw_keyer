@@ -34,22 +34,37 @@ esp32Tone derivedFromToneBase;
 // and implements toneBase's .tone and .noTone
 toneBase &toneControl{derivedFromToneBase};
 
+
+
+// Different ways to persist config
+// E.g. if you wanted sd card inherit from persitentConfig
+#if defined(ESP32)
+#include "persistentConfig/spiffsPersistentConfig.h"
+SpiffsPersistentConfig persistConfig;
+#endif
+
+// make sure your derived object is named persistConfig
+// and implements .initialize and .save
+persistentConfig &configControl{persistConfig};
+
 void setup()
 {
+
 #ifdef ESPNOW_WIRELESS_KEYER
   initialize_espnow_wireless(speed_set);
 #endif
   initialize_pins();
   initialize_serial_ports();
-  initializeSpiffs(primary_serial_port);
+  
   initDisplay();
-  // Goody - this is available for testing startup issues
+  
   initialize_keyer_state();
+  configControl.initialize(primary_serial_port);
+
   initialize_potentiometer();
 
   initialize_default_modes();
 
-  check_eeprom_for_initialization();
   check_for_beacon_mode();
   initialize_display();
 }
@@ -145,7 +160,7 @@ void check_for_dirty_configuration()
 
   if (config_dirty)
   {
-    write_settings_to_eeprom(0);
+    save_persistent_configuration();
   }
 }
 
@@ -176,7 +191,7 @@ void check_paddles()
   check_dit_paddle();
   check_dah_paddle();
 
-  if (configuration.keyer_mode == ULTIMATIC)
+  if (configControl.configuration.keyer_mode == ULTIMATIC)
   {
     if (ultimatic_mode == ULTIMATIC_NORMAL)
     {
@@ -314,9 +329,9 @@ void check_paddles()
         }
       }
     } // if (ultimatic_mode == ULTIMATIC_NORMAL)
-  }   // if (configuration.keyer_mode == ULTIMATIC)
+  }   // if (configControl.configuration.keyer_mode == ULTIMATIC)
 
-  if (configuration.keyer_mode == SINGLE_PADDLE)
+  if (configControl.configuration.keyer_mode == SINGLE_PADDLE)
   {
     switch (last_closure)
     {
@@ -438,7 +453,7 @@ void check_paddles()
       }
       break;
     }
-  } //if (configuration.keyer_mode == SINGLE_PADDLE)
+  } //if (configControl.configuration.keyer_mode == SINGLE_PADDLE)
 
   service_tx_inhibit_and_pause();
 }
@@ -454,10 +469,10 @@ void ptt_key()
   if (ptt_line_activated == 0)
   { // if PTT is currently deactivated, bring it up and insert PTT lead time delay
 
-    if (configuration.current_ptt_line)
+    if (configControl.configuration.current_ptt_line)
     {
 
-      digitalWrite(configuration.current_ptt_line, ptt_line_active_state);
+      digitalWrite(configControl.configuration.current_ptt_line, ptt_line_active_state);
     }
 
     ptt_line_activated = 1;
@@ -465,7 +480,7 @@ void ptt_key()
     while (!all_delays_satisfied)
     {
 
-      if ((millis() - ptt_activation_time) >= configuration.ptt_lead_time[configuration.current_tx - 1])
+      if ((millis() - ptt_activation_time) >= configControl.configuration.ptt_lead_time[configControl.configuration.current_tx - 1])
       {
         all_delays_satisfied = 1;
       }
@@ -488,9 +503,9 @@ void ptt_unkey()
     {
       digitalWrite(current_tx_ptt_line, ptt_line_inactive_state);
 #else
-    if (configuration.current_ptt_line)
+    if (configControl.configuration.current_ptt_line)
     {
-      digitalWrite(configuration.current_ptt_line, ptt_line_inactive_state);
+      digitalWrite(configControl.configuration.current_ptt_line, ptt_line_inactive_state);
 
 #endif //FEATURE_SO2R_BASE
     }
@@ -546,7 +561,7 @@ void check_ptt_tail()
 
         // PTT Tail Time: N     PTT Hang Time: Y
 
-        if ((millis() - ptt_time) >= ((configuration.length_wordspace * ptt_hang_time_wordspace_units) * float(1200 / configuration.wpm)))
+        if ((millis() - ptt_time) >= ((configControl.configuration.length_wordspace * ptt_hang_time_wordspace_units) * float(1200 / configControl.configuration.wpm)))
         {
           ptt_unkey();
         }
@@ -555,12 +570,12 @@ void check_ptt_tail()
 
         // PTT Tail Time: Y     PTT Hang Time: Y
 
-        if ((millis() - ptt_time) >= (((configuration.length_wordspace * ptt_hang_time_wordspace_units) * float(1200 / configuration.wpm)) + configuration.ptt_tail_time[configuration.current_tx - 1]))
+        if ((millis() - ptt_time) >= (((configControl.configuration.length_wordspace * ptt_hang_time_wordspace_units) * float(1200 / configControl.configuration.wpm)) + configControl.configuration.ptt_tail_time[configControl.configuration.current_tx - 1]))
         {
           ptt_unkey();
         }
 #else  //OPTION_EXCLUDE_PTT_HANG_TIME_FOR_MANUAL_SENDING
-        if ((millis() - ptt_time) >= configuration.ptt_tail_time[configuration.current_tx - 1])
+        if ((millis() - ptt_time) >= configControl.configuration.ptt_tail_time[configControl.configuration.current_tx - 1])
         {
 
           // PTT Tail Time: Y    PTT Hang Time: N
@@ -572,7 +587,7 @@ void check_ptt_tail()
       }
       else
       { // automatic sending
-        if (((millis() - ptt_time) > configuration.ptt_tail_time[configuration.current_tx - 1]) && (!configuration.ptt_buffer_hold_active || ((!send_buffer_bytes) && configuration.ptt_buffer_hold_active) || (pause_sending_buffer)))
+        if (((millis() - ptt_time) > configControl.configuration.ptt_tail_time[configControl.configuration.current_tx - 1]) && (!configControl.configuration.ptt_buffer_hold_active || ((!send_buffer_bytes) && configControl.configuration.ptt_buffer_hold_active) || (pause_sending_buffer)))
         {
           ptt_unkey();
         }
@@ -584,10 +599,9 @@ void check_ptt_tail()
 }
 
 //-------------------------------------------------------------------------------------------------------
-void write_settings_to_eeprom(int initialize_eeprom)
+void save_persistent_configuration()
 {
-
-  writeConfigurationToFile();
+  configControl.save();
 
   config_dirty = 0;
 }
@@ -655,26 +669,6 @@ void service_async_eeprom_write()
 
 //-------------------------------------------------------------------------------------------------------
 
-int read_settings_from_eeprom()
-{
-
-  // returns 0 if eeprom had valid settings, returns 1 if eeprom needs initialized
-
-  if (configFileExists())
-  {
-    setConfigurationFromFile();
-    //all good, return 0
-    return 0;
-  }
-  else
-  {
-    //no file so initialize it
-    return 1;
-  }
-
-  return 1;
-}
-
 //-------------------------------------------------------------------------------------------------------
 
 void check_dit_paddle()
@@ -686,7 +680,7 @@ void check_dit_paddle()
   static byte memory_rpt_interrupt_flag = 0;
 #endif
 
-  if (configuration.paddle_mode == PADDLE_NORMAL)
+  if (configControl.configuration.paddle_mode == PADDLE_NORMAL)
   {
     dit_paddle = paddle_left;
   }
@@ -709,7 +703,7 @@ void check_dit_paddle()
   {
     memory_rpt_interrupt_flag = 0;
     sending_mode = MANUAL_SENDING;
-    loop_element_lengths(3, 0, configuration.wpm);
+    loop_element_lengths(3, 0, configControl.configuration.wpm);
     dit_buffer = 0;
   }
 #endif
@@ -736,7 +730,7 @@ void check_dah_paddle()
   byte pin_value = 0;
   byte dah_paddle;
 
-  if (configuration.paddle_mode == PADDLE_NORMAL)
+  if (configControl.configuration.paddle_mode == PADDLE_NORMAL)
   {
     dah_paddle = paddle_right;
   }
@@ -764,12 +758,12 @@ void send_dit()
   // notes: key_compensation is a straight x mS lengthening or shortening of the key down time
   //        weighting is
 
-  unsigned int character_wpm = configuration.wpm;
+  unsigned int character_wpm = configControl.configuration.wpm;
 
 #ifdef FEATURE_FARNSWORTH
-  if ((sending_mode == AUTOMATIC_SENDING) && (configuration.wpm_farnsworth > configuration.wpm))
+  if ((sending_mode == AUTOMATIC_SENDING) && (configControl.configuration.wpm_farnsworth > configControl.configuration.wpm))
   {
-    character_wpm = configuration.wpm_farnsworth;
+    character_wpm = configControl.configuration.wpm_farnsworth;
 #if defined(DEBUG_FARNSWORTH)
     debug_serial_port->println(F("send_dit: farns act"));
 #endif
@@ -785,7 +779,7 @@ void send_dit()
 
   if (keyer_machine_mode == KEYER_COMMAND_MODE)
   {
-    character_wpm = configuration.wpm_command_mode;
+    character_wpm = configControl.configuration.wpm_command_mode;
   }
 
   being_sent = SENDING_DIT;
@@ -801,14 +795,14 @@ void send_dit()
 #ifdef FEATURE_QLF
   if (qlf_active)
   {
-    loop_element_lengths((1.0 * (float(configuration.weighting) / 50) * (random(qlf_dit_min, qlf_dit_max) / 100.0)), keying_compensation, character_wpm);
+    loop_element_lengths((1.0 * (float(configControl.configuration.weighting) / 50) * (random(qlf_dit_min, qlf_dit_max) / 100.0)), keying_compensation, character_wpm);
   }
   else
   {
-    loop_element_lengths((1.0 * (float(configuration.weighting) / 50)), keying_compensation, character_wpm);
+    loop_element_lengths((1.0 * (float(configControl.configuration.weighting) / 50)), keying_compensation, character_wpm);
   }
 #else  //FEATURE_QLF
-  loop_element_lengths((1.0 * (float(configuration.weighting) / 50)), keying_compensation, character_wpm);
+  loop_element_lengths((1.0 * (float(configControl.configuration.weighting) / 50)), keying_compensation, character_wpm);
 #endif //FEATURE_QLF
 
   if ((tx_key_dit) && (key_tx))
@@ -820,19 +814,19 @@ void send_dit()
 #endif
   tx_and_sidetone_key(0);
 
-  loop_element_lengths((2.0 - (float(configuration.weighting) / 50)), (-1.0 * keying_compensation), character_wpm);
+  loop_element_lengths((2.0 - (float(configControl.configuration.weighting) / 50)), (-1.0 * keying_compensation), character_wpm);
 
 #ifdef FEATURE_AUTOSPACE
 
   byte autospace_end_of_character_flag = 0;
 
-  if ((sending_mode == MANUAL_SENDING) && (configuration.autospace_active))
+  if ((sending_mode == MANUAL_SENDING) && (configControl.configuration.autospace_active))
   {
     check_paddles();
   }
-  if ((sending_mode == MANUAL_SENDING) && (configuration.autospace_active) && (dit_buffer == 0) && (dah_buffer == 0))
+  if ((sending_mode == MANUAL_SENDING) && (configControl.configuration.autospace_active) && (dit_buffer == 0) && (dah_buffer == 0))
   {
-    loop_element_lengths(2, 0, configuration.wpm);
+    loop_element_lengths(2, 0, configControl.configuration.wpm);
     autospace_end_of_character_flag = 1;
   }
 #endif
@@ -841,8 +835,8 @@ void send_dit()
   if ((winkey_host_open) && (winkey_paddle_echo_activated) && (sending_mode == MANUAL_SENDING))
   {
     winkey_paddle_echo_buffer = (winkey_paddle_echo_buffer * 10) + 1;
-    //winkey_paddle_echo_buffer_decode_time = millis() + (float(winkey_paddle_echo_buffer_decode_time_factor/float(configuration.wpm))*length_letterspace);
-    winkey_paddle_echo_buffer_decode_time = millis() + (float(winkey_paddle_echo_buffer_decode_timing_factor * 1200.0 / float(configuration.wpm)) * length_letterspace);
+    //winkey_paddle_echo_buffer_decode_time = millis() + (float(winkey_paddle_echo_buffer_decode_time_factor/float(configControl.configuration.wpm))*length_letterspace);
+    winkey_paddle_echo_buffer_decode_time = millis() + (float(winkey_paddle_echo_buffer_decode_timing_factor * 1200.0 / float(configControl.configuration.wpm)) * length_letterspace);
 
 #ifdef FEATURE_AUTOSPACE
     if (autospace_end_of_character_flag)
@@ -857,7 +851,7 @@ void send_dit()
   if (sending_mode == MANUAL_SENDING)
   {
     paddle_echo_buffer = (paddle_echo_buffer * 10) + 1;
-    paddle_echo_buffer_decode_time = millis() + (float((cw_echo_timing_factor * 1200.0) / configuration.wpm) * length_letterspace);
+    paddle_echo_buffer_decode_time = millis() + (float((cw_echo_timing_factor * 1200.0) / configControl.configuration.wpm) * length_letterspace);
 
 #ifdef FEATURE_AUTOSPACE
     if (autospace_end_of_character_flag)
@@ -883,18 +877,18 @@ void send_dit()
 void send_dah()
 {
   sendEspNowDitDah(ESPNOW_DAH);
-  unsigned int character_wpm = configuration.wpm;
+  unsigned int character_wpm = configControl.configuration.wpm;
 
 #ifdef FEATURE_FARNSWORTH
-  if ((sending_mode == AUTOMATIC_SENDING) && (configuration.wpm_farnsworth > configuration.wpm))
+  if ((sending_mode == AUTOMATIC_SENDING) && (configControl.configuration.wpm_farnsworth > configControl.configuration.wpm))
   {
-    character_wpm = configuration.wpm_farnsworth;
+    character_wpm = configControl.configuration.wpm_farnsworth;
   }
 #endif //FEATURE_FARNSWORTH
 
   if (keyer_machine_mode == KEYER_COMMAND_MODE)
   {
-    character_wpm = configuration.wpm_command_mode;
+    character_wpm = configControl.configuration.wpm_command_mode;
   }
 
   being_sent = SENDING_DAH;
@@ -910,14 +904,14 @@ void send_dah()
 #ifdef FEATURE_QLF
   if (qlf_active)
   {
-    loop_element_lengths((float(configuration.dah_to_dit_ratio / 100.0) * (float(configuration.weighting) / 50) * (random(qlf_dah_min, qlf_dah_max) / 100.0)), keying_compensation, character_wpm);
+    loop_element_lengths((float(configControl.configuration.dah_to_dit_ratio / 100.0) * (float(configControl.configuration.weighting) / 50) * (random(qlf_dah_min, qlf_dah_max) / 100.0)), keying_compensation, character_wpm);
   }
   else
   {
-    loop_element_lengths((float(configuration.dah_to_dit_ratio / 100.0) * (float(configuration.weighting) / 50)), keying_compensation, character_wpm);
+    loop_element_lengths((float(configControl.configuration.dah_to_dit_ratio / 100.0) * (float(configControl.configuration.weighting) / 50)), keying_compensation, character_wpm);
   }
 #else  //FEATURE_QLF
-  loop_element_lengths((float(configuration.dah_to_dit_ratio / 100.0) * (float(configuration.weighting) / 50)), keying_compensation, character_wpm);
+  loop_element_lengths((float(configControl.configuration.dah_to_dit_ratio / 100.0) * (float(configControl.configuration.weighting) / 50)), keying_compensation, character_wpm);
 #endif //FEATURE_QLF
 
   if ((tx_key_dah) && (key_tx))
@@ -931,19 +925,19 @@ void send_dah()
 
   tx_and_sidetone_key(0);
 
-  loop_element_lengths((4.0 - (3.0 * (float(configuration.weighting) / 50))), (-1.0 * keying_compensation), character_wpm);
+  loop_element_lengths((4.0 - (3.0 * (float(configControl.configuration.weighting) / 50))), (-1.0 * keying_compensation), character_wpm);
 
 #ifdef FEATURE_AUTOSPACE
 
   byte autospace_end_of_character_flag = 0;
 
-  if ((sending_mode == MANUAL_SENDING) && (configuration.autospace_active))
+  if ((sending_mode == MANUAL_SENDING) && (configControl.configuration.autospace_active))
   {
     check_paddles();
   }
-  if ((sending_mode == MANUAL_SENDING) && (configuration.autospace_active) && (dit_buffer == 0) && (dah_buffer == 0))
+  if ((sending_mode == MANUAL_SENDING) && (configControl.configuration.autospace_active) && (dit_buffer == 0) && (dah_buffer == 0))
   {
-    loop_element_lengths(2, 0, configuration.wpm);
+    loop_element_lengths(2, 0, configControl.configuration.wpm);
     autospace_end_of_character_flag = 1;
   }
 #endif
@@ -952,8 +946,8 @@ void send_dah()
   if ((winkey_host_open) && (winkey_paddle_echo_activated) && (sending_mode == MANUAL_SENDING))
   {
     winkey_paddle_echo_buffer = (winkey_paddle_echo_buffer * 10) + 2;
-    //winkey_paddle_echo_buffer_decode_time = millis() + (float(winkey_paddle_echo_buffer_decode_time_factor/float(configuration.wpm))*length_letterspace);
-    winkey_paddle_echo_buffer_decode_time = millis() + (float(winkey_paddle_echo_buffer_decode_timing_factor * 1200.0 / float(configuration.wpm)) * length_letterspace);
+    //winkey_paddle_echo_buffer_decode_time = millis() + (float(winkey_paddle_echo_buffer_decode_time_factor/float(configControl.configuration.wpm))*length_letterspace);
+    winkey_paddle_echo_buffer_decode_time = millis() + (float(winkey_paddle_echo_buffer_decode_timing_factor * 1200.0 / float(configControl.configuration.wpm)) * length_letterspace);
 #ifdef FEATURE_AUTOSPACE
     if (autospace_end_of_character_flag)
     {
@@ -967,7 +961,7 @@ void send_dah()
   if (sending_mode == MANUAL_SENDING)
   {
     paddle_echo_buffer = (paddle_echo_buffer * 10) + 2;
-    paddle_echo_buffer_decode_time = millis() + (float((cw_echo_timing_factor * 1200.0) / configuration.wpm) * length_letterspace);
+    paddle_echo_buffer_decode_time = millis() + (float((cw_echo_timing_factor * 1200.0) / configControl.configuration.wpm) * length_letterspace);
 
 #ifdef FEATURE_AUTOSPACE
     if (autospace_end_of_character_flag)
@@ -1015,10 +1009,10 @@ void tx_and_sidetone_key(int state)
         delay(first_extension_time);
       }
     }
-    if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
+    if ((configControl.configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configControl.configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
     {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-      toneControl.tone(sidetone_line, configuration.hz_sidetone);
+      toneControl.tone(sidetone_line, configControl.configuration.hz_sidetone);
 #else
       if (sidetone_line)
       {
@@ -1046,7 +1040,7 @@ void tx_and_sidetone_key(int state)
 #endif
         ptt_key();
       }
-      if ((configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
+      if ((configControl.configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configControl.configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
       {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
         toneControl.noTone(sidetone_line);
@@ -1142,9 +1136,9 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
     }
 #endif
 
-    if ((configuration.keyer_mode != ULTIMATIC) && (configuration.keyer_mode != SINGLE_PADDLE))
+    if ((configControl.configuration.keyer_mode != ULTIMATIC) && (configControl.configuration.keyer_mode != SINGLE_PADDLE))
     {
-      if ((configuration.keyer_mode == IAMBIC_A) && (paddle_pin_read(paddle_left) == LOW) && (paddle_pin_read(paddle_right) == LOW))
+      if ((configControl.configuration.keyer_mode == IAMBIC_A) && (paddle_pin_read(paddle_left) == LOW) && (paddle_pin_read(paddle_right) == LOW))
       {
         iambic_flag = 1;
       }
@@ -1167,11 +1161,11 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
         }
       }
 #else  ////FEATURE_CMOS_SUPER_KEYER_IAMBIC_B_TIMING
-      if (configuration.cmos_super_keyer_iambic_b_timing_on)
+      if (configControl.configuration.cmos_super_keyer_iambic_b_timing_on)
       {
-        if ((float(float(micros() - start) / float(ticks)) * 100) >= configuration.cmos_super_keyer_iambic_b_timing_percent)
+        if ((float(float(micros() - start) / float(ticks)) * 100) >= configControl.configuration.cmos_super_keyer_iambic_b_timing_percent)
         {
-          //if ((float(float(millis()-starttime)/float(starttime-ticks))*100) >= configuration.cmos_super_keyer_iambic_b_timing_percent) {
+          //if ((float(float(millis()-starttime)/float(starttime-ticks))*100) >= configControl.configuration.cmos_super_keyer_iambic_b_timing_percent) {
           if (being_sent == SENDING_DIT)
           {
             check_dah_paddle();
@@ -1215,7 +1209,7 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 #endif //FEATURE_CMOS_SUPER_KEYER_IAMBIC_B_TIMING
     }
     else
-    { //(configuration.keyer_mode != ULTIMATIC)
+    { //(configControl.configuration.keyer_mode != ULTIMATIC)
 
       if (being_sent == SENDING_DIT)
       {
@@ -1261,7 +1255,7 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 
   } //while ((millis() < endtime) && (millis() > 200))
 
-  if ((configuration.keyer_mode == IAMBIC_A) && (iambic_flag) && (paddle_pin_read(paddle_left) == HIGH) && (paddle_pin_read(paddle_right) == HIGH))
+  if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag) && (paddle_pin_read(paddle_left) == HIGH) && (paddle_pin_read(paddle_right) == HIGH))
   {
     iambic_flag = 0;
     dit_buffer = 0;
@@ -1270,11 +1264,11 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 
   if ((being_sent == SENDING_DIT) || (being_sent == SENDING_DAH))
   {
-    if (configuration.dit_buffer_off)
+    if (configControl.configuration.dit_buffer_off)
     {
       dit_buffer = 0;
     }
-    if (configuration.dah_buffer_off)
+    if (configControl.configuration.dah_buffer_off)
     {
       dah_buffer = 0;
     }
@@ -1290,9 +1284,9 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 
 void speed_change(int change)
 {
-  if (((configuration.wpm + change) > wpm_limit_low) && ((configuration.wpm + change) < wpm_limit_high))
+  if (((configControl.configuration.wpm + change) > wpm_limit_low) && ((configControl.configuration.wpm + change) < wpm_limit_high))
   {
-    speed_set(configuration.wpm + change);
+    speed_set(configControl.configuration.wpm + change);
   }
 
 #ifdef FEATURE_DISPLAY
@@ -1304,14 +1298,14 @@ void speed_change(int change)
 
 void speed_change_command_mode(int change)
 {
-  if (((configuration.wpm_command_mode + change) > wpm_limit_low) && ((configuration.wpm_command_mode + change) < wpm_limit_high))
+  if (((configControl.configuration.wpm_command_mode + change) > wpm_limit_low) && ((configControl.configuration.wpm_command_mode + change) < wpm_limit_high))
   {
-    configuration.wpm_command_mode = configuration.wpm_command_mode + change;
+    configControl.configuration.wpm_command_mode = configControl.configuration.wpm_command_mode + change;
     config_dirty = 1;
   }
 
 #ifdef FEATURE_DISPLAY
-  lcd_center_print_timed(String(configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
+  lcd_center_print_timed(String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
 #endif
 }
 
@@ -1335,7 +1329,7 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds)
 #endif //OPTION_WATCHDOG_TIMER
 
 #ifdef FEATURE_POTENTIOMETER
-    if (configuration.pot_activated)
+    if (configControl.configuration.pot_activated)
     {
       wpmPot.checkPotentiometer(wpmSetCallBack);
       //check_potentiometer();
@@ -1362,7 +1356,7 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds)
       cw_char = (cw_char * 10) + 2;
       last_element_time = millis();
     }
-    if ((paddle_hit) && (millis() > (last_element_time + (float(600 / configuration.wpm) * length_letterspace))))
+    if ((paddle_hit) && (millis() > (last_element_time + (float(600 / configControl.configuration.wpm) * length_letterspace))))
     {
 #ifdef DEBUG_GET_CW_INPUT_FROM_USER
       debug_serial_port->println(F("get_cw_input_from_user: hit length_letterspace"));
@@ -1411,18 +1405,18 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds)
 void adjust_dah_to_dit_ratio(int adjustment)
 {
 
-  if ((configuration.dah_to_dit_ratio + adjustment) > 150 && (configuration.dah_to_dit_ratio + adjustment) < 810)
+  if ((configControl.configuration.dah_to_dit_ratio + adjustment) > 150 && (configControl.configuration.dah_to_dit_ratio + adjustment) < 810)
   {
-    configuration.dah_to_dit_ratio = configuration.dah_to_dit_ratio + adjustment;
+    configControl.configuration.dah_to_dit_ratio = configControl.configuration.dah_to_dit_ratio + adjustment;
 #ifdef FEATURE_DISPLAY
 #ifdef OPTION_MORE_DISPLAY_MSGS
     if (LCD_COLUMNS < 9)
     {
-      lcd_center_print_timed("DDR:" + String(configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
+      lcd_center_print_timed("DDR:" + String(configControl.configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
     }
     else
     {
-      lcd_center_print_timed("Dah/Dit: " + String(configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
+      lcd_center_print_timed("Dah/Dit: " + String(configControl.configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
     }
     service_display();
 #endif
@@ -1437,18 +1431,18 @@ void adjust_dah_to_dit_ratio(int adjustment)
 void sidetone_adj(int hz)
 {
 
-  if (((configuration.hz_sidetone + hz) > sidetone_hz_limit_low) && ((configuration.hz_sidetone + hz) < sidetone_hz_limit_high))
+  if (((configControl.configuration.hz_sidetone + hz) > sidetone_hz_limit_low) && ((configControl.configuration.hz_sidetone + hz) < sidetone_hz_limit_high))
   {
-    configuration.hz_sidetone = configuration.hz_sidetone + hz;
+    configControl.configuration.hz_sidetone = configControl.configuration.hz_sidetone + hz;
     config_dirty = 1;
 #if defined(FEATURE_DISPLAY) && defined(OPTION_MORE_DISPLAY_MSGS)
     if (LCD_COLUMNS < 9)
     {
-      lcd_center_print_timed(String(configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
+      lcd_center_print_timed(String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
     }
     else
     {
-      lcd_center_print_timed("Sidetone " + String(configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
+      lcd_center_print_timed("Sidetone " + String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
     }
 #endif
   }
@@ -1466,54 +1460,54 @@ void switch_to_tx_silent(byte tx)
   case 1:
     if ((ptt_tx_1) || (tx_key_line_1))
     {
-      configuration.current_ptt_line = ptt_tx_1;
+      configControl.configuration.current_ptt_line = ptt_tx_1;
       current_tx_key_line = tx_key_line_1;
-      configuration.current_tx = 1;
+      configControl.configuration.current_tx = 1;
       config_dirty = 1;
     }
     break;
   case 2:
     if ((ptt_tx_2) || (tx_key_line_2))
     {
-      configuration.current_ptt_line = ptt_tx_2;
+      configControl.configuration.current_ptt_line = ptt_tx_2;
       current_tx_key_line = tx_key_line_2;
-      configuration.current_tx = 2;
+      configControl.configuration.current_tx = 2;
       config_dirty = 1;
     }
     break;
   case 3:
     if ((ptt_tx_3) || (tx_key_line_3))
     {
-      configuration.current_ptt_line = ptt_tx_3;
+      configControl.configuration.current_ptt_line = ptt_tx_3;
       current_tx_key_line = tx_key_line_3;
-      configuration.current_tx = 3;
+      configControl.configuration.current_tx = 3;
       config_dirty = 1;
     }
     break;
   case 4:
     if ((ptt_tx_4) || (tx_key_line_4))
     {
-      configuration.current_ptt_line = ptt_tx_4;
+      configControl.configuration.current_ptt_line = ptt_tx_4;
       current_tx_key_line = tx_key_line_4;
-      configuration.current_tx = 4;
+      configControl.configuration.current_tx = 4;
       config_dirty = 1;
     }
     break;
   case 5:
     if ((ptt_tx_5) || (tx_key_line_5))
     {
-      configuration.current_ptt_line = ptt_tx_5;
+      configControl.configuration.current_ptt_line = ptt_tx_5;
       current_tx_key_line = tx_key_line_5;
-      configuration.current_tx = 5;
+      configControl.configuration.current_tx = 5;
       config_dirty = 1;
     }
     break;
   case 6:
     if ((ptt_tx_6) || (tx_key_line_6))
     {
-      configuration.current_ptt_line = ptt_tx_6;
+      configControl.configuration.current_ptt_line = ptt_tx_6;
       current_tx_key_line = tx_key_line_6;
-      configuration.current_tx = 6;
+      configControl.configuration.current_tx = 6;
       config_dirty = 1;
     }
     break;
@@ -1646,7 +1640,7 @@ void service_dit_dah_buffers()
 
   if (automatic_sending_interruption_time != 0)
   {
-    if ((millis() - automatic_sending_interruption_time) > (configuration.paddle_interruption_quiet_time_element_lengths * (1200 / configuration.wpm)))
+    if ((millis() - automatic_sending_interruption_time) > (configControl.configuration.paddle_interruption_quiet_time_element_lengths * (1200 / configControl.configuration.wpm)))
     {
       automatic_sending_interruption_time = 0;
       sending_mode = MANUAL_SENDING;
@@ -1665,9 +1659,9 @@ void service_dit_dah_buffers()
   static unsigned long bug_dah_key_down_time = 0;
 #endif //FEATURE_PADDLE_ECHO
 
-  if ((configuration.keyer_mode == IAMBIC_A) || (configuration.keyer_mode == IAMBIC_B) || (configuration.keyer_mode == ULTIMATIC) || (configuration.keyer_mode == SINGLE_PADDLE))
+  if ((configControl.configuration.keyer_mode == IAMBIC_A) || (configControl.configuration.keyer_mode == IAMBIC_B) || (configControl.configuration.keyer_mode == ULTIMATIC) || (configControl.configuration.keyer_mode == SINGLE_PADDLE))
   {
-    if ((configuration.keyer_mode == IAMBIC_A) && (iambic_flag) && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right)))
+    if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag) && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right)))
     {
       iambic_flag = 0;
       dit_buffer = 0;
@@ -1693,7 +1687,7 @@ void service_dit_dah_buffers()
   }
   else
   {
-    if (configuration.keyer_mode == BUG)
+    if (configControl.configuration.keyer_mode == BUG)
     {
       if (dit_buffer)
       {
@@ -1719,7 +1713,7 @@ void service_dit_dah_buffers()
 
         //zzzzzz
 
-        //paddle_echo_buffer_decode_time = millis() + (float((cw_echo_timing_factor*3000.0)/configuration.wpm)*length_letterspace);
+        //paddle_echo_buffer_decode_time = millis() + (float((cw_echo_timing_factor*3000.0)/configControl.configuration.wpm)*length_letterspace);
 #endif //FEATURE_PADDLE_ECHO
       }
       else
@@ -1729,9 +1723,9 @@ void service_dit_dah_buffers()
           sending_mode = MANUAL_SENDING;
           tx_and_sidetone_key(0);
 #ifdef FEATURE_PADDLE_ECHO
-          if ((millis() - bug_dah_key_down_time) > (0.5 * (1200.0 / configuration.wpm)))
+          if ((millis() - bug_dah_key_down_time) > (0.5 * (1200.0 / configControl.configuration.wpm)))
           {
-            if ((millis() - bug_dah_key_down_time) > (2 * (1200.0 / configuration.wpm)))
+            if ((millis() - bug_dah_key_down_time) > (2 * (1200.0 / configControl.configuration.wpm)))
             {
               paddle_echo_buffer = (paddle_echo_buffer * 10) + 2;
             }
@@ -1739,7 +1733,7 @@ void service_dit_dah_buffers()
             {
               paddle_echo_buffer = (paddle_echo_buffer * 10) + 1;
             }
-            paddle_echo_buffer_decode_time = millis() + (float((cw_echo_timing_factor * 3000.0) / configuration.wpm) * length_letterspace);
+            paddle_echo_buffer_decode_time = millis() + (float((cw_echo_timing_factor * 3000.0) / configControl.configuration.wpm) * length_letterspace);
           }
 #endif //FEATURE_PADDLE_ECHO
           bug_dah_flag = 0;
@@ -1751,7 +1745,7 @@ void service_dit_dah_buffers()
     }
     else
     {
-      if (configuration.keyer_mode == STRAIGHT)
+      if (configControl.configuration.keyer_mode == STRAIGHT)
       {
         if (dit_buffer)
         {
@@ -1897,13 +1891,13 @@ void send_the_dits_and_dahs(char const *cw_to_send)
       {
         digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_active_state);
       }
-      loop_element_lengths((float(4.0) * (float(configuration.weighting) / 50)), keying_compensation, configuration.wpm);
+      loop_element_lengths((float(4.0) * (float(configControl.configuration.weighting) / 50)), keying_compensation, configControl.configuration.wpm);
       if ((tx_key_dah) && (key_tx))
       {
         digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_inactive_state);
       }
       tx_and_sidetone_key(0);
-      loop_element_lengths((4.0 - (3.0 * (float(configuration.weighting) / 50))), (-1.0 * keying_compensation), configuration.wpm);
+      loop_element_lengths((4.0 - (3.0 * (float(configControl.configuration.weighting) / 50))), (-1.0 * keying_compensation), configControl.configuration.wpm);
       break;
 
     case '=':
@@ -1913,17 +1907,17 @@ void send_the_dits_and_dahs(char const *cw_to_send)
       {
         digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_active_state);
       }
-      loop_element_lengths((float(5.0) * (float(configuration.weighting) / 50)), keying_compensation, configuration.wpm);
+      loop_element_lengths((float(5.0) * (float(configControl.configuration.weighting) / 50)), keying_compensation, configControl.configuration.wpm);
       if ((tx_key_dah) && (key_tx))
       {
         digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_inactive_state);
       }
       tx_and_sidetone_key(0);
-      loop_element_lengths((4.0 - (3.0 * (float(configuration.weighting) / 50))), (-1.0 * keying_compensation), configuration.wpm);
+      loop_element_lengths((4.0 - (3.0 * (float(configControl.configuration.weighting) / 50))), (-1.0 * keying_compensation), configControl.configuration.wpm);
       break;
 
     case '&':
-      loop_element_lengths((4.0 - (3.0 * (float(configuration.weighting) / 50))), (-1.0 * keying_compensation), configuration.wpm);
+      loop_element_lengths((4.0 - (3.0 * (float(configControl.configuration.weighting) / 50))), (-1.0 * keying_compensation), configControl.configuration.wpm);
       break;
 #endif //FEATURE_AMERICAN_MORSE
     default:
@@ -2090,7 +2084,7 @@ void send_char(byte cw_char, byte omit_letterspace)
       send_the_dits_and_dahs("-..-.");
       break;
     case ' ':
-      loop_element_lengths((configuration.length_wordspace - length_letterspace - 2), 0, configuration.wpm);
+      loop_element_lengths((configControl.configuration.length_wordspace - length_letterspace - 2), 0, configControl.configuration.wpm);
       break;
     case '*':
       send_the_dits_and_dahs("-...-.-");
@@ -2377,7 +2371,7 @@ void send_char(byte cw_char, byte omit_letterspace)
 
     case '|':
 #if !defined(OPTION_WINKEY_DO_NOT_SEND_7C_BYTE_HALF_SPACE)
-      loop_element_lengths(0.5, 0, configuration.wpm);
+      loop_element_lengths(0.5, 0, configControl.configuration.wpm);
 #endif
       return;
       break;
@@ -2397,14 +2391,14 @@ void send_char(byte cw_char, byte omit_letterspace)
     if (omit_letterspace != OMIT_LETTERSPACE)
     {
 
-      loop_element_lengths((length_letterspace - 1), 0, configuration.wpm); //this is minus one because send_dit and send_dah have a trailing element space
+      loop_element_lengths((length_letterspace - 1), 0, configControl.configuration.wpm); //this is minus one because send_dit and send_dah have a trailing element space
     }
 
 #ifdef FEATURE_FARNSWORTH
     // Farnsworth Timing : http://www.arrl.org/files/file/Technology/x9004008.pdf
-    if (configuration.wpm_farnsworth > configuration.wpm)
+    if (configControl.configuration.wpm_farnsworth > configControl.configuration.wpm)
     {
-      float additional_intercharacter_time_ms = ((((1.0 * farnsworth_timing_calibration) * ((60.0 * float(configuration.wpm_farnsworth)) - (37.2 * float(configuration.wpm))) / (float(configuration.wpm) * float(configuration.wpm_farnsworth))) / 19.0) * 1000.0) - (1200.0 / float(configuration.wpm_farnsworth));
+      float additional_intercharacter_time_ms = ((((1.0 * farnsworth_timing_calibration) * ((60.0 * float(configControl.configuration.wpm_farnsworth)) - (37.2 * float(configControl.configuration.wpm))) / (float(configControl.configuration.wpm) * float(configControl.configuration.wpm_farnsworth))) / 19.0) * 1000.0) - (1200.0 / float(configControl.configuration.wpm_farnsworth));
       loop_element_lengths(1, additional_intercharacter_time_ms, 0);
     }
 #endif
@@ -2586,8 +2580,6 @@ void send_char(byte cw_char, byte omit_letterspace)
 
 //-------------------------------------------------------------------------------------------------------
 
-
-
 void service_send_buffer(byte no_print)
 {
   // send one character out of the send buffer
@@ -2718,12 +2710,12 @@ void service_send_buffer(byte no_print)
             if ((winkey_host_open) && (winkey_speed_state == WINKEY_UNBUFFERED_SPEED))
             {
               winkey_speed_state = WINKEY_BUFFERED_SPEED;
-              winkey_last_unbuffered_speed_wpm = configuration.wpm;
+              winkey_last_unbuffered_speed_wpm = configControl.configuration.wpm;
             }
 #endif
-            configuration.wpm = send_buffer_array[0] * 256;
+            configControl.configuration.wpm = send_buffer_array[0] * 256;
             remove_from_send_buffer();
-            configuration.wpm = configuration.wpm + send_buffer_array[0];
+            configControl.configuration.wpm = configControl.configuration.wpm + send_buffer_array[0];
             remove_from_send_buffer();
 
 #ifdef FEATURE_LED_RING
@@ -3164,12 +3156,12 @@ void service_paddle_echo()
 #endif
 
     paddle_echo_buffer = 0;
-    paddle_echo_buffer_decode_time = millis() + (float(600 / configuration.wpm) * length_letterspace);
+    paddle_echo_buffer_decode_time = millis() + (float(600 / configControl.configuration.wpm) * length_letterspace);
     paddle_echo_space_sent = 0;
   }
 
   // is it time to echo a space?
-  if ((paddle_echo_buffer == 0) && (millis() > (paddle_echo_buffer_decode_time + (float(1200 / configuration.wpm) * (configuration.length_wordspace - length_letterspace)))) && (!paddle_echo_space_sent))
+  if ((paddle_echo_buffer == 0) && (millis() > (paddle_echo_buffer_decode_time + (float(1200 / configControl.configuration.wpm) * (configControl.configuration.length_wordspace - length_letterspace)))) && (!paddle_echo_space_sent))
   {
 
 #if defined(FEATURE_CW_COMPUTER_KEYBOARD)
@@ -3289,11 +3281,13 @@ void initialize_pins()
     pinMode(ptt_tx_6, OUTPUT);
     digitalWrite(ptt_tx_6, ptt_line_inactive_state);
   }
+  /*
   if (sidetone_line)
   {
     pinMode(sidetone_line, OUTPUT);
     digitalWrite(sidetone_line, LOW);
   }
+  */
   if (tx_key_dit)
   {
     pinMode(tx_key_dit, OUTPUT);
@@ -3339,41 +3333,41 @@ void initialize_keyer_state()
   key_state = 0;
   key_tx = 1;
 
-  configuration.wpm = initial_speed_wpm;
+  configControl.configuration.wpm = initial_speed_wpm;
 
-  configuration.paddle_interruption_quiet_time_element_lengths = default_paddle_interruption_quiet_time_element_lengths;
-  configuration.hz_sidetone = initial_sidetone_freq;
-  configuration.memory_repeat_time = default_memory_repeat_time;
-  configuration.cmos_super_keyer_iambic_b_timing_percent = default_cmos_super_keyer_iambic_b_timing_percent;
-  configuration.dah_to_dit_ratio = initial_dah_to_dit_ratio;
-  configuration.length_wordspace = default_length_wordspace;
-  configuration.weighting = default_weighting;
-  configuration.wordsworth_wordspace = default_wordsworth_wordspace;
-  configuration.wordsworth_repetition = default_wordsworth_repetition;
-  configuration.wpm_farnsworth = initial_speed_wpm;
-  configuration.cli_mode = CLI_NORMAL_MODE;
-  configuration.wpm_command_mode = initial_command_mode_speed_wpm;
-  configuration.ptt_buffer_hold_active = 0;
-  configuration.sidetone_volume = sidetone_volume_low_limit + ((sidetone_volume_high_limit - sidetone_volume_low_limit) / 2);
+  configControl.configuration.paddle_interruption_quiet_time_element_lengths = default_paddle_interruption_quiet_time_element_lengths;
+  configControl.configuration.hz_sidetone = initial_sidetone_freq;
+  configControl.configuration.memory_repeat_time = default_memory_repeat_time;
+  configControl.configuration.cmos_super_keyer_iambic_b_timing_percent = default_cmos_super_keyer_iambic_b_timing_percent;
+  configControl.configuration.dah_to_dit_ratio = initial_dah_to_dit_ratio;
+  configControl.configuration.length_wordspace = default_length_wordspace;
+  configControl.configuration.weighting = default_weighting;
+  configControl.configuration.wordsworth_wordspace = default_wordsworth_wordspace;
+  configControl.configuration.wordsworth_repetition = default_wordsworth_repetition;
+  configControl.configuration.wpm_farnsworth = initial_speed_wpm;
+  configControl.configuration.cli_mode = CLI_NORMAL_MODE;
+  configControl.configuration.wpm_command_mode = initial_command_mode_speed_wpm;
+  configControl.configuration.ptt_buffer_hold_active = 0;
+  configControl.configuration.sidetone_volume = sidetone_volume_low_limit + ((sidetone_volume_high_limit - sidetone_volume_low_limit) / 2);
 
-  configuration.ptt_lead_time[0] = initial_ptt_lead_time_tx1;
-  configuration.ptt_tail_time[0] = initial_ptt_tail_time_tx1;
-  configuration.ptt_lead_time[1] = initial_ptt_lead_time_tx2;
-  configuration.ptt_tail_time[1] = initial_ptt_tail_time_tx2;
+  configControl.configuration.ptt_lead_time[0] = initial_ptt_lead_time_tx1;
+  configControl.configuration.ptt_tail_time[0] = initial_ptt_tail_time_tx1;
+  configControl.configuration.ptt_lead_time[1] = initial_ptt_lead_time_tx2;
+  configControl.configuration.ptt_tail_time[1] = initial_ptt_tail_time_tx2;
 #if !defined(OPTION_SAVE_MEMORY_NANOKEYER)
-  configuration.ptt_lead_time[2] = initial_ptt_lead_time_tx3;
-  configuration.ptt_tail_time[2] = initial_ptt_tail_time_tx3;
-  configuration.ptt_lead_time[3] = initial_ptt_lead_time_tx4;
-  configuration.ptt_tail_time[3] = initial_ptt_tail_time_tx4;
-  configuration.ptt_lead_time[4] = initial_ptt_lead_time_tx5;
-  configuration.ptt_tail_time[4] = initial_ptt_tail_time_tx5;
-  configuration.ptt_lead_time[5] = initial_ptt_lead_time_tx6;
-  configuration.ptt_tail_time[5] = initial_ptt_tail_time_tx6;
+  configControl.configuration.ptt_lead_time[2] = initial_ptt_lead_time_tx3;
+  configControl.configuration.ptt_tail_time[2] = initial_ptt_tail_time_tx3;
+  configControl.configuration.ptt_lead_time[3] = initial_ptt_lead_time_tx4;
+  configControl.configuration.ptt_tail_time[3] = initial_ptt_tail_time_tx4;
+  configControl.configuration.ptt_lead_time[4] = initial_ptt_lead_time_tx5;
+  configControl.configuration.ptt_tail_time[4] = initial_ptt_tail_time_tx5;
+  configControl.configuration.ptt_lead_time[5] = initial_ptt_lead_time_tx6;
+  configControl.configuration.ptt_tail_time[5] = initial_ptt_tail_time_tx6;
 
   for (int x = 0; x < 5; x++)
   {
-    configuration.ptt_active_to_sequencer_active_time[x] = 0;
-    configuration.ptt_inactive_to_sequencer_inactive_time[x] = 0;
+    configControl.configuration.ptt_active_to_sequencer_active_time[x] = 0;
+    configControl.configuration.ptt_inactive_to_sequencer_inactive_time[x] = 0;
   }
 #endif //OPTION_SAVE_MEMORY_NANOKEYER
 
@@ -3388,12 +3382,8 @@ void initialize_potentiometer()
 
 #ifdef FEATURE_POTENTIOMETER
   wpmPot.initialize(potentiometer);
-  /*
-  pinMode(potentiometer, INPUT);
-  pot_wpm_high_value = initial_pot_wpm_high_value;
-  last_pot_wpm_read = pot_value_wpm();
-  */
-  configuration.pot_activated = 1;
+
+  configControl.configuration.pot_activated = 1;
 #endif
 }
 
@@ -3406,18 +3396,18 @@ void initialize_default_modes()
 
   // setup default modes
   keyer_machine_mode = KEYER_NORMAL;
-  configuration.paddle_mode = PADDLE_NORMAL;
-  configuration.keyer_mode = IAMBIC_B;
-  configuration.sidetone_mode = SIDETONE_ON;
+  configControl.configuration.paddle_mode = PADDLE_NORMAL;
+  configControl.configuration.keyer_mode = IAMBIC_B;
+  configControl.configuration.sidetone_mode = SIDETONE_ON;
 
 #ifdef initial_sidetone_mode
-  configuration.sidetone_mode = initial_sidetone_mode;
+  configControl.configuration.sidetone_mode = initial_sidetone_mode;
 #endif
 
   char_send_mode = CW;
 
 #if defined(FEATURE_CMOS_SUPER_KEYER_IAMBIC_B_TIMING) && defined(OPTION_CMOS_SUPER_KEYER_IAMBIC_B_TIMING_ON_BY_DEFAULT) // DL1HTB initialize CMOS Super Keyer if feature is enabled
-  configuration.cmos_super_keyer_iambic_b_timing_on = 1;
+  configControl.configuration.cmos_super_keyer_iambic_b_timing_on = 1;
 #endif //FEATURE_CMOS_SUPER_KEYER_IAMBIC_B_TIMING // #end DL1HTB initialize CMOS Super Keyer if feature is enabled
 
   delay(250); // wait a little bit for the caps to charge up on the paddle lines
@@ -3425,44 +3415,7 @@ void initialize_default_modes()
 
 //---------------------------------------------------------------------
 
-void check_eeprom_for_initialization()
-{
-
-#if !defined(ESP32)
-  // do an eeprom reset to defaults if paddles are squeezed
-  if (paddle_pin_read(paddle_left) == LOW && paddle_pin_read(paddle_right) == LOW)
-  {
-    while (paddle_pin_read(paddle_left) == LOW && paddle_pin_read(paddle_right) == LOW)
-    {
-    }
-    initialize_eeprom();
-  }
-#endif
-
-  // read settings from eeprom and initialize eeprom if it has never been written to
-  if (read_settings_from_eeprom())
-  {
-#if defined(HARDWARE_GENERIC_STM32F103C)
-    EEPROM.init();   //sp5iou 20180328 to reinitialize / initialize EEPROM
-    EEPROM.format(); //sp5iou 20180328 to reinitialize / format EEPROM
-#endif
-    initialize_eeprom();
-  }
-}
-
 //---------------------------------------------------------------------
-
-void initialize_eeprom()
-{
-
-  write_settings_to_eeprom(1);
-  // #if defined(FEATURE_SINEWAVE_SIDETONE)
-  //   initialize_tonsin();
-  // #endif
-  beep_boop();
-  beep_boop();
-  beep_boop();
-}
 
 //---------------------------------------------------------------------
 
@@ -3481,7 +3434,7 @@ void check_for_beacon_mode()
   {
     if (paddle_pin_read(paddle_right) == LOW)
     {
-      configuration.keyer_mode = STRAIGHT;
+      configControl.configuration.keyer_mode = STRAIGHT;
     }
   }
 #endif //OPTION_SAVE_MEMORY_NANOKEYER
@@ -3573,9 +3526,9 @@ void initialize_display()
     // say HI
     // store current setting (compliments of DL2SBA - http://dl2sba.com/ )
     byte oldKey = key_tx;
-    byte oldSideTone = configuration.sidetone_mode;
+    byte oldSideTone = configControl.configuration.sidetone_mode;
     key_tx = 0;
-    configuration.sidetone_mode = SIDETONE_ON;
+    configControl.configuration.sidetone_mode = SIDETONE_ON;
 #ifdef FEATURE_DISPLAY
     lcd_center_print_timed("h", 1, 4000);
 #endif
@@ -3584,7 +3537,7 @@ void initialize_display()
     lcd_center_print_timed("hi", 1, 4000);
 #endif
     send_char('I', KEYER_NORMAL);
-    configuration.sidetone_mode = oldSideTone;
+    configControl.configuration.sidetone_mode = oldSideTone;
     key_tx = oldKey;
 #endif //OPTION_DO_NOT_SAY_HI
 #ifdef OPTION_BLINK_HI_ON_PTT
