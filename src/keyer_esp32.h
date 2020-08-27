@@ -1,5 +1,5 @@
 #define GENERIC_CHARGRAB
-//#define OLED_DISPLAY_64_128
+#define OLED_DISPLAY_64_128
 #ifdef OLED_DISPLAY_64_128
 
 // For a connection via I2C using the Arduino Wire include:
@@ -23,7 +23,7 @@ String displayContents = "";
 void initDisplay()
 {
 #ifdef OLED_DISPLAY_64_128
-    esp32_port_to_use->println("displayinitcalled");
+    //esp32_port_to_use->println("displayinitcalled");
     display.init();
 
     display.flipScreenVertically();
