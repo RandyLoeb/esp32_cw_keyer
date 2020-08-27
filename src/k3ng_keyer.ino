@@ -34,8 +34,6 @@ esp32Tone derivedFromToneBase;
 // and implements toneBase's .tone and .noTone
 toneBase &toneControl{derivedFromToneBase};
 
-
-
 // Different ways to persist config
 // E.g. if you wanted sd card inherit from persitentConfig
 #if defined(ESP32)
@@ -47,6 +45,10 @@ SpiffsPersistentConfig persistConfig;
 // and implements .initialize and .save
 persistentConfig &configControl{persistConfig};
 
+#include "displays/oled64x128.h"
+oled64x128 disp;
+displayBase &displayControl{disp};
+
 void setup()
 {
 
@@ -55,9 +57,9 @@ void setup()
 #endif
   initialize_pins();
   initialize_serial_ports();
-  
-  initDisplay();
-  
+
+  displayControl.initialize();
+
   initialize_keyer_state();
   configControl.initialize(primary_serial_port);
 
@@ -2891,7 +2893,7 @@ void service_send_buffer(byte no_print)
 
 #ifdef GENERIC_CHARGRAB
 
-        displayUpdate(send_buffer_array[0]);
+        displayControl.displayUpdate(send_buffer_array[0]);
         //displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
 #endif
 
@@ -3152,7 +3154,7 @@ void service_paddle_echo()
 
 #ifdef GENERIC_CHARGRAB
 
-    displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
+    displayControl.displayUpdate(convert_cw_number_to_ascii(paddle_echo_buffer));
 #endif
 
     paddle_echo_buffer = 0;
@@ -3183,7 +3185,7 @@ void service_paddle_echo()
 #endif //FEATURE_DISPLAY
 
 #ifdef GENERIC_CHARGRAB
-    displayUpdate(' ');
+    displayControl.displayUpdate(' ');
 #endif
 
 #if defined(FEATURE_SERIAL) && defined(FEATURE_COMMAND_LINE_INTERFACE)
