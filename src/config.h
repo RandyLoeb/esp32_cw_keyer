@@ -48,6 +48,11 @@ struct config_t
 
 byte sending_mode = UNDEFINED_SENDING;
 byte command_mode_disable_tx = 0;
+
+#if defined M5CORE
+#define tx_key_line_1 0
+#endif
+
 byte current_tx_key_line = tx_key_line_1;
 
 byte manual_ptt_invoke = 0;

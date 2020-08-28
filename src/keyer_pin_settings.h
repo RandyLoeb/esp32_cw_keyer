@@ -2,6 +2,7 @@
 #ifndef keyer_pin_settings_h
 #define keyer_pin_settings_h
 
+#if !defined M5CORE
 #define paddle_left 25   //2  //Note this is Dn, i.e. 14=D14 which is esp32 pin 13
 #define paddle_right 33  //5 //Note this means D27, i.e. pin 12
 #define tx_key_line_1 11 // (high = key down/tx on)
@@ -21,8 +22,9 @@
 #define ptt_tx_6 0
 #define tx_key_dit 0 // if defined, goes active for dit (any transmitter) - customized with tx_key_dit_and_dah_pins_active_state and tx_key_dit_and_dah_pins_inactive_state
 #define tx_key_dah 0 // if defined, goes active for dah (any transmitter) - customized with tx_key_dit_and_dah_pins_active_state and tx_key_dit_and_dah_pins_inactive_state
+#endif
 
-#ifdef ESP32
+#if defined ESP32 && !defined M5CORE
 #define I2C_SDA 21
 #define I2C_SCL 22
 #endif

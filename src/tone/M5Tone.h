@@ -1,9 +1,9 @@
 #include "toneBase.h"
-
-class esp32Tone : public toneBase
+#include <M5Stack.h>
+class M5Tone : public toneBase
 {
 public:
-    esp32Tone(uint8_t pin);
+    M5Tone();
     virtual void noTone();
     virtual void tone(unsigned short freq, unsigned duration = 0);
 };

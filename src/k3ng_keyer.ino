@@ -1,4 +1,5 @@
 #define CODE_VERSION "2020.02.13.01"
+#define M5CORE
 #define eeprom_magic_number 35 // you can change this number to have the unit re-initialize EEPROM
 
 #include <stdio.h>
@@ -11,23 +12,33 @@
 #include "keyer_settings.h"
 #include "display.h"
 #include "config.h"
+#if !defined M5CORE
 #include "potentiometer.h"
+#endif
 #include "cw_utils.h"
 
 #define memory_area_start 113
 
 #if defined(ESP32)
 void add_to_send_buffer(byte incoming_serial_byte);
+
+#if defined M5CORE
+#include <M5Stack.h>
+#endif
+
+#if !defined M5CORE
 #include "keyer_esp32now.h"
+#endif
+
 #include "keyer_esp32.h"
 #endif
 
 // Different hardware might need different tone control capabilities,
 // so the approach is to use a global object that implements
 // .tone and .noTone.
-#if defined(ESP32)
-#include "tone/esp32Tone.h"
-esp32Tone derivedFromToneBase;
+#if defined M5CORE
+#include "tone/M5Tone.h"
+M5Tone derivedFromToneBase;
 #endif
 
 // make sure your derived object is named derivedFromToneBase
@@ -45,8 +56,8 @@ SpiffsPersistentConfig persistConfig;
 // and implements .initialize and .save
 persistentConfig &configControl{persistConfig};
 
-#include "displays/oled64x128.h"
-oled64x128 disp;
+#include "displays/M5KeyerDisplay.h"
+M5KeyerDisplay disp;
 displayBase &displayControl{disp};
 
 // move this later
@@ -54,11 +65,17 @@ void lcd_center_print_timed_wpm();
 
 void setup()
 {
+
+#if defined M5CORE
+  M5.begin();
+#endif
   Serial.begin(115200);
   Serial.println("In setup()");
 
 #ifdef ESPNOW_WIRELESS_KEYER
+#ifndef M5CORE
   initialize_espnow_wireless(speed_set);
+#endif
 #endif
   initialize_pins();
   initialize_serial_ports();
@@ -68,9 +85,11 @@ void setup()
   initialize_keyer_state();
   configControl.initialize(primary_serial_port);
 
+#if !defined M5CORE
   // potentiometer
   wpmPot.initialize(potentiometer_pin);
   configControl.configuration.pot_activated = 1;
+#endif
 
   initialize_default_modes();
 
@@ -89,7 +108,9 @@ void loop()
   service_send_buffer(PRINTCHAR);
   check_ptt_tail();
 
+#if !defined M5CORE
   wpmPot.checkPotentiometer(wpmSetCallBack);
+#endif
 
   check_for_dirty_configuration();
 
@@ -600,7 +621,7 @@ void save_persistent_configuration()
 
 void check_dit_paddle()
 {
-
+#if !defined M5CORE
   byte pin_value = 0;
   byte dit_paddle = 0;
 #ifdef OPTION_DIT_PADDLE_NO_SEND_ON_MEM_RPT
@@ -647,13 +668,14 @@ void check_dit_paddle()
 
     manual_ptt_invoke = 0;
   }
+#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
 
 void check_dah_paddle()
 {
-
+#if !defined M5CORE
   byte pin_value = 0;
   byte dah_paddle;
 
@@ -675,13 +697,16 @@ void check_dah_paddle()
 
     manual_ptt_invoke = 0;
   }
+#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
 
 void send_dit()
 {
+#if !defined M5CORE
   sendEspNowDitDah(ESPNOW_DIT);
+#endif
   // notes: key_compensation is a straight x mS lengthening or shortening of the key down time
   //        weighting is
 
@@ -711,14 +736,12 @@ void send_dit()
 
   being_sent = SENDING_DIT;
   tx_and_sidetone_key(1);
-#ifdef DEBUG_VARIABLE_DUMP
-  dit_start_time = millis();
-#endif
+#if !defined M5CORE
   if ((tx_key_dit) && (key_tx))
   {
     digitalWrite(tx_key_dit, tx_key_dit_and_dah_pins_active_state);
   }
-
+#endif
 #ifdef FEATURE_QLF
   if (qlf_active)
   {
@@ -731,11 +754,12 @@ void send_dit()
 #else  //FEATURE_QLF
   loop_element_lengths((1.0 * (float(configControl.configuration.weighting) / 50)), keying_compensation, character_wpm);
 #endif //FEATURE_QLF
-
+#if !defined M5CORE
   if ((tx_key_dit) && (key_tx))
   {
     digitalWrite(tx_key_dit, tx_key_dit_and_dah_pins_inactive_state);
   }
+#endif
 #ifdef DEBUG_VARIABLE_DUMP
   dit_end_time = millis();
 #endif
@@ -803,7 +827,9 @@ void send_dit()
 
 void send_dah()
 {
+#if !defined M5CORE
   sendEspNowDitDah(ESPNOW_DAH);
+#endif
   unsigned int character_wpm = configControl.configuration.wpm;
 
 #ifdef FEATURE_FARNSWORTH
@@ -823,11 +849,12 @@ void send_dah()
 #ifdef DEBUG_VARIABLE_DUMP
   dah_start_time = millis();
 #endif
+#if !defined M5CORE
   if ((tx_key_dah) && (key_tx))
   {
     digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_active_state);
   }
-
+#endif
 #ifdef FEATURE_QLF
   if (qlf_active)
   {
@@ -840,12 +867,12 @@ void send_dah()
 #else  //FEATURE_QLF
   loop_element_lengths((float(configControl.configuration.dah_to_dit_ratio / 100.0) * (float(configControl.configuration.weighting) / 50)), keying_compensation, character_wpm);
 #endif //FEATURE_QLF
-
+#if !defined M5CORE
   if ((tx_key_dah) && (key_tx))
   {
     digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_inactive_state);
   }
-
+#endif
 #ifdef DEBUG_VARIABLE_DUMP
   dah_end_time = millis();
 #endif
@@ -921,10 +948,12 @@ void tx_and_sidetone_key(int state)
     {
       byte previous_ptt_line_activated = ptt_line_activated;
       ptt_key();
+#if !defined M5CORE
       if (current_tx_key_line)
       {
         digitalWrite(current_tx_key_line, tx_key_line_active_state);
       }
+#endif
 #if defined(OPTION_WINKEY_2_SUPPORT) && defined(FEATURE_WINKEY_EMULATION) && !defined(FEATURE_SO2R_BASE)
       if ((wk2_both_tx_activated) && (tx_key_line_2))
       {
@@ -940,7 +969,7 @@ void tx_and_sidetone_key(int state)
     {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
       Serial.println("About send tone #1");
-      toneControl.tone(sidetone_line, configControl.configuration.hz_sidetone);
+      toneControl.tone(configControl.configuration.hz_sidetone);
 #else
       if (sidetone_line)
       {
@@ -956,10 +985,12 @@ void tx_and_sidetone_key(int state)
     {
       if (key_tx)
       {
+#if !defined M5CORE
         if (current_tx_key_line)
         {
           digitalWrite(current_tx_key_line, tx_key_line_inactive_state);
         }
+#endif
 #if defined(OPTION_WINKEY_2_SUPPORT) && defined(FEATURE_WINKEY_EMULATION) && !defined(FEATURE_SO2R_BASE)
         if ((wk2_both_tx_activated) && (tx_key_line_2))
         {
@@ -971,7 +1002,7 @@ void tx_and_sidetone_key(int state)
       if ((configControl.configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configControl.configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
       {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-        toneControl.noTone(sidetone_line);
+        toneControl.noTone();
 #else
         if (sidetone_line)
         {
@@ -1066,7 +1097,12 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 
     if ((configControl.configuration.keyer_mode != ULTIMATIC) && (configControl.configuration.keyer_mode != SINGLE_PADDLE))
     {
-      if ((configControl.configuration.keyer_mode == IAMBIC_A) && (paddle_pin_read(paddle_left) == LOW) && (paddle_pin_read(paddle_right) == LOW))
+      if ((configControl.configuration.keyer_mode == IAMBIC_A)
+#if !defined M5CORE
+          &&
+          (paddle_pin_read(paddle_left) == LOW) && (paddle_pin_read(paddle_right) == LOW)
+#endif
+      )
       {
         iambic_flag = 1;
       }
@@ -1169,7 +1205,11 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
       }
     }
 #else
-    if (sending_mode == AUTOMATIC_SENDING && (paddle_pin_read(paddle_left) == LOW || paddle_pin_read(paddle_right) == LOW || dit_buffer || dah_buffer))
+    if (sending_mode == AUTOMATIC_SENDING && (
+#if !defined M5CORE
+                                                 paddle_pin_read(paddle_left) == LOW || paddle_pin_read(paddle_right) == LOW ||
+#endif
+                                                 dit_buffer || dah_buffer))
     {
       if (keyer_machine_mode == KEYER_NORMAL)
       {
@@ -1183,7 +1223,11 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
 
   } //while ((millis() < endtime) && (millis() > 200))
 
-  if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag) && (paddle_pin_read(paddle_left) == HIGH) && (paddle_pin_read(paddle_right) == HIGH))
+  if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag)
+#if !defined M5CORE
+      && (paddle_pin_read(paddle_left) == HIGH) && (paddle_pin_read(paddle_right) == HIGH)
+#endif
+  )
   {
     iambic_flag = 0;
     dit_buffer = 0;
@@ -1253,8 +1297,10 @@ long get_cw_input_from_user(unsigned int exit_time_milliseconds)
 #ifdef FEATURE_POTENTIOMETER
     if (configControl.configuration.pot_activated)
     {
+#if !defined M5CORE
       wpmPot.checkPotentiometer(wpmSetCallBack);
-      //check_potentiometer();
+//check_potentiometer();
+#endif
     }
 #endif
 
@@ -1362,7 +1408,7 @@ void sidetone_adj(int hz)
 
 void switch_to_tx_silent(byte tx)
 {
-
+#if !defined M5CORE
   switch (tx)
   {
   case 1:
@@ -1420,12 +1466,13 @@ void switch_to_tx_silent(byte tx)
     }
     break;
   }
+#endif
 }
 
 //------------------------------------------------------------------
 void switch_to_tx(byte tx)
 {
-
+#if !defined M5CORE
 #ifdef FEATURE_MEMORIES
   repeat_memory = 255;
 #endif
@@ -1529,6 +1576,7 @@ void switch_to_tx(byte tx)
     break;
   }
 #endif
+#endif
 }
 
 //------------------------------------------------------------------
@@ -1569,7 +1617,11 @@ void service_dit_dah_buffers()
 
   if ((configControl.configuration.keyer_mode == IAMBIC_A) || (configControl.configuration.keyer_mode == IAMBIC_B) || (configControl.configuration.keyer_mode == ULTIMATIC) || (configControl.configuration.keyer_mode == SINGLE_PADDLE))
   {
-    if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag) && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right)))
+    if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag)
+#if !defined M5CORE
+        && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right))
+#endif
+    )
     {
       iambic_flag = 0;
       dit_buffer = 0;
@@ -1685,7 +1737,7 @@ void beep()
   //   noTone(sidetone_line);
   // #else
   Serial.println("About send tone #2");
-  toneControl.tone(sidetone_line, hz_high_beep, 200);
+  toneControl.tone(hz_high_beep, 200);
   // #endif
 #else
   if (sidetone_line)
@@ -1703,9 +1755,9 @@ void boop()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
   Serial.println("About send tone #3");
-  toneControl.tone(sidetone_line, hz_low_beep);
+  toneControl.tone(hz_low_beep);
   delay(100);
-  toneControl.noTone(sidetone_line);
+  toneControl.noTone();
 #else
   if (sidetone_line)
   {
@@ -1722,12 +1774,12 @@ void beep_boop()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
   Serial.println("About send tone #4");
-  toneControl.tone(sidetone_line, hz_high_beep);
+  toneControl.tone(hz_high_beep);
   delay(100);
   Serial.println("About send tone #5");
-  toneControl.tone(sidetone_line, hz_low_beep);
+  toneControl.tone(hz_low_beep);
   delay(100);
-  toneControl.noTone(sidetone_line);
+  toneControl.noTone();
 #else
   if (sidetone_line)
   {
@@ -1744,12 +1796,12 @@ void boop_beep()
 {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
   Serial.println("About send tone #6");
-  toneControl.tone(sidetone_line, hz_low_beep);
+  toneControl.tone(hz_low_beep);
   delay(100);
   Serial.println("About send tone #7");
-  toneControl.tone(sidetone_line, hz_high_beep);
+  toneControl.tone(hz_high_beep);
   delay(100);
-  toneControl.noTone(sidetone_line);
+  toneControl.noTone();
 #else
   if (sidetone_line)
   {
@@ -3104,7 +3156,7 @@ void service_paddle_echo()
 
 void initialize_pins()
 {
-
+#if !defined M5CORE
 #if defined(ARDUINO_MAPLE_MINI) || defined(ARDUINO_GENERIC_STM32F103C) || defined(ESP32) //sp5iou 20180329
   pinMode(paddle_left, INPUT_PULLUP);
   pinMode(paddle_right, INPUT_PULLUP);
@@ -3213,7 +3265,7 @@ void initialize_pins()
   {
     pinMode(potentiometer_enable_pin, INPUT_PULLUP);
   }
-
+#endif
 } //initialize_pins()
 
 //---------------------------------------------------------------------
@@ -3307,7 +3359,7 @@ void initialize_default_modes()
 
 void check_for_beacon_mode()
 {
-
+#if !defined M5CORE
 #ifndef OPTION_SAVE_MEMORY_NANOKEYER
   // check for beacon mode (paddle_left == low) or straight key mode (paddle_right == low)
   if (paddle_pin_read(paddle_left) == LOW)
@@ -3324,6 +3376,7 @@ void check_for_beacon_mode()
     }
   }
 #endif //OPTION_SAVE_MEMORY_NANOKEYER
+#endif
 }
 
 //---------------------------------------------------------------------

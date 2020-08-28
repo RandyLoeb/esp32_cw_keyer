@@ -4,11 +4,16 @@
 #define SOUND_ON (1 << (SOUND_RESOLUTION - 1)) // 50% duty cycle
 #define SOUND_OFF 0                            // 0% duty cycle
 
-void esp32Tone::noTone(uint8_t pin)
+esp32Tone::esp32Tone(uint8_t pin)
+{
+    this->pin = pin;
+}
+
+void esp32Tone::noTone()
 {
     this->tone(pin, -1);
 }
-void esp32Tone::tone(uint8_t pin, unsigned short freq,
+void esp32Tone::tone(unsigned short freq,
                      unsigned duration)
 {
     /* Serial.print("Tone:");
@@ -21,8 +26,6 @@ void esp32Tone::tone(uint8_t pin, unsigned short freq,
     ledcSetup(SOUND_PWM_CHANNEL, freq, SOUND_RESOLUTION); // Set up PWM channel
     ledcAttachPin(pin, SOUND_PWM_CHANNEL);
     ledcWriteTone(SOUND_PWM_CHANNEL, freq); // Attach channel to pin
-    
 
     delay(duration);
-    
 }

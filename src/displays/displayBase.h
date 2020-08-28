@@ -1,3 +1,4 @@
+#include <Arduino.h>
 class displayBase
 {
 

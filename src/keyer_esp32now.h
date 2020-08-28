@@ -1,3 +1,4 @@
+#ifndef M5CORE
 #include <esp_now.h>
 #include "WiFi.h"
 //A4:CF:12:75:BB:68
@@ -213,3 +214,4 @@ int getEspNowBuff(bool ditdah)
 
     return 1;
 }
+#endif
