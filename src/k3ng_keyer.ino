@@ -3,7 +3,6 @@
 #define eeprom_magic_number 35 // you can change this number to have the unit re-initialize EEPROM
 
 #include <stdio.h>
-
 #include "keyer_hardware.h"
 #include "keyer_features_and_options.h"
 #include "keyer.h"
@@ -61,17 +60,6 @@ persistentConfig &configControl{persistConfig};
 M5KeyerDisplay disp;
 displayBase &displayControl{disp};
 
-#include "virtualPins/virtualPins.h"
-VirtualPins virtualPins;
-#include "virtualPins/m5VirtualButtonPin.h"
-M5VirtualButtonPin btnA{M5Btnslist::A};
-M5VirtualButtonPin btnB{M5Btnslist::B};
-VirtualPin &vpA{btnA};
-VirtualPin &vpB{btnB};
-//#include "virtualPins/virtualPin.h"
-//VirtualPin pinhello;
-//virtualPins.pins.insert(std::pair<int, VirtualPin>(1, pinhello));
-
 // move this later
 void lcd_center_print_timed_wpm();
 
@@ -80,8 +68,6 @@ void setup()
 
 #if defined M5CORE
   M5.begin();
-  virtualPins.pins.insert(std::make_pair(paddle_left, &vpA));
-  virtualPins.pins.insert(std::make_pair(paddle_right, &vpB));
 #endif
   Serial.begin(115200);
   Serial.println("In setup()");
@@ -91,7 +77,8 @@ void setup()
   initialize_espnow_wireless(speed_set);
 #endif
 #endif
-  //initialize_pins();
+  initialize_pins();
+  initialize_serial_ports();
 
   displayControl.initialize();
 
@@ -115,8 +102,8 @@ void setup()
 void loop()
 {
 
-  //check_paddles();
-  //service_dit_dah_buffers();
+  check_paddles();
+  service_dit_dah_buffers();
 
   service_send_buffer(PRINTCHAR);
   check_ptt_tail();
@@ -200,8 +187,7 @@ void check_for_dirty_configuration()
 
 void check_paddles()
 {
-#if !defined M5CORE
-  Serial.println("In checkpaddes()");
+
 #define NO_CLOSURE 0
 #define DIT_CLOSURE_DAH_OFF 1
 #define DAH_CLOSURE_DIT_OFF 2
@@ -483,7 +469,6 @@ void check_paddles()
   }
 
   service_tx_inhibit_and_pause();
-#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -636,10 +621,9 @@ void save_persistent_configuration()
 
 void check_dit_paddle()
 {
-
+#if !defined M5CORE
   byte pin_value = 0;
   byte dit_paddle = 0;
-
 #ifdef OPTION_DIT_PADDLE_NO_SEND_ON_MEM_RPT
   static byte memory_rpt_interrupt_flag = 0;
 #endif
@@ -652,12 +636,8 @@ void check_dit_paddle()
   {
     dit_paddle = paddle_right;
   }
-  pin_value =
-#if !defined M5CORE
-      getEspNowBuff(ESPNOW_DIT) &&
-#endif
 
-      paddle_pin_read(dit_paddle);
+  pin_value = getEspNowBuff(ESPNOW_DIT) && paddle_pin_read(dit_paddle);
 
 #if defined(FEATURE_USB_MOUSE) || defined(FEATURE_USB_KEYBOARD)
   if (usb_dit)
@@ -688,13 +668,14 @@ void check_dit_paddle()
 
     manual_ptt_invoke = 0;
   }
+#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
 
 void check_dah_paddle()
 {
-
+#if !defined M5CORE
   byte pin_value = 0;
   byte dah_paddle;
 
@@ -707,12 +688,7 @@ void check_dah_paddle()
     dah_paddle = paddle_left;
   }
 
-  pin_value =
-#if !defined M5CORE
-      getEspNowBuff(ESPNOW_DAH) &&
-#endif
-
-      paddle_pin_read(dah_paddle);
+  pin_value = getEspNowBuff(ESPNOW_DAH) && paddle_pin_read(dah_paddle);
 
   if (pin_value == 0)
   {
@@ -721,13 +697,13 @@ void check_dah_paddle()
 
     manual_ptt_invoke = 0;
   }
+#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
 
 void send_dit()
 {
-  Serial.println("in send_dit()");
 #if !defined M5CORE
   sendEspNowDitDah(ESPNOW_DIT);
 #endif
@@ -851,8 +827,6 @@ void send_dit()
 
 void send_dah()
 {
-  Serial.println("in send_dah()");
-  delay(1000);
 #if !defined M5CORE
   sendEspNowDitDah(ESPNOW_DAH);
 #endif
@@ -1124,10 +1098,10 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
     if ((configControl.configuration.keyer_mode != ULTIMATIC) && (configControl.configuration.keyer_mode != SINGLE_PADDLE))
     {
       if ((configControl.configuration.keyer_mode == IAMBIC_A)
-          //#if !defined M5CORE
+#if !defined M5CORE
           &&
           (paddle_pin_read(paddle_left) == LOW) && (paddle_pin_read(paddle_right) == LOW)
-          //#endif
+#endif
       )
       {
         iambic_flag = 1;
@@ -1232,9 +1206,9 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
     }
 #else
     if (sending_mode == AUTOMATIC_SENDING && (
-                                                 //#if !defined M5CORE
+#if !defined M5CORE
                                                  paddle_pin_read(paddle_left) == LOW || paddle_pin_read(paddle_right) == LOW ||
-                                                 //#endif
+#endif
                                                  dit_buffer || dah_buffer))
     {
       if (keyer_machine_mode == KEYER_NORMAL)
@@ -1250,9 +1224,9 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
   } //while ((millis() < endtime) && (millis() > 200))
 
   if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag)
-      //#if !defined M5CORE
+#if !defined M5CORE
       && (paddle_pin_read(paddle_left) == HIGH) && (paddle_pin_read(paddle_right) == HIGH)
-      //#endif
+#endif
   )
   {
     iambic_flag = 0;
@@ -1644,9 +1618,9 @@ void service_dit_dah_buffers()
   if ((configControl.configuration.keyer_mode == IAMBIC_A) || (configControl.configuration.keyer_mode == IAMBIC_B) || (configControl.configuration.keyer_mode == ULTIMATIC) || (configControl.configuration.keyer_mode == SINGLE_PADDLE))
   {
     if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag)
-        //#if !defined M5CORE
+#if !defined M5CORE
         && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right))
-        //#endif
+#endif
     )
     {
       iambic_flag = 0;
@@ -3409,6 +3383,10 @@ void check_for_beacon_mode()
 
 //---------------------------------------------------------------------
 
+void initialize_serial_ports()
+{
+}
+
 void initialize_display()
 {
 
@@ -3489,13 +3467,8 @@ void initialize_display()
 
 int paddle_pin_read(int pin_to_read)
 {
-  return virtualPins.pins.at(pin_to_read)->digitalRead();
-  /*
-  return 0;
-#if !defined M5CORE
+
   return digitalRead(pin_to_read);
-#endif
-*/
 }
 
 void service_millis_rollover()
