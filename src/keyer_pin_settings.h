@@ -2,6 +2,10 @@
 #ifndef keyer_pin_settings_h
 #define keyer_pin_settings_h
 
+//virtualized, doesn't matter as long as unique
+#define paddle_left 25  //2  //Note this is Dn, i.e. 14=D14 which is esp32 pin 13
+#define paddle_right 33 //5 //Note this means D27, i.e. pin 12
+
 #if !defined M5CORE
 #define paddle_left 25   //2  //Note this is Dn, i.e. 14=D14 which is esp32 pin 13
 #define paddle_right 33  //5 //Note this means D27, i.e. pin 12
