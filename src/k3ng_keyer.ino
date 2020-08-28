@@ -60,6 +60,14 @@ persistentConfig &configControl{persistConfig};
 M5KeyerDisplay disp;
 displayBase &displayControl{disp};
 
+#include "virtualPins/virtualPins.h"
+VirtualPins virtualPins;
+#include "virtualPins/m5VirtualButtonPin.h"
+M5VirtualButtonPin btnA{M5Btnslist::A};
+M5VirtualButtonPin btnB{M5Btnslist::B};
+VirtualPin &vpA{btnA};
+VirtualPin &vpB{btnB};
+
 // move this later
 void lcd_center_print_timed_wpm();
 
@@ -69,6 +77,8 @@ void setup()
 #if defined M5CORE
   M5.begin();
 #endif
+  virtualPins.pins.insert(std::make_pair(paddle_left, &vpA));
+  virtualPins.pins.insert(std::make_pair(paddle_right, &vpB));
   Serial.begin(115200);
   Serial.println("In setup()");
 
