@@ -64,9 +64,9 @@ displayBase &displayControl{disp};
 VirtualPins virtualPins;
 #include "virtualPins/m5VirtualButtonPin.h"
 M5VirtualButtonPin btnA{M5Btnslist::A};
-M5VirtualButtonPin btnB{M5Btnslist::B};
+M5VirtualButtonPin btnC{M5Btnslist::C};
 VirtualPin &vpA{btnA};
-VirtualPin &vpB{btnB};
+VirtualPin &vpC{btnC};
 
 // move this later
 void lcd_center_print_timed_wpm();
@@ -78,7 +78,7 @@ void setup()
   M5.begin();
 #endif
   virtualPins.pins.insert(std::make_pair(paddle_left, &vpA));
-  virtualPins.pins.insert(std::make_pair(paddle_right, &vpB));
+  virtualPins.pins.insert(std::make_pair(paddle_right, &vpC));
   Serial.begin(115200);
   Serial.println("In setup()");
 
@@ -102,7 +102,7 @@ void setup()
 #endif
 
   initialize_default_modes();
-
+configControl.configuration.wpm=15;
   check_for_beacon_mode();
   initialize_display();
 }
@@ -121,7 +121,8 @@ void loop()
 #if !defined M5CORE
   wpmPot.checkPotentiometer(wpmSetCallBack);
 #endif
-
+  
+  
   check_for_dirty_configuration();
 
   check_paddles();
