@@ -631,7 +631,7 @@ void save_persistent_configuration()
 
 void check_dit_paddle()
 {
-#if !defined M5CORE
+  //#if !defined M5CORE
   byte pin_value = 0;
   byte dit_paddle = 0;
 #ifdef OPTION_DIT_PADDLE_NO_SEND_ON_MEM_RPT
@@ -647,7 +647,7 @@ void check_dit_paddle()
     dit_paddle = paddle_right;
   }
 
-  pin_value = getEspNowBuff(ESPNOW_DIT) && paddle_pin_read(dit_paddle);
+  pin_value = paddle_pin_read(dit_paddle);
 
 #if defined(FEATURE_USB_MOUSE) || defined(FEATURE_USB_KEYBOARD)
   if (usb_dit)
@@ -678,14 +678,14 @@ void check_dit_paddle()
 
     manual_ptt_invoke = 0;
   }
-#endif
+  //#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
 
 void check_dah_paddle()
 {
-#if !defined M5CORE
+
   byte pin_value = 0;
   byte dah_paddle;
 
@@ -697,8 +697,8 @@ void check_dah_paddle()
   {
     dah_paddle = paddle_left;
   }
-
-  pin_value = getEspNowBuff(ESPNOW_DAH) && paddle_pin_read(dah_paddle);
+  //#if !defined M5CORE
+  pin_value = paddle_pin_read(dah_paddle);
 
   if (pin_value == 0)
   {
@@ -707,7 +707,7 @@ void check_dah_paddle()
 
     manual_ptt_invoke = 0;
   }
-#endif
+  //#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -1628,9 +1628,9 @@ void service_dit_dah_buffers()
   if ((configControl.configuration.keyer_mode == IAMBIC_A) || (configControl.configuration.keyer_mode == IAMBIC_B) || (configControl.configuration.keyer_mode == ULTIMATIC) || (configControl.configuration.keyer_mode == SINGLE_PADDLE))
   {
     if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag)
-#if !defined M5CORE
+        //#if !defined M5CORE
         && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right))
-#endif
+        //#endif
     )
     {
       iambic_flag = 0;
@@ -3477,8 +3477,8 @@ void initialize_display()
 
 int paddle_pin_read(int pin_to_read)
 {
-
-  return digitalRead(pin_to_read);
+  return virtualPins.pins.at(pin_to_read)->digitalRead();
+  //return digitalRead(pin_to_read);
 }
 
 void service_millis_rollover()
