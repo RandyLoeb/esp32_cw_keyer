@@ -6,7 +6,7 @@ M5VirtualButtonPin::M5VirtualButtonPin(M5Btnslist btn, bool pressImpliesLow)
     this->btn = btn;
     this->_pressImpliesLow = pressImpliesLow;
 };
-int M5VirtualButtonPin::digitalRead()
+int M5VirtualButtonPin::digRead()
 {
     int isPressed = 0;
     //M5.update();

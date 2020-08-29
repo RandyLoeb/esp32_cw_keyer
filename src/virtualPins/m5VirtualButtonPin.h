@@ -14,5 +14,5 @@ class M5VirtualButtonPin : public VirtualPin
 public:
     M5VirtualButtonPin(M5Btnslist btn, bool pressImpliesLow = true);
 
-    virtual int digitalRead();
+    virtual int digRead();
 };

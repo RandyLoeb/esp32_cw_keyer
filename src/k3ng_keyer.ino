@@ -3485,7 +3485,7 @@ void initialize_display()
 
 int paddle_pin_read(int pin_to_read)
 {
-  return virtualPins.pinsets.at(pin_to_read)->digitalRead();
+  return virtualPins.pinsets.at(pin_to_read)->digRead();
   //return digitalRead(pin_to_read);
 }
 

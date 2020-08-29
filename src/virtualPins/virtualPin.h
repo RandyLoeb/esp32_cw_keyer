@@ -3,6 +3,6 @@
 class VirtualPin
 {
 public:
-    virtual int digitalRead();
+    virtual int digRead();
 };
 #endif

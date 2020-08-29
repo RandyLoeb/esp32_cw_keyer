@@ -6,12 +6,12 @@ class VirtualPinSet
 {
 public:
     std::vector<VirtualPin *> pins;
-    int digitalRead()
+    int digRead()
     {
         int ret = 1;
         for (VirtualPin *p : pins)
         {
-            ret = p->digitalRead();
+            ret = p->digRead();
             if (ret == 0)
             {
                 break;
