@@ -979,7 +979,7 @@ void tx_and_sidetone_key(int state)
     if ((configControl.configuration.sidetone_mode == SIDETONE_ON) || (keyer_machine_mode == KEYER_COMMAND_MODE) || ((configControl.configuration.sidetone_mode == SIDETONE_PADDLE_ONLY) && (sending_mode == MANUAL_SENDING)))
     {
 #if !defined(OPTION_SIDETONE_DIGITAL_OUTPUT_NO_SQUARE_WAVE)
-      Serial.println("About send tone #1");
+      //Serial.println("About send tone #1");
       toneControl.tone(configControl.configuration.hz_sidetone);
 #else
       if (sidetone_line)
@@ -3082,7 +3082,7 @@ void service_paddle_echo()
 
 #ifndef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
       //rel suspect byte might not be appropriate here?
-      Serial.println("About to call displayUpdate #1");
+      //Serial.println("About to call displayUpdate #1");
       displayControl.displayUpdate(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
       //display_scroll_print_char(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
 #else  //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS

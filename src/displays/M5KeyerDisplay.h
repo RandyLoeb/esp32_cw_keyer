@@ -1,5 +1,6 @@
 
 #include <string>
+#include <vector>
 #include "displayBase.h"
 class M5KeyerDisplay : public displayBase
 {
@@ -15,6 +16,14 @@ class M5KeyerDisplay : public displayBase
     int timedDelay = 0;
     int millisDelayStarted = 0;
     bool delayMode = false;
+    int _cursorX = 0;
+    int _cursorY = 0;
+    String _currentLine = "";
+    int _maxRows = 5;
+    int _Row = 0;
+    std::vector<String> _lines;
+    bool _cachedSpace = false;
+    virtual void displayUpdate(String character, bool safeScroll);
 
 public:
     virtual void initialize();

@@ -3,8 +3,98 @@
 #include "M5KeyerDisplay.h"
 #include "Free_Fonts.h"
 
+void M5KeyerDisplay::displayUpdate(String character, bool safeScroll)
+{
+    String testLine;
+    String testChar{character};
+    bool isSpace = false;
+
+    if (testChar == " ")
+    {
+        isSpace = true;
+        Serial.println("received a space");
+    }
+    /* int testWidth = 0;
+    testLine = this->_currentLine + testChar; */
+    M5.Lcd.setTextDatum(TL_DATUM);
+    M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+    M5.Lcd.setFreeFont(FF20);
+
+    //note this seems accurate whereas full strings not?
+    int testCharWidth = isSpace ? M5.Lcd.textWidth("Q") : M5.Lcd.textWidth(testChar);
+    bool willOverFlow = (_cursorX + testCharWidth) > M5.Lcd.width();
+    if (willOverFlow)
+    {
+        if (isSpace && !this->_cachedSpace)
+        {
+            //cache it and deal with it next time
+            this->_cachedSpace = true;
+        }
+        else
+        {
+            this->_cachedSpace = false;
+            if (!safeScroll)
+            {
+                String cpy = String(this->_currentLine);
+                Serial.print("lines before push:");
+                Serial.println(this->_lines.size());
+                this->_lines.push_back(cpy);
+                Serial.print("lines after push:");
+                Serial.println(this->_lines.size());
+            }
+            this->_currentLine = "";
+            if (safeScroll || (this->_Row < (this->_maxRows - 1)))
+            {
+                //we're not at the bottom yet so just push it in
+                this->_Row++;
+            }
+            else
+            {
+                //we're full so loose the oldest
+                Serial.print("lines before erase:");
+                Serial.println(this->_lines.size());
+                this->_lines.erase(this->_lines.begin());
+                Serial.print("lines after erase:");
+                Serial.println(this->_lines.size());
+                M5.Lcd.fillScreen(BLACK);
+                this->_Row = 0;
+                this->_cursorX = 0;
+
+                //now go through each line, char by char and refill the screen
+                for (String line : this->_lines)
+                {
+                    int length = line.length();
+                    for (int j = 0; j < length; j++)
+                    {
+
+                        this->displayUpdate(line.substring(j, j + 1), true);
+                    }
+                }
+                this->_Row = this->_maxRows - 1;
+            }
+            this->_cursorX = 0;
+            this->_currentLine = "";
+        }
+    }
+
+    if (!this->_cachedSpace)
+    {
+        if (!isSpace)
+        {
+            M5.Lcd.drawString(testChar, this->_cursorX, this->_Row * 50, GFXFF);
+        }
+        this->_cursorX += testCharWidth;
+        this->_currentLine += testChar;
+    }
+}
+
 void M5KeyerDisplay::displayUpdate(char character)
 {
+    if (this->_cachedSpace)
+    {
+        this->displayUpdate(" ", false);
+    }
+    this->displayUpdate(String(character), false);
 }
 void M5KeyerDisplay::initialize()
 {
