@@ -65,8 +65,14 @@ VirtualPins virtualPins;
 #include "virtualPins/m5VirtualButtonPin.h"
 M5VirtualButtonPin btnA{M5Btnslist::A};
 M5VirtualButtonPin btnC{M5Btnslist::C};
+#include "virtualPins/virtualArduinoStyleInputPin.h"
+VirtualArduinoStyleInputPin p2(2, VitualArduinoPinPull::VAPP_HIGH);
+VirtualArduinoStyleInputPin p5(5, VitualArduinoPinPull::VAPP_HIGH);
+
 VirtualPin &vpA{btnA};
 VirtualPin &vpC{btnC};
+VirtualPin &vp2{p2};
+VirtualPin &vp5{p5};
 
 #include "virtualPins/virtualPinSet.h"
 VirtualPinSet ditPaddles;
@@ -80,15 +86,18 @@ void setup()
 
 #if defined M5CORE
   M5.begin();
-  
+  Serial.begin(115200);
+  Serial.println("In setup()");
 #endif
+
   ditPaddles.pins.push_back(&vpA);
+  ditPaddles.pins.push_back(&vp2);
   dahPaddles.pins.push_back(&vpC);
+  dahPaddles.pins.push_back(&vp5);
+  
 
   virtualPins.pinsets.insert(std::make_pair(paddle_left, &ditPaddles));
   virtualPins.pinsets.insert(std::make_pair(paddle_right, &dahPaddles));
-  Serial.begin(115200);
-  Serial.println("In setup()");
 
 #ifdef ESPNOW_WIRELESS_KEYER
 #ifndef M5CORE
