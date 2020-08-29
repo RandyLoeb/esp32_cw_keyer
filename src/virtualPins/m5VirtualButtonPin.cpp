@@ -9,17 +9,18 @@ M5VirtualButtonPin::M5VirtualButtonPin(M5Btnslist btn, bool pressImpliesLow)
 int M5VirtualButtonPin::digitalRead()
 {
     int isPressed = 0;
-    M5.update();
+    //M5.update();
     switch (this->btn)
     {
     case M5Btnslist::A:
-        isPressed = M5.BtnA.isPressed();
+        isPressed = M5.BtnA.read();
         break;
     case M5Btnslist::B:
-        isPressed = M5.BtnB.isPressed();
+        isPressed = M5.BtnB.read();
+        //isPressed = M5.BtnB.isPressed();
         break;
     case M5Btnslist::C:
-        isPressed = M5.BtnC.isPressed();
+        isPressed = M5.BtnC.read();
         break;
     }
 
