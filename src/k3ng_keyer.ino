@@ -68,6 +68,10 @@ M5VirtualButtonPin btnC{M5Btnslist::C};
 VirtualPin &vpA{btnA};
 VirtualPin &vpC{btnC};
 
+#include "virtualPins/virtualPinSet.h"
+VirtualPinSet ditPaddles;
+VirtualPinSet dahPaddles;
+
 // move this later
 void lcd_center_print_timed_wpm();
 
@@ -76,9 +80,13 @@ void setup()
 
 #if defined M5CORE
   M5.begin();
+  
 #endif
-  virtualPins.pins.insert(std::make_pair(paddle_left, &vpA));
-  virtualPins.pins.insert(std::make_pair(paddle_right, &vpC));
+  ditPaddles.pins.push_back(&vpA);
+  dahPaddles.pins.push_back(&vpC);
+
+  virtualPins.pinsets.insert(std::make_pair(paddle_left, &ditPaddles));
+  virtualPins.pinsets.insert(std::make_pair(paddle_right, &dahPaddles));
   Serial.begin(115200);
   Serial.println("In setup()");
 
@@ -102,7 +110,7 @@ void setup()
 #endif
 
   initialize_default_modes();
-configControl.configuration.wpm=15;
+  configControl.configuration.wpm = 15;
   check_for_beacon_mode();
   initialize_display();
 }
@@ -121,8 +129,7 @@ void loop()
 #if !defined M5CORE
   wpmPot.checkPotentiometer(wpmSetCallBack);
 #endif
-  
-  
+
   check_for_dirty_configuration();
 
   check_paddles();
@@ -3478,7 +3485,7 @@ void initialize_display()
 
 int paddle_pin_read(int pin_to_read)
 {
-  return virtualPins.pins.at(pin_to_read)->digitalRead();
+  return virtualPins.pinsets.at(pin_to_read)->digitalRead();
   //return digitalRead(pin_to_read);
 }
 
