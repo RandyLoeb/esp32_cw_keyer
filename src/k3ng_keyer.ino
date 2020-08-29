@@ -102,7 +102,7 @@ void setup()
 #endif
 
   initialize_default_modes();
-configControl.configuration.wpm=15;
+  configControl.configuration.wpm = 15;
   check_for_beacon_mode();
   initialize_display();
 }
@@ -121,8 +121,7 @@ void loop()
 #if !defined M5CORE
   wpmPot.checkPotentiometer(wpmSetCallBack);
 #endif
-  
-  
+
   check_for_dirty_configuration();
 
   check_paddles();
