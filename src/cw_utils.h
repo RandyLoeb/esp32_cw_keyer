@@ -1,3 +1,47 @@
+
+#if defined(OPTION_PROSIGN_SUPPORT)
+char *convert_prosign(byte prosign_code)
+{
+
+  switch (prosign_code)
+  {
+  case PROSIGN_AA:
+    return ((char *)"AA");
+    break;
+  case PROSIGN_AS:
+    return ((char *)"AS");
+    break;
+  case PROSIGN_BK:
+    return ((char *)"BK");
+    break;
+  case PROSIGN_CL:
+    return ((char *)"CL");
+    break;
+  case PROSIGN_CT:
+    return ((char *)"CT");
+    break;
+  case PROSIGN_KN:
+    return ((char *)"KN");
+    break;
+  case PROSIGN_NJ:
+    return ((char *)"NJ");
+    break;
+  case PROSIGN_SK:
+    return ((char *)"SK");
+    break;
+  case PROSIGN_SN:
+    return ((char *)"SN");
+    break;
+  case PROSIGN_HH:
+    return ((char *)"HH");
+    break; // iz0rus
+  default:
+    return ((char *)"");
+    break;
+  }
+}
+#endif //OPTION_PROSIGN_SUPPORT
+
 int convert_cw_number_to_ascii(long number_in)
 {
 
@@ -286,3 +330,21 @@ int convert_cw_number_to_ascii(long number_in)
   }
 }
 
+String convert_cw_number_to_string(long number_in)
+{
+  char ascii = convert_cw_number_to_ascii(number_in);
+
+#if defined OPTION_PROSIGN_SUPPORT
+  //might be a special prosign
+  String prosign = String(convert_prosign(ascii));
+
+  if (prosign.length() > 0)
+  {
+    //it was a prosign
+    return "<" + prosign + ">";
+  }
+#endif
+
+  //just a regular character
+  return String(ascii);
+}

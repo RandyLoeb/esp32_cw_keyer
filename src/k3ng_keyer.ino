@@ -94,7 +94,6 @@ void setup()
   ditPaddles.pins.push_back(&vp2);
   dahPaddles.pins.push_back(&vpC);
   dahPaddles.pins.push_back(&vp5);
-  
 
   virtualPins.pinsets.insert(std::make_pair(paddle_left, &ditPaddles));
   virtualPins.pinsets.insert(std::make_pair(paddle_right, &dahPaddles));
@@ -3045,17 +3044,8 @@ void service_paddle_echo()
     {
 #if defined(OPTION_PROSIGN_SUPPORT)
 #ifndef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
-      byte_temp = convert_cw_number_to_ascii(paddle_echo_buffer);
-      if ((byte_temp > PROSIGN_START) && (byte_temp < PROSIGN_END))
-      {
-        prosign_temp = convert_prosign(byte_temp);
-        display_scroll_print_char(prosign_temp[0]);
-        display_scroll_print_char(prosign_temp[1]);
-      }
-      else
-      {
-        display_scroll_print_char(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
-      }
+      displayControl.displayUpdate(convert_cw_number_to_string(paddle_echo_buffer));
+
 #else  //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
       ascii_temp = byte(convert_cw_number_to_ascii(paddle_echo_buffer));
       if ((ascii_temp > PROSIGN_START) && (ascii_temp < PROSIGN_END))
