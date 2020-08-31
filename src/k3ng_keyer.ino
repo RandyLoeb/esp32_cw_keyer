@@ -1114,12 +1114,10 @@ void loop_element_lengths(float lengths, float additional_time_ms, int speed_wpm
     }
 #endif //FEATURE_SERIAL
 
-#if defined(FEATURE_DISPLAY)
     if ((ticks - (micros() - start)) > (10 * 1000))
     {
       displayControl.service_display();
     }
-#endif
 
     if ((configControl.configuration.keyer_mode != ULTIMATIC) && (configControl.configuration.keyer_mode != SINGLE_PADDLE))
     {
@@ -1281,9 +1279,7 @@ void speed_change(int change)
     speed_set(configControl.configuration.wpm + change);
   }
 
-#ifdef FEATURE_DISPLAY
   lcd_center_print_timed_wpm();
-#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -1296,9 +1292,7 @@ void speed_change_command_mode(int change)
     config_dirty = 1;
   }
 
-#ifdef FEATURE_DISPLAY
   displayControl.lcd_center_print_timed(String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
-#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -1415,7 +1409,7 @@ void sidetone_adj(int hz)
   {
     configControl.configuration.hz_sidetone = configControl.configuration.hz_sidetone + hz;
     config_dirty = 1;
-#if defined(FEATURE_DISPLAY) && defined(OPTION_MORE_DISPLAY_MSGS)
+#if defined(OPTION_MORE_DISPLAY_MSGS)
     if (LCD_COLUMNS < 9)
     {
       displayControl.lcd_center_print_timed(String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
@@ -3002,39 +2996,10 @@ void add_to_send_buffer(byte incoming_serial_byte)
   }
 }
 
-#ifdef FEATURE_PADDLE_ECHO
 void service_paddle_echo()
 {
-
-#ifdef DEBUG_LOOP
-  debug_serial_port->println(F("loop: entering service_paddle_echo"));
-#endif
-
+#ifdef FEATURE_PADDLE_ECHO
   static byte paddle_echo_space_sent = 1;
-  byte character_to_send = 0;
-  static byte no_space = 0;
-
-#if defined(OPTION_PROSIGN_SUPPORT)
-  byte byte_temp = 0;
-  static char *prosign_temp = (char *)"";
-#endif
-
-#if defined(FEATURE_DISPLAY) && defined(OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS)
-  byte ascii_temp = 0;
-#endif //defined(FEATURE_DISPLAY) && defined(OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS)
-
-#if defined(FEATURE_CW_COMPUTER_KEYBOARD)
-  static byte backspace_flag = 0;
-  if (paddle_echo_buffer == 111111)
-  {
-    paddle_echo_buffer_decode_time = 0;
-    backspace_flag = 1;
-  }    //this is a special hack to make repeating backspace work
-#endif //defined(FEATURE_CW_COMPUTER_KEYBOARD)
-
-#ifdef FEATURE_SD_CARD_SUPPORT
-  char temp_string[2];
-#endif
 
   if ((paddle_echo_buffer) && (millis() > paddle_echo_buffer_decode_time))
   {
@@ -3042,84 +3007,8 @@ void service_paddle_echo()
 #ifdef FEATURE_DISPLAY
     if (displayControl.lcd_paddle_echo)
     {
-#if defined(OPTION_PROSIGN_SUPPORT)
-#ifndef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
+
       displayControl.displayUpdate(convert_cw_number_to_string(paddle_echo_buffer));
-
-#else  //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
-      ascii_temp = byte(convert_cw_number_to_ascii(paddle_echo_buffer));
-      if ((ascii_temp > PROSIGN_START) && (ascii_temp < PROSIGN_END))
-      {
-        prosign_temp = convert_prosign(ascii_temp);
-        display_scroll_print_char(prosign_temp[0]);
-        display_scroll_print_char(prosign_temp[1]);
-      }
-      else
-      {
-        switch (ascii_temp)
-        {
-        case 220:
-          ascii_temp = 0;
-          break; // U_umlaut  (D, ...)
-        case 214:
-          ascii_temp = 1;
-          break; // O_umlaut  (D, SM, OH, ...)
-        case 196:
-          ascii_temp = 2;
-          break; // A_umlaut  (D, SM, OH, ...)
-        case 198:
-          ascii_temp = 3;
-          break; // AE_capital (OZ, LA)
-        case 216:
-          ascii_temp = 4;
-          break; // OE_capital (OZ, LA)
-        case 197:
-          ascii_temp = 6;
-          break; // AA_capital (OZ, LA, SM)
-        case 209:
-          ascii_temp = 7;
-          break; // N-tilde (EA)
-        }
-        display_scroll_print_char(ascii_temp);
-      }
-#endif //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
-
-#else // ! OPTION_PROSIGN_SUPPORT
-
-#ifndef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
-      //rel suspect byte might not be appropriate here?
-      //Serial.println("About to call displayUpdate #1");
-      displayControl.displayUpdate(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
-      //display_scroll_print_char(byte(convert_cw_number_to_ascii(paddle_echo_buffer)));
-#else  //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
-      ascii_temp = byte(convert_cw_number_to_ascii(paddle_echo_buffer));
-      switch (ascii_temp)
-      {
-      case 220:
-        ascii_temp = 0;
-        break; // U_umlaut  (D, ...)
-      case 214:
-        ascii_temp = 1;
-        break; // O_umlaut  (D, SM, OH, ...)
-      case 196:
-        ascii_temp = 2;
-        break; // A_umlaut  (D, SM, OH, ...)
-      case 198:
-        ascii_temp = 3;
-        break; // AE_capital (OZ, LA)
-      case 216:
-        ascii_temp = 4;
-        break; // OE_capital (OZ, LA)
-      case 197:
-        ascii_temp = 6;
-        break; // AA_capital (OZ, LA, SM)
-      case 209:
-        ascii_temp = 7;
-        break; // N-tilde (EA)
-      }
-      display_scroll_print_char(ascii_temp);
-#endif //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
-#endif //OPTION_PROSIGN_SUPPORT
     }
 #endif //FEATURE_DISPLAY
 
@@ -3132,17 +3021,6 @@ void service_paddle_echo()
   if ((paddle_echo_buffer == 0) && (millis() > (paddle_echo_buffer_decode_time + (float(1200 / configControl.configuration.wpm) * (configControl.configuration.length_wordspace - length_letterspace)))) && (!paddle_echo_space_sent))
   {
 
-#if defined(FEATURE_CW_COMPUTER_KEYBOARD)
-    if (!no_space)
-    {
-      Keyboard.write(' ');
-#ifdef DEBUG_CW_COMPUTER_KEYBOARD
-      debug_serial_port->println("service_paddle_echo: Keyboard.write: <space>");
-#endif //DEBUG_CW_COMPUTER_KEYBOARD
-    }
-    no_space = 0;
-#endif //defined(FEATURE_CW_COMPUTER_KEYBOARD)
-
 #ifdef FEATURE_DISPLAY
     if (displayControl.lcd_paddle_echo)
     {
@@ -3150,26 +3028,10 @@ void service_paddle_echo()
     }
 #endif //FEATURE_DISPLAY
 
-#if defined(FEATURE_SERIAL) && defined(FEATURE_COMMAND_LINE_INTERFACE)
-    if (cli_paddle_echo)
-    {
-
-      primary_serial_port->write(" ");
-
-#ifdef FEATURE_COMMAND_LINE_INTERFACE_ON_SECONDARY_PORT
-      secondary_serial_port->write(" ");
-#endif
-    }
-#endif //defined(FEATURE_SERIAL) && defined(FEATURE_COMMAND_LINE_INTERFACE)
-
-#ifdef FEATURE_SD_CARD_SUPPORT
-    sd_card_log(" ", 0);
-#endif
-
     paddle_echo_space_sent = 1;
   }
-}
 #endif //FEATURE_PADDLE_ECHO
+}
 
 void initialize_pins()
 {
@@ -3409,30 +3271,6 @@ void initialize_display()
 
 #ifdef FEATURE_DISPLAY
 
-#ifdef OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS // OZ1JHM provided code, cleaned up by LA3ZA
-  // Store bit maps, designed using editor at http://omerk.github.io/lcdchargen/
-
-  byte U_umlaut[8] = {B01010, B00000, B10001, B10001, B10001, B10001, B01110, B00000};   // 'Ü'
-  byte O_umlaut[8] = {B01010, B00000, B01110, B10001, B10001, B10001, B01110, B00000};   // 'Ö'
-  byte A_umlaut[8] = {B01010, B00000, B01110, B10001, B11111, B10001, B10001, B00000};   // 'Ä'
-  byte AE_capital[8] = {B01111, B10100, B10100, B11110, B10100, B10100, B10111, B00000}; // 'Æ'
-  byte OE_capital[8] = {B00001, B01110, B10011, B10101, B11001, B01110, B10000, B00000}; // 'Ø'
-  byte empty[8] = {B00000, B00000, B00000, B00000, B00000, B00000, B00000, B00000};      // empty
-  byte AA_capital[8] = {B00100, B00000, B01110, B10001, B11111, B10001, B10001, B00000}; // 'Å'
-  byte Ntilde[8] = {B01101, B10010, B00000, B11001, B10101, B10011, B10001, B00000};     // 'Ñ'
-
-  //     upload 8 charaters to the lcd
-  lcd.createChar(0, U_umlaut);   //     German
-  lcd.createChar(1, O_umlaut);   //     German, Swedish
-  lcd.createChar(2, A_umlaut);   //     German, Swedish
-  lcd.createChar(3, AE_capital); //   Danish, Norwegian
-  lcd.createChar(4, OE_capital); //   Danish, Norwegian
-  lcd.createChar(5, empty);      //        For some reason this one needs to display nothing - otherwise it will display in pauses on serial interface
-  lcd.createChar(6, AA_capital); //   Danish, Norwegian, Swedish
-  lcd.createChar(7, Ntilde);     //       Spanish
-  lcd.clear();                   // you have to ;o)
-#endif                           //OPTION_DISPLAY_NON_ENGLISH_EXTENSIONS
-
   if (displayControl.getColsCount() < 9)
   {
     displayControl.lcd_center_print_timed("K3NGKeyr", 0, 4000);
@@ -3464,14 +3302,14 @@ void initialize_display()
     byte oldSideTone = configControl.configuration.sidetone_mode;
     key_tx = 0;
     configControl.configuration.sidetone_mode = SIDETONE_ON;
-#ifdef FEATURE_DISPLAY
+
     displayControl.lcd_center_print_timed("h", 1, 4000);
-#endif
+
     Serial.println("About to say HI...");
     send_char('H', KEYER_NORMAL);
-#ifdef FEATURE_DISPLAY
+
     displayControl.lcd_center_print_timed("hi", 1, 4000);
-#endif
+
     send_char('I', KEYER_NORMAL);
     configControl.configuration.sidetone_mode = oldSideTone;
     key_tx = oldKey;
@@ -3485,7 +3323,6 @@ void initialize_display()
 int paddle_pin_read(int pin_to_read)
 {
   return virtualPins.pinsets.at(pin_to_read)->digRead();
-  //return digitalRead(pin_to_read);
 }
 
 void service_millis_rollover()
@@ -3513,18 +3350,16 @@ byte is_visible_character(byte char_in)
   }
 }
 
-#ifdef FEATURE_DISPLAY
 void lcd_center_print_timed_wpm()
 {
 
 #if defined(OPTION_ADVANCED_SPEED_DISPLAY)
-  lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm * 5) + " cpm", 0, default_display_msg_delay);
-  lcd_center_print_timed(String(1200 / configuration.wpm) + ":" + (((1200 / configuration.wpm) * configuration.dah_to_dit_ratio) / 100) + "ms 1:" + (float(configuration.dah_to_dit_ratio) / 100.00), 1, default_display_msg_delay);
+  displayControl.lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm * 5) + " cpm", 0, default_display_msg_delay);
+  displayControl.lcd_center_print_timed(String(1200 / configuration.wpm) + ":" + (((1200 / configuration.wpm) * configuration.dah_to_dit_ratio) / 100) + "ms 1:" + (float(configuration.dah_to_dit_ratio) / 100.00), 1, default_display_msg_delay);
 #else
   displayControl.lcd_center_print_timed(String(configuration.wpm) + " wpm", 0, default_display_msg_delay);
 #endif
 }
-#endif
 
 void speed_set(int wpm_set)
 {
@@ -3546,9 +3381,7 @@ void speed_set(int wpm_set)
     update_led_ring();
 #endif //FEATURE_LED_RING
 
-#ifdef FEATURE_DISPLAY
     lcd_center_print_timed_wpm();
-#endif
   }
 }
 
@@ -3559,10 +3392,9 @@ void command_speed_set(int wpm_set)
     configuration.wpm_command_mode = wpm_set;
     config_dirty = 1;
 
-#ifdef FEATURE_DISPLAY
     displayControl.lcd_center_print_timed("Cmd Spd " + String(configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
-#endif // FEATURE_DISPLAY
-  }    // end if
+
+  } // end if
 } // end command_speed_set
 
 void wpmSetCallBack(byte pot_value_wpm_read)
