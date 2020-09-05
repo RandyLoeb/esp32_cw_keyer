@@ -32,4 +32,8 @@ public:
     virtual void lcd_center_print_timed(String lcd_print_string, byte row_number, unsigned int duration);
     virtual int getColsCount();
     virtual int getRowsCount();
+    virtual bool isShowingTimedDisplay()
+    {
+        return delayMode;
+    }
 };

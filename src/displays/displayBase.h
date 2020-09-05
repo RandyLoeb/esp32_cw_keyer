@@ -19,15 +19,18 @@ public:
             this->displayUpdate(str.charAt(i));
         }
     }
-    virtual void initialize()
-    {
+    virtual void initialize(){
         //Serial.println("initialize in displayBase...not good...");
     };
     virtual void service_display(){
         //Serial.println("In service_display displayBase...not good...");
     };
-    virtual void lcd_center_print_timed(String lcd_print_string, byte row_number, unsigned int duration)
-    {
+    virtual void lcd_center_print_timed(String lcd_print_string, byte row_number, unsigned int duration){
         //Serial.println("In lcd_center_print_timed displayBase...not good...");
     };
+
+    virtual bool isShowingTimedDisplay()
+    {
+        return false;
+    }
 };

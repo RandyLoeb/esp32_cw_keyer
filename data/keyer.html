@@ -1,0 +1,110 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="wifiadmin.css" />
+  </head>
+  <body>
+    <div id="logo"></div>
+    <div></div>
+    <div id="status"></div>
+
+    <br />
+
+    <div id="wifiscantablediv"></div>
+
+    <div id="unseenNetwork" class="divTable" style="display: none">
+      <div class="divTableHeading" id="otherHead">
+        <div class="divTableRow">
+          <div>&nbsp;&nbsp;Unseen Network:</div>
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center">
+        <div class="divTableCell">
+          <input
+            id="SSIDinput"
+            class="myInput"
+            size="16"
+            type="text"
+            id="other"
+          />
+          <button
+            id="unseenSSIDButton"
+            class="myButton"
+            data-unseenSSID="true"
+            data-networkType="type4"
+            data-isknown="false"
+          >
+            Join
+          </button>
+        </div>
+      </div>
+    </div>
+    <br />
+
+    <div id="rescanDiv" style="display: none">
+      <button data-isrescan="true" id="rescanButton" class="myButton">
+        Scan for networks
+      </button>
+    </div>
+
+    <div id="optionsDiv" class="divTable SSIDtable" style="display: none">
+      <div class="divTableBody">
+        <div class="divTableRow">
+          <div class="divTableCell">
+            <input id="passwordBox" class="myInput" type="password" />
+          </div>
+        </div>
+        <div class="divTableRow">
+          <div class="divTableCell">
+            <button
+              id="cancelButton"
+              data-cancelButton="true"
+              class="myButton"
+              style="display: none"
+            >
+              Cancel
+            </button>
+            <button
+              id="forgetButton"
+              data-forgetButton="true"
+              class="myButton"
+              style="display: none"
+            >
+              Forget
+            </button>
+            <button
+              id="joinButton"
+              data-joinButton="True"
+              class="myButton"
+              style="display: none"
+            >
+              Join
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="confirmForgetDiv" class="divTable SSIDtable" style="display: none">
+      <div class="divTableBody">
+        <div class="divTableRow">
+          <div class="divTableCell">
+            <button
+              id="cancelForgetButton"
+              data-cancelButton="True"
+              class="myButton"
+            >
+              Cancel
+            </button>
+            <button
+              id="confirmForgetButton"
+              data-confirmremove="true"
+              class="myButton"
+            >
+              Forget
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript" src="wifiadmin.js"></script>
+  </body>
+</html>

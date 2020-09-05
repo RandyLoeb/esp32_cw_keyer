@@ -81,6 +81,12 @@ VirtualPinSet dahPaddles;
 // move this later
 void lcd_center_print_timed_wpm();
 
+#include "webServer/wifiUtils.h"
+WifiUtils wifiUtils{};
+
+#include "webServer/keyerWebServer.h"
+KeyerWebServer *keyerWebServer;
+
 void setup()
 {
 
@@ -89,6 +95,8 @@ void setup()
   Serial.begin(115200);
   Serial.println("In setup()");
 #endif
+
+  keyerWebServer = new KeyerWebServer(&wifiUtils);
 
   ditPaddles.pins.push_back(&vpA);
   ditPaddles.pins.push_back(&vp2);
@@ -121,6 +129,10 @@ void setup()
   configControl.configuration.wpm = 15;
   check_for_beacon_mode();
   initialize_display();
+  wifiUtils.initialize();
+
+  
+  keyerWebServer->start();
 }
 
 // --------------------------------------------------------------------------------------------
@@ -147,6 +159,8 @@ void loop()
   service_paddle_echo();
 
   service_millis_rollover();
+  wifiUtils.processNextDNSRequest();
+  keyerWebServer->handleClient();
 }
 
 byte service_tx_inhibit_and_pause()

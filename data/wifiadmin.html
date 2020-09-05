@@ -1,0 +1,133 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="wifiadmin.css" />
+    <style>
+      /* .lockedSSID style is in here because too many PNGs in any one file - hmtl, css, js - keep it from loading */
+      .lockedSSID {
+        display: table-cell;
+        background-repeat: no-repeat;
+        background-position: center;
+        /* created from lock-icon.png */
+        background-image: url("data:image/png;base64,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");
+      }
+      .notFoundSSID {
+        display: table-cell;
+        background-repeat: no-repeat;
+        background-position: center;
+        /* created from qmark.png */
+        background-image: url("data:image/png;base64,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");
+      }
+    </style>
+  </head>
+  <body>
+    <div id="logo">
+      
+    </div>
+    <div></div>
+    <div id="status"></div>
+
+    <br />
+
+    <div id="wifiscantablediv"></div>
+
+    <div id="unseenNetwork" class="divTable" style="display: none;">
+      <div class="divTableHeading" id="otherHead">
+        <div class="divTableRow">
+          <div>&nbsp;&nbsp;Unseen Network:</div>
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center;">
+        <div class="divTableCell">
+          <input
+            id="SSIDinput"
+            class="myInput"
+            size="16"
+            type="text"
+            id="other"
+          />
+          <button
+            id="unseenSSIDButton"
+            class="myButton"
+            data-unseenSSID="true"
+            data-networkType="type4"
+            data-isknown="false"
+          >
+            Join
+          </button>
+        </div>
+      </div>
+    </div>
+    <br />
+
+    <div id="rescanDiv" style="display: none;">
+      <button data-isrescan="true" id="rescanButton" class="myButton">
+        Scan for networks
+      </button>
+    </div>
+
+    <div id="optionsDiv" class="divTable SSIDtable" style="display: none;">
+      <div class="divTableBody">
+        <div class="divTableRow">
+          <div class="divTableCell">
+            <input id="passwordBox" class="myInput" type="password" />
+          </div>
+        </div>
+        <div class="divTableRow">
+          <div class="divTableCell">
+            <button
+              id="cancelButton"
+              data-cancelButton="true"
+              class="myButton"
+              style="display: none;"
+            >
+              Cancel
+            </button>
+            <button
+              id="forgetButton"
+              data-forgetButton="true"
+              class="myButton"
+              style="display: none;"
+            >
+              Forget
+            </button>
+            <button
+              id="joinButton"
+              data-joinButton="True"
+              class="myButton"
+              style="display: none;"
+            >
+              Join
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="confirmForgetDiv"
+      class="divTable SSIDtable"
+      style="display: none;"
+    >
+      <div class="divTableBody">
+        <div class="divTableRow">
+          <div class="divTableCell">
+            <button
+              id="cancelForgetButton"
+              data-cancelButton="True"
+              class="myButton"
+            >
+              Cancel
+            </button>
+            <button
+              id="confirmForgetButton"
+              data-confirmremove="true"
+              class="myButton"
+            >
+              Forget
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript" src="wifiadmin.js"></script>
+  </body>
+</html>
