@@ -1,4 +1,5 @@
-#include <WebServer.h> //Local WebServer used to serve the configuration portal
+//#include <WebServer.h> //Local WebServer used to serve the configuration portal
+#include "ESPAsyncWebServer.h"
 #include "SPIFFS.h"
 #include "wifiUtils.h"
 #include "keyerWebServer.h"
@@ -13,85 +14,127 @@ KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils) : server(80)
 void KeyerWebServer::handleRoot()
 {
     Serial.println("hadnling root...");
-    this->_wifiUtils->showJson();
+    //this->_wifiUtils->showJson();
     //_MS_SINCE_LAST_WEB = 0;
-    server.send(200, "text/html", getWifiAdminPage()); // Send HTTP status 200 (Ok) and send some text to the browser/client
+    //server.send(200, "text/html", getWifiAdminPage()); // Send HTTP status 200 (Ok) and send some text to the browser/client
 }
 
 void KeyerWebServer::handleRootCss()
 {
     //_MS_SINCE_LAST_WEB = 0;
-    server.send(200, "text/css", getWifiAdminCSS());
+    //server.send(200, "text/css", getWifiAdminCSS());
 }
 
 void KeyerWebServer::handleRootJS()
 {
     //_MS_SINCE_LAST_WEB = 0;
-    server.send(200, "text/javascript", getWifiAdminJS());
+    //server.send(200, "text/javascript", getWifiAdminJS());
 }
 
 void KeyerWebServer::handleNotFound()
 {
     //_MS_SINCE_LAST_WEB = 0;
     Serial.println("Not found reached.");
-    server.sendHeader("Location", "http://" + WiFi.softAPIP().toString() + "/");
-    server.send(302, "text/plain", "");
-    server.client().stop();
+    //server.sendHeader("Location", "http://" + WiFi.softAPIP().toString() + "/");
+    //server.send(302, "text/plain", "");
+    //server.client().stop();
 }
 
 void KeyerWebServer::handleReboot()
 {
     //_MS_SINCE_LAST_WEB = 0;
-    server.send(200, "text/html", "rebooting");
-    ESP.restart();
+    //server.send(200, "text/html", "rebooting");
+    //ESP.restart();
 }
 
 void KeyerWebServer::handleWiFiScan()
 {
-    String scanJson = this->_wifiUtils->getWiFiScan();
-    server.send(200, "application/json", scanJson);
+    //String scanJson = this->_wifiUtils->getWiFiScan();
+    //server.send(200, "application/json", scanJson);
 }
 
 void KeyerWebServer::handleUpdateAp()
 {
-    Serial.println(server.arg(0));
-    this->_wifiUtils->updateAp(server.arg(0));
-    server.send(200, "text/html", "ok");
+    //Serial.println(server.arg(0));
+    //this->_wifiUtils->updateAp(server.arg(0));
+    //server.send(200, "text/html", "ok");
 }
 
 void KeyerWebServer::handleForgetAp()
 {
-    this->_wifiUtils->forgetAp(server.arg(0));
-    server.send(200, "text/html", "ok");
+    //this->_wifiUtils->forgetAp(server.arg(0));
+    //server.send(200, "text/html", "ok");
 }
 
 void KeyerWebServer::initializeServer()
 {
-    server.enableCORS(true);
-    server.enableCrossOrigin(true);
+    //server.enableCORS(true);
+    //server.enableCrossOrigin(true);
     //WifiUtils * myutils = this->_wifiUtils;
-    server.on("/", [this]() { this->handleRoot(); }); // Call the 'handleRoot' function when a client requests URI "/"
-    server.on("/wifiadmin.html", [this]() { this->handleRoot(); });
-    server.on("/wifiadmin.css", [this]() { this->handleRootCss(); });
-    server.on("/wifiadmin.js", [this]() { this->handleRootJS(); });
+    server.on("/", HTTP_GET, [this](AsyncWebServerRequest *request) { request->send(SPIFFS, "/wifiadmin.html", "text/html"); }); // Call the 'handleRoot' function when a client requests URI "/"
+    server.on("/wifiadmin.html", HTTP_GET, [this](AsyncWebServerRequest *request) { request->send(SPIFFS, "/wifiadmin.html", "text/html"); });
+    server.on("/wifiadmin.css", HTTP_GET, [this](AsyncWebServerRequest *request) { request->send(SPIFFS, "/wifiadmin.css", "text/css"); });
+    server.on("/wifiadmin.js", HTTP_GET, [this](AsyncWebServerRequest *request) { request->send(SPIFFS, "/wifiadmin.js", "text/javascript"); });
 
-    server.on("/wifiscan", [this]() { this->handleWiFiScan(); });
-    server.on("/updateap", [this]() { this->handleUpdateAp(); });
-    server.on("/forgetap", [this]() { this->handleForgetAp(); });
-    server.on("/reboot", [this]() { this->handleReboot(); });
-    server.onNotFound([this]() { this->handleNotFound(); });
+    server.on("/wifiscan", [this](AsyncWebServerRequest *request) {
+        String scanJson = this->_wifiUtils->getWiFiScan();
+        request->send(200, "application/json", scanJson); });
+
+    server.on("/updateap", HTTP_POST, [this](AsyncWebServerRequest *request){
+    //nothing and dont remove it
+  }, NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+     String s = String((const char*)data);
+  
+      this->_wifiUtils->updateAp(s);
+        request->send(200, "text/html", "ok"); });
+  
+    server.on("/forgetap",HTTP_POST, [this](AsyncWebServerRequest *request) { 
+        //nothing and dont remove it
+  }, NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+     String s = String((const char*)data);
+  
+      this->_wifiUtils->forgetAp(s);
+        request->send(200, "text/html", "ok"); });
+    server.on("/reboot", [this](AsyncWebServerRequest *request) {
+         request->send(200, "text/html", "rebooting");
+        ESP.restart(); });
+    server.on("/keyer.html", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        request->send(SPIFFS, "/keyer.html", "text/html");
+    });
+
+    server.on("/jquery-3.5.1.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        request->send(SPIFFS, "/jquery-3.5.1.min.js", "text/javascript");
+    });
+    server.on("/knockout-3.5.1.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        request->send(SPIFFS, "/knockout-3.5.1.min.js", "text/javascript");
+    });
+    server.on("/axios.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        request->send(SPIFFS, "/axios.min.js", "text/javascript");
+    });
+    server.on("/keyer.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        request->send(SPIFFS, "/keyer.js", "text/javascript");
+    });
+    server.onNotFound([this](AsyncWebServerRequest *request) { request->redirect("http://" + WiFi.softAPIP().toString() + "/"); });
 }
 
 String KeyerWebServer::getPage(String page)
 {
-    File f = SPIFFS.open(page, FILE_READ);
     String pageBody = "";
-    while (f.available())
+    File f = SPIFFS.open(page, FILE_READ);
+    if (!f)
     {
-        pageBody = pageBody + f.readString();
+        Serial.println("problem opening " + page);
     }
-    f.close();
-    //Serial.println(pageBody);
+    else
+    {
+
+        while (f.available())
+        {
+            pageBody = pageBody + f.readString();
+        }
+        f.close();
+        //Serial.println(pageBody);
+    }
     return pageBody;
 }
 String KeyerWebServer::getWifiAdminPage()
@@ -111,5 +154,5 @@ String KeyerWebServer::getWifiAdminJS()
 
 void KeyerWebServer::handleClient()
 {
-    this->server.handleClient();
+    //this->server.handleClient();
 }

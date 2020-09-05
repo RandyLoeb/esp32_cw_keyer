@@ -1,11 +1,13 @@
 #ifndef KEYERWEBSERVER_H
 #define KEYERWEBSERVER_H
-#include <WebServer.h> //Local WebServer used to serve the configuration portal
+//#include <WebServer.h> //Local WebServer used to serve the configuration portal
+#include "ESPAsyncWebServer.h"
 #include "SPIFFS.h"
 #include "wifiUtils.h"
 class KeyerWebServer
 {
-    WebServer server;
+    //WebServer server;
+    AsyncWebServer server;
     //WifiUtils *_wifiUtils;
     void handleRoot();
 

@@ -1,6 +1,9 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="wifiadmin.css" />
+    <script type="text/javascript" src="jquery-3.5.1.min.js"></script>
+    <script type="text/javascript" src="knockout-3.5.1.min.js"></script>
+    <script type="text/javascript" src="keyer.js"></script>
   </head>
   <body>
     <div id="logo"></div>
@@ -11,10 +14,10 @@
 
     <div id="wifiscantablediv"></div>
 
-    <div id="unseenNetwork" class="divTable" style="display: none">
+    <div id="unseenNetwork" class="divTable">
       <div class="divTableHeading" id="otherHead">
         <div class="divTableRow">
-          <div>&nbsp;&nbsp;Unseen Network:</div>
+          <div>&nbsp;&nbsp;Text to key:</div>
         </div>
       </div>
       <div class="divTableRow" style="text-align: center">
@@ -25,6 +28,7 @@
             size="16"
             type="text"
             id="other"
+            data-bind="value: keyerText"
           />
           <button
             id="unseenSSIDButton"
@@ -33,78 +37,18 @@
             data-networkType="type4"
             data-isknown="false"
           >
-            Join
+            Key
           </button>
         </div>
       </div>
     </div>
     <br />
-
-    <div id="rescanDiv" style="display: none">
-      <button data-isrescan="true" id="rescanButton" class="myButton">
-        Scan for networks
-      </button>
-    </div>
-
-    <div id="optionsDiv" class="divTable SSIDtable" style="display: none">
-      <div class="divTableBody">
-        <div class="divTableRow">
-          <div class="divTableCell">
-            <input id="passwordBox" class="myInput" type="password" />
-          </div>
-        </div>
-        <div class="divTableRow">
-          <div class="divTableCell">
-            <button
-              id="cancelButton"
-              data-cancelButton="true"
-              class="myButton"
-              style="display: none"
-            >
-              Cancel
-            </button>
-            <button
-              id="forgetButton"
-              data-forgetButton="true"
-              class="myButton"
-              style="display: none"
-            >
-              Forget
-            </button>
-            <button
-              id="joinButton"
-              data-joinButton="True"
-              class="myButton"
-              style="display: none"
-            >
-              Join
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="confirmForgetDiv" class="divTable SSIDtable" style="display: none">
-      <div class="divTableBody">
-        <div class="divTableRow">
-          <div class="divTableCell">
-            <button
-              id="cancelForgetButton"
-              data-cancelButton="True"
-              class="myButton"
-            >
-              Cancel
-            </button>
-            <button
-              id="confirmForgetButton"
-              data-confirmremove="true"
-              class="myButton"
-            >
-              Forget
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <script type="text/javascript" src="wifiadmin.js"></script>
+    <script>
+      $(function () {
+        console.log("ready!");
+        ko.applyBindings(myViewModel);
+      });
+    </script>
+    <!-- <script type="text/javascript" src="wifiadmin.js"></script> -->
   </body>
 </html>
