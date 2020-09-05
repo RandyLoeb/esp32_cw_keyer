@@ -3,12 +3,15 @@
 #include "SPIFFS.h"
 #include "wifiUtils.h"
 #include "keyerWebServer.h"
+#include <queue>
+#include <string>
 
-KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils) : server(80)
+KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue) : server(80)
 {
     Serial.println("got addr of wifi utils");
     //Serial.println(wifiUtils);
     this->_wifiUtils = wifiUtils;
+    this->_textQueue = textQueue;
 };
 
 void KeyerWebServer::handleRoot()
@@ -80,17 +83,16 @@ void KeyerWebServer::initializeServer()
         String scanJson = this->_wifiUtils->getWiFiScan();
         request->send(200, "application/json", scanJson); });
 
-    server.on("/updateap", HTTP_POST, [this](AsyncWebServerRequest *request){
-    //nothing and dont remove it
-  }, NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+    //nothing in first lambda blocks, and dont remove it
+    server.on(
+        "/updateap", HTTP_POST, [this](AsyncWebServerRequest *request) {}, NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
      String s = String((const char*)data);
   
       this->_wifiUtils->updateAp(s);
         request->send(200, "text/html", "ok"); });
-  
-    server.on("/forgetap",HTTP_POST, [this](AsyncWebServerRequest *request) { 
-        //nothing and dont remove it
-  }, NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+
+    server.on(
+        "/forgetap", HTTP_POST, [this](AsyncWebServerRequest *request) {}, NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
      String s = String((const char*)data);
   
       this->_wifiUtils->forgetAp(s);
@@ -114,6 +116,18 @@ void KeyerWebServer::initializeServer()
     server.on("/keyer.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
         request->send(SPIFFS, "/keyer.js", "text/javascript");
     });
+
+    server.on(
+        "/textsubmit", HTTP_POST, [this](AsyncWebServerRequest *request) {},
+        NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+        String jsonIn = String((const char*)data);
+        DynamicJsonDocument jBuffer(4096);
+        deserializeJson(jBuffer, jsonIn);
+
+        String textIn = jBuffer["text"];
+        this->_textQueue->push(textIn);
+        request->send(200, "text/html", "ok"); });
+
     server.onNotFound([this](AsyncWebServerRequest *request) { request->redirect("http://" + WiFi.softAPIP().toString() + "/"); });
 }
 

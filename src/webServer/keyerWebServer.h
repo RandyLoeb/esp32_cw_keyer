@@ -4,6 +4,8 @@
 #include "ESPAsyncWebServer.h"
 #include "SPIFFS.h"
 #include "wifiUtils.h"
+#include <queue>
+#include <string>
 class KeyerWebServer
 {
     //WebServer server;
@@ -35,7 +37,8 @@ class KeyerWebServer
 
 public:
     WifiUtils *_wifiUtils;
-    KeyerWebServer(WifiUtils *wifiUtils);
+    std::queue<String> *_textQueue;
+    KeyerWebServer(WifiUtils *wifiUtils,std::queue<String> *textQueue);
 
     void start()
     {

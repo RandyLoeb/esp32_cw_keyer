@@ -3,6 +3,8 @@
 #define eeprom_magic_number 35 // you can change this number to have the unit re-initialize EEPROM
 
 #include <stdio.h>
+#include <queue>
+#include <string>
 #include "keyer_hardware.h"
 #include "keyer_features_and_options.h"
 #include "keyer.h"
@@ -87,6 +89,7 @@ WifiUtils wifiUtils{};
 #include "webServer/keyerWebServer.h"
 KeyerWebServer *keyerWebServer;
 
+std::queue<String> injectedText;
 void setup()
 {
 
@@ -96,7 +99,9 @@ void setup()
   Serial.println("In setup()");
 #endif
 
-  keyerWebServer = new KeyerWebServer(&wifiUtils);
+  //the web server needs a wifiutils object to handle wifi config
+  //also needs place to inject text
+  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText);
 
   ditPaddles.pins.push_back(&vpA);
   ditPaddles.pins.push_back(&vp2);
@@ -131,7 +136,6 @@ void setup()
   initialize_display();
   wifiUtils.initialize();
 
-  
   keyerWebServer->start();
 }
 
@@ -161,6 +165,7 @@ void loop()
   service_millis_rollover();
   wifiUtils.processNextDNSRequest();
   keyerWebServer->handleClient();
+  service_injected_text();
 }
 
 byte service_tx_inhibit_and_pause()
@@ -3007,6 +3012,22 @@ void add_to_send_buffer(byte incoming_serial_byte)
   }
   else
   {
+  }
+}
+
+void service_injected_text()
+{
+  while (!injectedText.empty())
+  {
+    char x;
+    String s = injectedText.front();
+    s.toUpperCase();
+    for (int i = 0; i < s.length(); i++)
+    {
+      x = s.charAt(i);
+      add_to_send_buffer(x);
+    }
+    injectedText.pop();
   }
 }
 
