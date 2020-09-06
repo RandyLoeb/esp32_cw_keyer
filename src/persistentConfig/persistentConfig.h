@@ -1,4 +1,7 @@
+#ifndef PERSISTENTCONFIG_H
+#define PERSISTENTCONFIG_H
 #include <Arduino.h>
+#include <string>
 #define PRIMARY_SERIAL_CLS HardwareSerial
 class persistentConfig
 {
@@ -52,8 +55,13 @@ public:
 
     } configuration;
 
-    virtual void initialize(PRIMARY_SERIAL_CLS *loggingPortToUse)
-    {
-    }
-    virtual void save(){};
+    virtual void initialize(PRIMARY_SERIAL_CLS *loggingPortToUse);
+
+    virtual void save();
+
+    String
+    getJsonStringFromConfiguration();
+
+    byte config_dirty = 0;
 };
+#endif

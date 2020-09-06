@@ -42,12 +42,67 @@
           </button>
         </div>
       </div>
+      <div class="divTableHeading" id="otherHead">
+        <div class="divTableRow">
+          <div>&nbsp;&nbsp;WPM:</div>
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center">
+        <div class="divTableCell">
+          <input
+            id="wpm"
+            class="myInput"
+            size="16"
+            type="text"
+            id="other"
+            data-bind="value: wpm"
+          />
+          <button
+            id="wpmButton"
+            class="myButton"
+            data-unseenSSID="true"
+            data-networkType="type4"
+            data-isknown="false"
+            data-bind="click: onWpm"
+          >
+            Set WPM
+          </button>
+        </div>
+      </div>
+      <div class="divTableHeading" id="otherHead">
+        <div class="divTableRow">
+          <div>&nbsp;&nbsp;WPM Farnsworth:</div>
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center">
+        <div class="divTableCell">
+          <input
+            id="wpm_farnsworth"
+            class="myInput"
+            size="16"
+            type="text"
+            id="other"
+            data-bind="value: wpm_farnsworth"
+          />
+          <button
+            id="wpmFarnsworthButton"
+            class="myButton"
+            data-unseenSSID="true"
+            data-networkType="type4"
+            data-isknown="false"
+            data-bind="click: onWpmFarnsworth"
+          >
+            Set WPM Farnsworth
+          </button>
+        </div>
+      </div>
     </div>
     <br />
     <script>
       $(function () {
         console.log("ready!");
         ko.applyBindings(myViewModel);
+        myViewModel.getConfig();
       });
     </script>
     <!-- <script type="text/javascript" src="wifiadmin.js"></script> -->

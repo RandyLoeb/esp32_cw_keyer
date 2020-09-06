@@ -65,7 +65,7 @@ byte dah_buffer = 0;                    // used for buffering paddle hits in iam
 byte button0_buffer = 0;
 byte being_sent = 0; // SENDING_NOTHING, SENDING_DIT, SENDING_DAH
 byte key_state = 0;  // 0 = key up, 1 = key down
-byte config_dirty = 0;
+//byte config_dirty = 0;
 unsigned long ptt_time = 0;
 byte ptt_line_activated = 0;
 byte speed_mode = SPEED_NORMAL;

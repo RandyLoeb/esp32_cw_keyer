@@ -2,16 +2,18 @@
 #include "ESPAsyncWebServer.h"
 #include "SPIFFS.h"
 #include "wifiUtils.h"
+#include "persistentConfig/persistentConfig.h"
 #include "keyerWebServer.h"
 #include <queue>
 #include <string>
 
-KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue) : server(80)
+KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf) : server(80)
 {
     Serial.println("got addr of wifi utils");
     //Serial.println(wifiUtils);
     this->_wifiUtils = wifiUtils;
     this->_textQueue = textQueue;
+    this->_persistentConfig = persistentConf;
 };
 
 void KeyerWebServer::handleRoot()
@@ -127,6 +129,43 @@ void KeyerWebServer::initializeServer()
         String textIn = jBuffer["text"];
         this->_textQueue->push(textIn);
         request->send(200, "text/html", "ok"); });
+
+    server.on("/getconfig", [this](AsyncWebServerRequest *request) {
+        String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();
+        request->send(200, "application/json", scanJson); });
+
+    server.on(
+        "/setconfig", HTTP_POST, [this](AsyncWebServerRequest *request) {},
+        NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+        String jsonIn = String((const char*)data);
+        Serial.println(jsonIn);
+        DynamicJsonDocument jBuffer(4096);
+        deserializeJson(jBuffer, jsonIn);
+        bool debugMatched = false;
+        JsonArray settingsAry = jBuffer["settings"].as<JsonArray>();
+        for (JsonObject settingsObj : settingsAry) {
+            String settingName = settingsObj["name"].as<String>();
+            
+            if (settingName=="wpm")
+            {
+                Serial.println("setting for wpm matched!");
+                this->_persistentConfig->configuration.wpm=settingsObj["value"].as<int>();
+                debugMatched=true;
+            }
+            if (settingName=="wpm_farnsworth")
+            {
+                this->_persistentConfig->configuration.wpm_farnsworth=settingsObj["value"].as<int>();
+                debugMatched=true;
+            }
+                
+            
+
+        }
+        Serial.print("settings matched?"); Serial.println(debugMatched);
+        this->_persistentConfig->config_dirty=1;
+        //send the config
+        String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();
+        request->send(200, "application/json", scanJson); });
 
     server.onNotFound([this](AsyncWebServerRequest *request) { request->redirect("http://" + WiFi.softAPIP().toString() + "/"); });
 }

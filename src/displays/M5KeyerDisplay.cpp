@@ -12,7 +12,7 @@ void M5KeyerDisplay::displayUpdate(String character, bool safeScroll)
     if (testChar == " ")
     {
         isSpace = true;
-        Serial.println("received a space");
+        //Serial.println("received a space");
     }
     /* int testWidth = 0;
     testLine = this->_currentLine + testChar; */
@@ -36,11 +36,11 @@ void M5KeyerDisplay::displayUpdate(String character, bool safeScroll)
             if (!safeScroll)
             {
                 String cpy = String(this->_currentLine);
-                Serial.print("lines before push:");
-                Serial.println(this->_lines.size());
+                //Serial.print("lines before push:");
+                //Serial.println(this->_lines.size());
                 this->_lines.push_back(cpy);
-                Serial.print("lines after push:");
-                Serial.println(this->_lines.size());
+                //Serial.print("lines after push:");
+                //Serial.println(this->_lines.size());
             }
             this->_currentLine = "";
             if (safeScroll || (this->_Row < (this->_maxRows - 1)))
@@ -51,11 +51,11 @@ void M5KeyerDisplay::displayUpdate(String character, bool safeScroll)
             else
             {
                 //we're full so loose the oldest
-                Serial.print("lines before erase:");
-                Serial.println(this->_lines.size());
+                //Serial.print("lines before erase:");
+                //Serial.println(this->_lines.size());
                 this->_lines.erase(this->_lines.begin());
-                Serial.print("lines after erase:");
-                Serial.println(this->_lines.size());
+                //Serial.print("lines after erase:");
+                //Serial.println(this->_lines.size());
                 M5.Lcd.fillScreen(BLACK);
                 this->_Row = 0;
                 this->_cursorX = 0;
@@ -139,7 +139,7 @@ void M5KeyerDisplay::service_display()
 
         if ((millis() - millisDelayStarted) > timedDelay)
         {
-            Serial.println("Ending timed display...");
+            //Serial.println("Ending timed display...");
             delayMode = false;
             M5.Lcd.fillScreen(BLACK);
             lastTimedDisplayLine1 = "";

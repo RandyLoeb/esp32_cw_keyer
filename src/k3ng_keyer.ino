@@ -101,7 +101,7 @@ void setup()
 
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
-  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText);
+  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl);
 
   ditPaddles.pins.push_back(&vpA);
   ditPaddles.pins.push_back(&vp2);
@@ -131,7 +131,7 @@ void setup()
 #endif
 
   initialize_default_modes();
-  configControl.configuration.wpm = 15;
+  //configControl.configuration.wpm = 15;
   check_for_beacon_mode();
   initialize_display();
   wifiUtils.initialize();
@@ -220,8 +220,9 @@ byte service_tx_inhibit_and_pause()
 void check_for_dirty_configuration()
 {
 
-  if (config_dirty)
+  if (configControl.config_dirty)
   {
+    Serial.println("dirty config!");
     save_persistent_configuration();
   }
 }
@@ -661,7 +662,7 @@ void save_persistent_configuration()
 {
   configControl.save();
 
-  config_dirty = 0;
+  configControl.config_dirty = 0;
 }
 
 void check_dit_paddle()
@@ -1308,7 +1309,7 @@ void speed_change_command_mode(int change)
   if (((configControl.configuration.wpm_command_mode + change) > wpm_limit_low) && ((configControl.configuration.wpm_command_mode + change) < wpm_limit_high))
   {
     configControl.configuration.wpm_command_mode = configControl.configuration.wpm_command_mode + change;
-    config_dirty = 1;
+    configControl.config_dirty = 1;
   }
 
   displayControl.lcd_center_print_timed(String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
@@ -1416,7 +1417,7 @@ void adjust_dah_to_dit_ratio(int adjustment)
 #endif
   }
 
-  config_dirty = 1;
+  configControl.config_dirty = 1;
 }
 
 //-------------------------------------------------------------------------------------------------------
@@ -1427,7 +1428,7 @@ void sidetone_adj(int hz)
   if (((configControl.configuration.hz_sidetone + hz) > sidetone_hz_limit_low) && ((configControl.configuration.hz_sidetone + hz) < sidetone_hz_limit_high))
   {
     configControl.configuration.hz_sidetone = configControl.configuration.hz_sidetone + hz;
-    config_dirty = 1;
+    configControl.config_dirty = 1;
 #if defined(OPTION_MORE_DISPLAY_MSGS)
     if (LCD_COLUMNS < 9)
     {
@@ -1456,7 +1457,7 @@ void switch_to_tx_silent(byte tx)
       configControl.configuration.current_ptt_line = ptt_tx_1;
       current_tx_key_line = tx_key_line_1;
       configControl.configuration.current_tx = 1;
-      config_dirty = 1;
+      configControl.config_dirty = 1;
     }
     break;
   case 2:
@@ -1465,7 +1466,7 @@ void switch_to_tx_silent(byte tx)
       configControl.configuration.current_ptt_line = ptt_tx_2;
       current_tx_key_line = tx_key_line_2;
       configControl.configuration.current_tx = 2;
-      config_dirty = 1;
+      configControl.config_dirty = 1;
     }
     break;
   case 3:
@@ -1474,7 +1475,7 @@ void switch_to_tx_silent(byte tx)
       configControl.configuration.current_ptt_line = ptt_tx_3;
       current_tx_key_line = tx_key_line_3;
       configControl.configuration.current_tx = 3;
-      config_dirty = 1;
+      configControl.config_dirty = 1;
     }
     break;
   case 4:
@@ -1483,7 +1484,7 @@ void switch_to_tx_silent(byte tx)
       configControl.configuration.current_ptt_line = ptt_tx_4;
       current_tx_key_line = tx_key_line_4;
       configControl.configuration.current_tx = 4;
-      config_dirty = 1;
+      configControl.config_dirty = 1;
     }
     break;
   case 5:
@@ -1492,7 +1493,7 @@ void switch_to_tx_silent(byte tx)
       configControl.configuration.current_ptt_line = ptt_tx_5;
       current_tx_key_line = tx_key_line_5;
       configControl.configuration.current_tx = 5;
-      config_dirty = 1;
+      configControl.config_dirty = 1;
     }
     break;
   case 6:
@@ -1501,7 +1502,7 @@ void switch_to_tx_silent(byte tx)
       configControl.configuration.current_ptt_line = ptt_tx_6;
       current_tx_key_line = tx_key_line_6;
       configControl.configuration.current_tx = 6;
-      config_dirty = 1;
+      configControl.config_dirty = 1;
     }
     break;
   }
@@ -1882,7 +1883,7 @@ void send_the_dits_and_dahs(char const *cw_to_send)
     switch (cw_to_send[x])
     {
     case '.':
-      Serial.println("About to send dit...");
+      //Serial.println("About to send dit...");
       send_dit();
       break;
     case '-':
@@ -3402,7 +3403,7 @@ void speed_set(int wpm_set)
   if ((wpm_set > 0) && (wpm_set < 1000))
   {
     configuration.wpm = wpm_set;
-    config_dirty = 1;
+    configControl.config_dirty = 1;
 
 #ifdef FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
     if ((configuration.wpm >= DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_WPM) && (configuration.wpm <= DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_WPM))
@@ -3425,7 +3426,7 @@ void command_speed_set(int wpm_set)
   if ((wpm_set > 0) && (wpm_set < 1000))
   {
     configuration.wpm_command_mode = wpm_set;
-    config_dirty = 1;
+    configControl.config_dirty = 1;
 
     displayControl.lcd_center_print_timed("Cmd Spd " + String(configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
 
