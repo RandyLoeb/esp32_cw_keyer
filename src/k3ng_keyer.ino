@@ -117,9 +117,6 @@ void setup()
 #endif
 #endif
   initialize_pins();
-  initialize_serial_ports();
-
-  displayControl.initialize();
 
   initialize_keyer_state();
   configControl.initialize(primary_serial_port);
@@ -133,7 +130,9 @@ void setup()
   initialize_default_modes();
   //configControl.configuration.wpm = 15;
   check_for_beacon_mode();
-  initialize_display();
+  displayControl.initialize([](char x) {
+    send_char(x, KEYER_NORMAL);
+  });
   wifiUtils.initialize();
 
   keyerWebServer->start();
@@ -683,6 +682,7 @@ void check_dit_paddle()
     dit_paddle = paddle_right;
   }
 
+  // low is closed, high is open
   pin_value = paddle_pin_read(dit_paddle);
 
 #if defined(FEATURE_USB_MOUSE) || defined(FEATURE_USB_KEYBOARD)
@@ -3195,44 +3195,6 @@ void initialize_keyer_state()
   key_state = 0;
   key_tx = 1;
 
-  configControl.configuration.wpm = initial_speed_wpm;
-
-  configControl.configuration.paddle_interruption_quiet_time_element_lengths = default_paddle_interruption_quiet_time_element_lengths;
-  configControl.configuration.hz_sidetone = initial_sidetone_freq;
-  configControl.configuration.memory_repeat_time = default_memory_repeat_time;
-  configControl.configuration.cmos_super_keyer_iambic_b_timing_percent = default_cmos_super_keyer_iambic_b_timing_percent;
-  configControl.configuration.dah_to_dit_ratio = initial_dah_to_dit_ratio;
-  configControl.configuration.length_wordspace = default_length_wordspace;
-  configControl.configuration.weighting = default_weighting;
-  configControl.configuration.wordsworth_wordspace = default_wordsworth_wordspace;
-  configControl.configuration.wordsworth_repetition = default_wordsworth_repetition;
-  configControl.configuration.wpm_farnsworth = initial_speed_wpm;
-  configControl.configuration.cli_mode = CLI_NORMAL_MODE;
-  configControl.configuration.wpm_command_mode = initial_command_mode_speed_wpm;
-  configControl.configuration.ptt_buffer_hold_active = 0;
-  configControl.configuration.sidetone_volume = sidetone_volume_low_limit + ((sidetone_volume_high_limit - sidetone_volume_low_limit) / 2);
-
-  configControl.configuration.ptt_lead_time[0] = initial_ptt_lead_time_tx1;
-  configControl.configuration.ptt_tail_time[0] = initial_ptt_tail_time_tx1;
-  configControl.configuration.ptt_lead_time[1] = initial_ptt_lead_time_tx2;
-  configControl.configuration.ptt_tail_time[1] = initial_ptt_tail_time_tx2;
-#if !defined(OPTION_SAVE_MEMORY_NANOKEYER)
-  configControl.configuration.ptt_lead_time[2] = initial_ptt_lead_time_tx3;
-  configControl.configuration.ptt_tail_time[2] = initial_ptt_tail_time_tx3;
-  configControl.configuration.ptt_lead_time[3] = initial_ptt_lead_time_tx4;
-  configControl.configuration.ptt_tail_time[3] = initial_ptt_tail_time_tx4;
-  configControl.configuration.ptt_lead_time[4] = initial_ptt_lead_time_tx5;
-  configControl.configuration.ptt_tail_time[4] = initial_ptt_tail_time_tx5;
-  configControl.configuration.ptt_lead_time[5] = initial_ptt_lead_time_tx6;
-  configControl.configuration.ptt_tail_time[5] = initial_ptt_tail_time_tx6;
-
-  for (int x = 0; x < 5; x++)
-  {
-    configControl.configuration.ptt_active_to_sequencer_active_time[x] = 0;
-    configControl.configuration.ptt_inactive_to_sequencer_inactive_time[x] = 0;
-  }
-#endif //OPTION_SAVE_MEMORY_NANOKEYER
-
 #ifndef FEATURE_SO2R_BASE
   switch_to_tx_silent(1);
 #endif
@@ -3249,13 +3211,6 @@ void initialize_default_modes()
 
   // setup default modes
   keyer_machine_mode = KEYER_NORMAL;
-  configControl.configuration.paddle_mode = PADDLE_NORMAL;
-  configControl.configuration.keyer_mode = IAMBIC_B;
-  configControl.configuration.sidetone_mode = SIDETONE_ON;
-
-#ifdef initial_sidetone_mode
-  configControl.configuration.sidetone_mode = initial_sidetone_mode;
-#endif
 
   char_send_mode = CW;
 
@@ -3298,64 +3253,6 @@ void check_for_beacon_mode()
 
 //---------------------------------------------------------------------
 
-void initialize_serial_ports()
-{
-}
-
-void initialize_display()
-{
-
-#ifdef FEATURE_DISPLAY
-
-  if (displayControl.getColsCount() < 9)
-  {
-    displayControl.lcd_center_print_timed("K3NGKeyr", 0, 4000);
-  }
-  else
-  {
-    displayControl.lcd_center_print_timed("K3NG Keyer", 0, 4000);
-#ifdef OPTION_PERSONALIZED_STARTUP_SCREEN
-    if (LCD_ROWS == 2)
-    {
-#ifdef OPTION_DO_NOT_SAY_HI                                                 // if we wish to display the custom field on the second line, we can't say 'hi'
-      displayControl.lcd_center_print_timed(custom_startup_field, 1, 4000); // display the custom field on the second line of the display, maximum field length is the number of columns
-#endif                                                                      // OPTION_DO_NOT_SAY_HI
-    }
-    else if (LCD_ROWS > 2)
-      displayControl.lcd_center_print_timed(custom_startup_field, 2, 4000); // display the custom field on the third line of the display, maximum field length is the number of columns
-#endif                                                                      // OPTION_PERSONALIZED_STARTUP_SCREEN
-    if (displayControl.getRowsCount() > 3)
-      displayControl.lcd_center_print_timed("V: " + String(CODE_VERSION), 3, 4000); // display the code version on the fourth line of the display
-  }
-#endif //FEATURE_DISPLAY
-
-  if (keyer_machine_mode != BEACON)
-  {
-#ifndef OPTION_DO_NOT_SAY_HI
-    // say HI
-    // store current setting (compliments of DL2SBA - http://dl2sba.com/ )
-    byte oldKey = key_tx;
-    byte oldSideTone = configControl.configuration.sidetone_mode;
-    key_tx = 0;
-    configControl.configuration.sidetone_mode = SIDETONE_ON;
-
-    displayControl.lcd_center_print_timed("h", 1, 4000);
-
-    Serial.println("About to say HI...");
-    send_char('H', KEYER_NORMAL);
-
-    displayControl.lcd_center_print_timed("hi", 1, 4000);
-
-    send_char('I', KEYER_NORMAL);
-    configControl.configuration.sidetone_mode = oldSideTone;
-    key_tx = oldKey;
-#endif //OPTION_DO_NOT_SAY_HI
-#ifdef OPTION_BLINK_HI_ON_PTT
-    blink_ptt_dits_and_dahs(".... ..");
-#endif
-  }
-}
-
 int paddle_pin_read(int pin_to_read)
 {
   return virtualPins.pinsets.at(pin_to_read)->digRead();
@@ -3393,7 +3290,7 @@ void lcd_center_print_timed_wpm()
   displayControl.lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm * 5) + " cpm", 0, default_display_msg_delay);
   displayControl.lcd_center_print_timed(String(1200 / configuration.wpm) + ":" + (((1200 / configuration.wpm) * configuration.dah_to_dit_ratio) / 100) + "ms 1:" + (float(configuration.dah_to_dit_ratio) / 100.00), 1, default_display_msg_delay);
 #else
-  displayControl.lcd_center_print_timed(String(configuration.wpm) + " wpm", 0, default_display_msg_delay);
+  displayControl.lcd_center_print_timed(String(configControl.configuration.wpm) + " wpm", 0, default_display_msg_delay);
 #endif
 }
 
@@ -3402,7 +3299,7 @@ void speed_set(int wpm_set)
 
   if ((wpm_set > 0) && (wpm_set < 1000))
   {
-    configuration.wpm = wpm_set;
+    configControl.configuration.wpm = wpm_set;
     configControl.config_dirty = 1;
 
 #ifdef FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
@@ -3425,10 +3322,10 @@ void command_speed_set(int wpm_set)
 {
   if ((wpm_set > 0) && (wpm_set < 1000))
   {
-    configuration.wpm_command_mode = wpm_set;
+    configControl.configuration.wpm_command_mode = wpm_set;
     configControl.config_dirty = 1;
 
-    displayControl.lcd_center_print_timed("Cmd Spd " + String(configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
+    displayControl.lcd_center_print_timed("Cmd Spd " + String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
 
   } // end if
 } // end command_speed_set

@@ -1,3 +1,5 @@
+#ifndef KEYER_SETTINGS_H
+#define KEYER_SETTINGS_H
 // Initial and hardcoded settings
 #define initial_speed_wpm 26              // "factory default" keyer speed setting
 #define initial_command_mode_speed_wpm 20 // "factory default" command mode speed setting
@@ -281,3 +283,4 @@
 #define sidetone_volume_high_limit 500
 
 #define custom_startup_field "your custom text here" // an example could be callsign and name, eg. "AB1XYZ Bob", (or "Worlds best operator" which requires a 20 column display), string length shouldo be no more than the number of columns on the display
+#endif

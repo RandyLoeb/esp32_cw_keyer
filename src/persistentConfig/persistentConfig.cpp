@@ -2,6 +2,54 @@
 #define PRIMARY_SERIAL_CLS HardwareSerial
 #include "persistentConfig.h"
 #include "ArduinoJson.h"
+#include "keyer_settings.h"
+#include "keyer.h"
+persistentConfig::persistentConfig()
+{
+    this->configuration.wpm = initial_speed_wpm;
+
+    this->configuration.paddle_interruption_quiet_time_element_lengths = default_paddle_interruption_quiet_time_element_lengths;
+    this->configuration.hz_sidetone = initial_sidetone_freq;
+    this->configuration.memory_repeat_time = default_memory_repeat_time;
+    this->configuration.cmos_super_keyer_iambic_b_timing_percent = default_cmos_super_keyer_iambic_b_timing_percent;
+    this->configuration.dah_to_dit_ratio = initial_dah_to_dit_ratio;
+    this->configuration.length_wordspace = default_length_wordspace;
+    this->configuration.weighting = default_weighting;
+    this->configuration.wordsworth_wordspace = default_wordsworth_wordspace;
+    this->configuration.wordsworth_repetition = default_wordsworth_repetition;
+    this->configuration.wpm_farnsworth = initial_speed_wpm;
+    this->configuration.cli_mode = CLI_NORMAL_MODE;
+    this->configuration.wpm_command_mode = initial_command_mode_speed_wpm;
+    this->configuration.ptt_buffer_hold_active = 0;
+    this->configuration.sidetone_volume = sidetone_volume_low_limit + ((sidetone_volume_high_limit - sidetone_volume_low_limit) / 2);
+
+    this->configuration.ptt_lead_time[0] = initial_ptt_lead_time_tx1;
+    this->configuration.ptt_tail_time[0] = initial_ptt_tail_time_tx1;
+    this->configuration.ptt_lead_time[1] = initial_ptt_lead_time_tx2;
+    this->configuration.ptt_tail_time[1] = initial_ptt_tail_time_tx2;
+
+    this->configuration.ptt_lead_time[2] = initial_ptt_lead_time_tx3;
+    this->configuration.ptt_tail_time[2] = initial_ptt_tail_time_tx3;
+    this->configuration.ptt_lead_time[3] = initial_ptt_lead_time_tx4;
+    this->configuration.ptt_tail_time[3] = initial_ptt_tail_time_tx4;
+    this->configuration.ptt_lead_time[4] = initial_ptt_lead_time_tx5;
+    this->configuration.ptt_tail_time[4] = initial_ptt_tail_time_tx5;
+    this->configuration.ptt_lead_time[5] = initial_ptt_lead_time_tx6;
+    this->configuration.ptt_tail_time[5] = initial_ptt_tail_time_tx6;
+
+    for (int x = 0; x < 5; x++)
+    {
+        this->configuration.ptt_active_to_sequencer_active_time[x] = 0;
+        this->configuration.ptt_inactive_to_sequencer_inactive_time[x] = 0;
+    }
+    this->configuration.paddle_mode = PADDLE_NORMAL;
+    this->configuration.keyer_mode = IAMBIC_B;
+    this->configuration.sidetone_mode = SIDETONE_ON;
+
+#ifdef initial_sidetone_mode
+    this->configuration.sidetone_mode = initial_sidetone_mode;
+#endif
+}
 
 void persistentConfig::initialize(PRIMARY_SERIAL_CLS *loggingPortToUse)
 {

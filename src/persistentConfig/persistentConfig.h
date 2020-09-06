@@ -7,6 +7,8 @@ class persistentConfig
 {
 
 public:
+    persistentConfig();
+
     struct config_t
     { // 111 bytes total
 

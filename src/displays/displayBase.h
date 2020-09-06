@@ -1,7 +1,12 @@
+#ifndef DISPLAYBASE_H
+#define DISPLAYBASE_H
 #include <Arduino.h>
 #include <string>
 class displayBase
 {
+
+protected:
+    void (*sendChar)(char x);
 
 public:
     byte lcd_paddle_echo = 1;
@@ -19,9 +24,7 @@ public:
             this->displayUpdate(str.charAt(i));
         }
     }
-    virtual void initialize(){
-        //Serial.println("initialize in displayBase...not good...");
-    };
+    virtual void initialize(void (*sendChr)(char x));
     virtual void service_display(){
         //Serial.println("In service_display displayBase...not good...");
     };
@@ -34,3 +37,4 @@ public:
         return false;
     }
 };
+#endif

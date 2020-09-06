@@ -96,9 +96,6 @@ void M5KeyerDisplay::displayUpdate(char character)
     }
     this->displayUpdate(String(character), false);
 }
-void M5KeyerDisplay::initialize()
-{
-}
 
 void M5KeyerDisplay::service_display()
 {
