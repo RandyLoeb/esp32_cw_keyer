@@ -348,3 +348,430 @@ String convert_cw_number_to_string(long number_in)
   //just a regular character
   return String(ascii);
 }
+
+String convertCharToDitsAndDahs(byte cw_char)
+{
+  switch (cw_char)
+  {
+  case 'A':
+    return ".-";
+    break;
+  case 'B':
+    return "-...";
+    break;
+  case 'C':
+    return "-.-.";
+    break;
+  case 'D':
+    return "-..";
+    break;
+  case 'E':
+    return ".";
+    break;
+  case 'F':
+    return "..-.";
+    break;
+  case 'G':
+    return "--.";
+    break;
+  case 'H':
+    return "....";
+    break;
+  case 'I':
+    return "..";
+    break;
+  case 'J':
+    return ".---";
+    break;
+  case 'K':
+    return "-.-";
+    break;
+  case 'L':
+    return ".-..";
+    break;
+  case 'M':
+    return "--";
+    break;
+  case 'N':
+    return "-.";
+    break;
+  case 'O':
+    return "---";
+    break;
+  case 'P':
+    return ".--.";
+    break;
+  case 'Q':
+    return "--.-";
+    break;
+  case 'R':
+    return ".-.";
+    break;
+  case 'S':
+    return "...";
+    break;
+  case 'T':
+    return "-";
+    break;
+  case 'U':
+    return "..-";
+    break;
+  case 'V':
+    return "...-";
+    break;
+  case 'W':
+    return ".--";
+    break;
+  case 'X':
+    return "-..-";
+    break;
+  case 'Y':
+    return "-.--";
+    break;
+  case 'Z':
+    return "--..";
+    break;
+
+  case '0':
+    return "-----";
+    break;
+  case '1':
+    return ".----";
+    break;
+  case '2':
+    return "..---";
+    break;
+  case '3':
+    return "...--";
+    break;
+  case '4':
+    return "....-";
+    break;
+  case '5':
+    return ".....";
+    break;
+  case '6':
+    return "-....";
+    break;
+  case '7':
+    return "--...";
+    break;
+  case '8':
+    return "---..";
+    break;
+  case '9':
+    return "----.";
+    break;
+
+  case '=':
+    return "-...-";
+    break;
+  case '/':
+    return "-..-.";
+    break;
+  /* case ' ':
+    loop_element_lengths((configControl.configuration.length_wordspace - length_letterspace - 2), 0, configControl.configuration.wpm);
+    break; */
+  case '*':
+    return "-...-.-";
+    break;
+  //case '&': send_dit(); loop_element_lengths(3); send_dits(3); break;
+  case '.':
+    return ".-.-.-";
+    break;
+  case ',':
+    return "--..--";
+    break;
+  case '!':
+    return "--..--";
+    break; //sp5iou 20180328
+  case '\'':
+    return ".----.";
+    break; // apostrophe
+           //      case '!': return "-.-.--");break;//sp5iou 20180328
+  case '(':
+    return "-.--.";
+    break;
+  case ')':
+    return "-.--.-";
+    break;
+  case '&':
+    return ".-...";
+    break;
+  case ':':
+    return "---...";
+    break;
+  case ';':
+    return "-.-.-.";
+    break;
+  case '+':
+    return ".-.-.";
+    break;
+  case '-':
+    return "-....-";
+    break;
+  case '_':
+    return "..--.-";
+    break;
+  case '"':
+    return ".-..-.";
+    break;
+  case '$':
+    return "...-..-";
+    break;
+  case '@':
+    return ".--.-.";
+    break;
+  case '<':
+    return ".-.-.";
+    break; // AR
+  case '>':
+    return "...-.-";
+    break; // SK
+
+#ifdef OPTION_RUSSIAN_LANGUAGE_SEND_CLI // Contributed by Павел Бирюков, UA1AQC
+  case 192:
+    return ".-";
+    break; //А
+  case 193:
+    return "-...";
+    break; //Б
+  case 194:
+    return ".--";
+    break; //В
+  case 195:
+    return "--.";
+    break; //Г
+  case 196:
+    return "-..";
+    break; //Д
+  case 197:
+    return ".";
+    break; //Е
+  case 168:
+    return ".";
+    break; //Ё
+  case 184:
+    return ".";
+    break; //ё
+  case 198:
+    return "...-";
+    break; //Ж
+  case 199:
+    return "--..";
+    break; //З
+  case 200:
+    return "..";
+    break; //И
+  case 201:
+    return ".---";
+    break; //Й
+  case 202:
+    return "-.-";
+    break; //К
+  case 203:
+    return ".-..";
+    break; //Л
+  case 204:
+    return "--";
+    break; //М
+  case 205:
+    return "-.";
+    break; //Н
+  case 206:
+    return "---";
+    break; //О
+  case 207:
+    return ".--.";
+    break; //П
+  case 208:
+    return ".-.";
+    break; //Р
+  case 209:
+    return "...";
+    break; //С
+  case 210:
+    return "-";
+    break; //Т
+  case 211:
+    return "..-";
+    break; //У
+  case 212:
+    return "..-.";
+    break; //Ф
+  case 213:
+    return "....";
+    break; //Х
+  case 214:
+    return "-.-.";
+    break; //Ц
+  case 215:
+    return "---.";
+    break; //Ч
+  case 216:
+    return "----";
+    break; //Ш
+  case 217:
+    return "--.-";
+    break; //Щ
+  case 218:
+    return "--.--";
+    break; //Ъ
+  case 219:
+    return "-.--";
+    break; //Ы
+  case 220:
+    return "-..-";
+    break; //Ь
+  case 221:
+    return "..-..";
+    break; //Э
+  case 222:
+    return "..--";
+    break; //Ю
+  case 223:
+    return ".-.-";
+    break; //Я
+  case 255:
+    return ".-.-";
+    break; //я
+#endif     //OPTION_RUSSIAN_LANGUAGE_SEND_CLI
+
+    /* case '\n':
+    break;
+  case '\r':
+    break; */
+
+#if defined(OPTION_PROSIGN_SUPPORT)
+  case PROSIGN_AA:
+    return ".-.-";
+    break;
+  case PROSIGN_AS:
+    return ".-...";
+    break;
+  case PROSIGN_BK:
+    return "-...-.-";
+    break;
+  case PROSIGN_CL:
+    return "-.-..-..";
+    break;
+  case PROSIGN_CT:
+    return "-.-.-";
+    break;
+  case PROSIGN_KN:
+    return "-.--.";
+    break;
+  case PROSIGN_NJ:
+    return "-..---";
+    break;
+  case PROSIGN_SK:
+    return "...-.-";
+    break;
+  case PROSIGN_SN:
+    return "...-.";
+    break;
+  case PROSIGN_HH:
+    return "........";
+    break; // iz0rus
+#endif
+
+#ifdef OPTION_NON_ENGLISH_EXTENSIONS
+  case 192:
+    return ".--.-";
+    break; // 'À'
+  case 194:
+    return ".-.-";
+    break; // 'Â'
+  case 197:
+    return ".--.-";
+    break; // 'Å'
+  case 196:
+    return ".-.-";
+    break; // 'Ä'
+  case 198:
+    return ".-.-";
+    break; // 'Æ'
+  case 199:
+    return "-.-..";
+    break; // 'Ç'
+  case 208:
+    return "..--.";
+    break; // 'Ð'
+  case 138:
+    return "----";
+    break; // 'Š'
+  case 200:
+    return ".-..-";
+    break; // 'È'
+  case 201:
+    return "..-..";
+    break; // 'É'
+  case 142:
+    return "--..-.";
+    break; // 'Ž'
+  case 209:
+    return "--.--";
+    break; // 'Ñ'
+  case 214:
+    return "---.";
+    break; // 'Ö'
+  case 216:
+    return "---.";
+    break; // 'Ø'
+  case 211:
+    return "---.";
+    break; // 'Ó'
+  case 220:
+    return "..--";
+    break; // 'Ü'
+  case 223:
+    return "------";
+    break; // 'ß'
+
+  // for English/Japanese font LCD controller which has a few European characters also (HD44780UA00) (LA3ZA code)
+  case 225:
+    return ".-.-";
+    break; // 'ä' LA3ZA
+  case 239:
+    return "---.";
+    break; // 'ö' LA3ZA
+  case 242:
+    return "---.";
+    break; // 'ø' LA3ZA
+  case 245:
+    return "..--";
+    break; // 'ü' LA3ZA
+  case 246:
+    return "----";
+    break; // almost '' or rather sigma LA3ZA
+  case 252:
+    return ".--.-";
+    break; // å (sort of) LA3ZA
+  case 238:
+    return "--.--";
+    break; // 'ñ' LA3ZA
+  case 226:
+    return "------";
+    break; // 'ß' LA3ZA
+#endif     //OPTION_NON_ENGLISH_EXTENSIONS
+
+    /* case '|':
+#if !defined(OPTION_WINKEY_DO_NOT_SEND_7C_BYTE_HALF_SPACE)
+    loop_element_lengths(0.5, 0, configControl.configuration.wpm);
+#endif
+    return;
+    break; */
+
+#if defined(OPTION_DO_NOT_SEND_UNKNOWN_CHAR_QUESTION)
+  case '?':
+    return "..--..";
+    break;
+#endif
+
+  default:
+#if !defined(OPTION_DO_NOT_SEND_UNKNOWN_CHAR_QUESTION)
+    return "..--..";
+#endif
+    break;
+  }
+}

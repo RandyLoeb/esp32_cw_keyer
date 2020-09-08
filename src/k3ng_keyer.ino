@@ -90,6 +90,10 @@ WifiUtils wifiUtils{};
 KeyerWebServer *keyerWebServer;
 
 std::queue<String> injectedText;
+
+#include "paddleMonitoring/paddleReader.h"
+PaddleReader *paddleReader;
+
 void setup()
 {
 
@@ -136,6 +140,9 @@ void setup()
   wifiUtils.initialize();
 
   keyerWebServer->start();
+  paddleReader = new PaddleReader([]() { return virtualPins.pinsets.at(paddle_left)->digRead(); },
+                                  []() { return virtualPins.pinsets.at(paddle_right)->digRead(); },
+                                  configControl.configuration.wpm);
 }
 
 // --------------------------------------------------------------------------------------------
@@ -144,6 +151,7 @@ void loop()
 {
 
   check_paddles();
+
   service_dit_dah_buffers();
 
   service_send_buffer(PRINTCHAR);
@@ -232,7 +240,10 @@ void check_for_dirty_configuration()
 
 void check_paddles()
 {
-
+  if (paddleReader != nullptr)
+  {
+    paddleReader->readPaddles();
+  }
 #define NO_CLOSURE 0
 #define DIT_CLOSURE_DAH_OFF 1
 #define DAH_CLOSURE_DIT_OFF 2
@@ -666,6 +677,10 @@ void save_persistent_configuration()
 
 void check_dit_paddle()
 {
+  if (paddleReader != nullptr)
+  {
+    paddleReader->readPaddles();
+  }
   //#if !defined M5CORE
   byte pin_value = 0;
   byte dit_paddle = 0;
@@ -721,7 +736,10 @@ void check_dit_paddle()
 
 void check_dah_paddle()
 {
-
+if (paddleReader != nullptr)
+  {
+    paddleReader->readPaddles();
+  }
   byte pin_value = 0;
   byte dah_paddle;
 
@@ -1659,7 +1677,15 @@ void service_dit_dah_buffers()
   {
     if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag)
         //#if !defined M5CORE
-        && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right))
+        && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right)
+        
+        && [](){
+          if (paddleReader!=nullptr)
+          {
+            paddleReader->readPaddles();
+          }
+          return true;
+        })
         //#endif
     )
     {
@@ -1972,429 +1998,43 @@ void send_char(byte cw_char, byte omit_letterspace)
 
   if (char_send_mode == CW)
   {
+    bool cwHandled = false;
+
+    //special cases
     switch (cw_char)
     {
-    case 'A':
-      send_the_dits_and_dahs(".-");
+    case '\n':
+      cwHandled = true;
       break;
-    case 'B':
-      send_the_dits_and_dahs("-...");
-      break;
-    case 'C':
-      send_the_dits_and_dahs("-.-.");
-      break;
-    case 'D':
-      send_the_dits_and_dahs("-..");
-      break;
-    case 'E':
-      send_the_dits_and_dahs(".");
-      break;
-    case 'F':
-      send_the_dits_and_dahs("..-.");
-      break;
-    case 'G':
-      send_the_dits_and_dahs("--.");
-      break;
-    case 'H':
-      send_the_dits_and_dahs("....");
-      break;
-    case 'I':
-      send_the_dits_and_dahs("..");
-      break;
-    case 'J':
-      send_the_dits_and_dahs(".---");
-      break;
-    case 'K':
-      send_the_dits_and_dahs("-.-");
-      break;
-    case 'L':
-      send_the_dits_and_dahs(".-..");
-      break;
-    case 'M':
-      send_the_dits_and_dahs("--");
-      break;
-    case 'N':
-      send_the_dits_and_dahs("-.");
-      break;
-    case 'O':
-      send_the_dits_and_dahs("---");
-      break;
-    case 'P':
-      send_the_dits_and_dahs(".--.");
-      break;
-    case 'Q':
-      send_the_dits_and_dahs("--.-");
-      break;
-    case 'R':
-      send_the_dits_and_dahs(".-.");
-      break;
-    case 'S':
-      send_the_dits_and_dahs("...");
-      break;
-    case 'T':
-      send_the_dits_and_dahs("-");
-      break;
-    case 'U':
-      send_the_dits_and_dahs("..-");
-      break;
-    case 'V':
-      send_the_dits_and_dahs("...-");
-      break;
-    case 'W':
-      send_the_dits_and_dahs(".--");
-      break;
-    case 'X':
-      send_the_dits_and_dahs("-..-");
-      break;
-    case 'Y':
-      send_the_dits_and_dahs("-.--");
-      break;
-    case 'Z':
-      send_the_dits_and_dahs("--..");
-      break;
-
-    case '0':
-      send_the_dits_and_dahs("-----");
-      break;
-    case '1':
-      send_the_dits_and_dahs(".----");
-      break;
-    case '2':
-      send_the_dits_and_dahs("..---");
-      break;
-    case '3':
-      send_the_dits_and_dahs("...--");
-      break;
-    case '4':
-      send_the_dits_and_dahs("....-");
-      break;
-    case '5':
-      send_the_dits_and_dahs(".....");
-      break;
-    case '6':
-      send_the_dits_and_dahs("-....");
-      break;
-    case '7':
-      send_the_dits_and_dahs("--...");
-      break;
-    case '8':
-      send_the_dits_and_dahs("---..");
-      break;
-    case '9':
-      send_the_dits_and_dahs("----.");
-      break;
-
-    case '=':
-      send_the_dits_and_dahs("-...-");
-      break;
-    case '/':
-      send_the_dits_and_dahs("-..-.");
+    case '\r':
+      cwHandled = true;
       break;
     case ' ':
       loop_element_lengths((configControl.configuration.length_wordspace - length_letterspace - 2), 0, configControl.configuration.wpm);
+      cwHandled = true;
       break;
-    case '*':
-      send_the_dits_and_dahs("-...-.-");
-      break;
-    //case '&': send_dit(); loop_element_lengths(3); send_dits(3); break;
-    case '.':
-      send_the_dits_and_dahs(".-.-.-");
-      break;
-    case ',':
-      send_the_dits_and_dahs("--..--");
-      break;
-    case '!':
-      send_the_dits_and_dahs("--..--");
-      break; //sp5iou 20180328
-    case '\'':
-      send_the_dits_and_dahs(".----.");
-      break; // apostrophe
-             //      case '!': send_the_dits_and_dahs("-.-.--");break;//sp5iou 20180328
-    case '(':
-      send_the_dits_and_dahs("-.--.");
-      break;
-    case ')':
-      send_the_dits_and_dahs("-.--.-");
-      break;
-    case '&':
-      send_the_dits_and_dahs(".-...");
-      break;
-    case ':':
-      send_the_dits_and_dahs("---...");
-      break;
-    case ';':
-      send_the_dits_and_dahs("-.-.-.");
-      break;
-    case '+':
-      send_the_dits_and_dahs(".-.-.");
-      break;
-    case '-':
-      send_the_dits_and_dahs("-....-");
-      break;
-    case '_':
-      send_the_dits_and_dahs("..--.-");
-      break;
-    case '"':
-      send_the_dits_and_dahs(".-..-.");
-      break;
-    case '$':
-      send_the_dits_and_dahs("...-..-");
-      break;
-    case '@':
-      send_the_dits_and_dahs(".--.-.");
-      break;
-    case '<':
-      send_the_dits_and_dahs(".-.-.");
-      break; // AR
-    case '>':
-      send_the_dits_and_dahs("...-.-");
-      break; // SK
-
-#ifdef OPTION_RUSSIAN_LANGUAGE_SEND_CLI // Contributed by Павел Бирюков, UA1AQC
-    case 192:
-      send_the_dits_and_dahs(".-");
-      break; //А
-    case 193:
-      send_the_dits_and_dahs("-...");
-      break; //Б
-    case 194:
-      send_the_dits_and_dahs(".--");
-      break; //В
-    case 195:
-      send_the_dits_and_dahs("--.");
-      break; //Г
-    case 196:
-      send_the_dits_and_dahs("-..");
-      break; //Д
-    case 197:
-      send_the_dits_and_dahs(".");
-      break; //Е
-    case 168:
-      send_the_dits_and_dahs(".");
-      break; //Ё
-    case 184:
-      send_the_dits_and_dahs(".");
-      break; //ё
-    case 198:
-      send_the_dits_and_dahs("...-");
-      break; //Ж
-    case 199:
-      send_the_dits_and_dahs("--..");
-      break; //З
-    case 200:
-      send_the_dits_and_dahs("..");
-      break; //И
-    case 201:
-      send_the_dits_and_dahs(".---");
-      break; //Й
-    case 202:
-      send_the_dits_and_dahs("-.-");
-      break; //К
-    case 203:
-      send_the_dits_and_dahs(".-..");
-      break; //Л
-    case 204:
-      send_the_dits_and_dahs("--");
-      break; //М
-    case 205:
-      send_the_dits_and_dahs("-.");
-      break; //Н
-    case 206:
-      send_the_dits_and_dahs("---");
-      break; //О
-    case 207:
-      send_the_dits_and_dahs(".--.");
-      break; //П
-    case 208:
-      send_the_dits_and_dahs(".-.");
-      break; //Р
-    case 209:
-      send_the_dits_and_dahs("...");
-      break; //С
-    case 210:
-      send_the_dits_and_dahs("-");
-      break; //Т
-    case 211:
-      send_the_dits_and_dahs("..-");
-      break; //У
-    case 212:
-      send_the_dits_and_dahs("..-.");
-      break; //Ф
-    case 213:
-      send_the_dits_and_dahs("....");
-      break; //Х
-    case 214:
-      send_the_dits_and_dahs("-.-.");
-      break; //Ц
-    case 215:
-      send_the_dits_and_dahs("---.");
-      break; //Ч
-    case 216:
-      send_the_dits_and_dahs("----");
-      break; //Ш
-    case 217:
-      send_the_dits_and_dahs("--.-");
-      break; //Щ
-    case 218:
-      send_the_dits_and_dahs("--.--");
-      break; //Ъ
-    case 219:
-      send_the_dits_and_dahs("-.--");
-      break; //Ы
-    case 220:
-      send_the_dits_and_dahs("-..-");
-      break; //Ь
-    case 221:
-      send_the_dits_and_dahs("..-..");
-      break; //Э
-    case 222:
-      send_the_dits_and_dahs("..--");
-      break; //Ю
-    case 223:
-      send_the_dits_and_dahs(".-.-");
-      break; //Я
-    case 255:
-      send_the_dits_and_dahs(".-.-");
-      break; //я
-#endif       //OPTION_RUSSIAN_LANGUAGE_SEND_CLI
-
-    case '\n':
-      break;
-    case '\r':
-      break;
-
-#if defined(OPTION_PROSIGN_SUPPORT)
-    case PROSIGN_AA:
-      send_the_dits_and_dahs(".-.-");
-      break;
-    case PROSIGN_AS:
-      send_the_dits_and_dahs(".-...");
-      break;
-    case PROSIGN_BK:
-      send_the_dits_and_dahs("-...-.-");
-      break;
-    case PROSIGN_CL:
-      send_the_dits_and_dahs("-.-..-..");
-      break;
-    case PROSIGN_CT:
-      send_the_dits_and_dahs("-.-.-");
-      break;
-    case PROSIGN_KN:
-      send_the_dits_and_dahs("-.--.");
-      break;
-    case PROSIGN_NJ:
-      send_the_dits_and_dahs("-..---");
-      break;
-    case PROSIGN_SK:
-      send_the_dits_and_dahs("...-.-");
-      break;
-    case PROSIGN_SN:
-      send_the_dits_and_dahs("...-.");
-      break;
-    case PROSIGN_HH:
-      send_the_dits_and_dahs("........");
-      break; // iz0rus
-#endif
-
-#ifdef OPTION_NON_ENGLISH_EXTENSIONS
-    case 192:
-      send_the_dits_and_dahs(".--.-");
-      break; // 'À'
-    case 194:
-      send_the_dits_and_dahs(".-.-");
-      break; // 'Â'
-    case 197:
-      send_the_dits_and_dahs(".--.-");
-      break; // 'Å'
-    case 196:
-      send_the_dits_and_dahs(".-.-");
-      break; // 'Ä'
-    case 198:
-      send_the_dits_and_dahs(".-.-");
-      break; // 'Æ'
-    case 199:
-      send_the_dits_and_dahs("-.-..");
-      break; // 'Ç'
-    case 208:
-      send_the_dits_and_dahs("..--.");
-      break; // 'Ð'
-    case 138:
-      send_the_dits_and_dahs("----");
-      break; // 'Š'
-    case 200:
-      send_the_dits_and_dahs(".-..-");
-      break; // 'È'
-    case 201:
-      send_the_dits_and_dahs("..-..");
-      break; // 'É'
-    case 142:
-      send_the_dits_and_dahs("--..-.");
-      break; // 'Ž'
-    case 209:
-      send_the_dits_and_dahs("--.--");
-      break; // 'Ñ'
-    case 214:
-      send_the_dits_and_dahs("---.");
-      break; // 'Ö'
-    case 216:
-      send_the_dits_and_dahs("---.");
-      break; // 'Ø'
-    case 211:
-      send_the_dits_and_dahs("---.");
-      break; // 'Ó'
-    case 220:
-      send_the_dits_and_dahs("..--");
-      break; // 'Ü'
-    case 223:
-      send_the_dits_and_dahs("------");
-      break; // 'ß'
-
-    // for English/Japanese font LCD controller which has a few European characters also (HD44780UA00) (LA3ZA code)
-    case 225:
-      send_the_dits_and_dahs(".-.-");
-      break; // 'ä' LA3ZA
-    case 239:
-      send_the_dits_and_dahs("---.");
-      break; // 'ö' LA3ZA
-    case 242:
-      send_the_dits_and_dahs("---.");
-      break; // 'ø' LA3ZA
-    case 245:
-      send_the_dits_and_dahs("..--");
-      break; // 'ü' LA3ZA
-    case 246:
-      send_the_dits_and_dahs("----");
-      break; // almost '' or rather sigma LA3ZA
-    case 252:
-      send_the_dits_and_dahs(".--.-");
-      break; // å (sort of) LA3ZA
-    case 238:
-      send_the_dits_and_dahs("--.--");
-      break; // 'ñ' LA3ZA
-    case 226:
-      send_the_dits_and_dahs("------");
-      break; // 'ß' LA3ZA
-#endif       //OPTION_NON_ENGLISH_EXTENSIONS
-
     case '|':
 #if !defined(OPTION_WINKEY_DO_NOT_SEND_7C_BYTE_HALF_SPACE)
       loop_element_lengths(0.5, 0, configControl.configuration.wpm);
 #endif
-      return;
+      cwHandled = true;
       break;
-
-#if defined(OPTION_DO_NOT_SEND_UNKNOWN_CHAR_QUESTION)
-    case '?':
-      send_the_dits_and_dahs("..--..");
-      break;
-#endif
-
     default:
-#if !defined(OPTION_DO_NOT_SEND_UNKNOWN_CHAR_QUESTION)
-      send_the_dits_and_dahs("..--..");
-#endif
+      cwHandled = false;
       break;
     }
+
+    //most cases
+    if (!cwHandled)
+    {
+      //get the dits and dahs
+      String ditsanddahs = "" + convertCharToDitsAndDahs(cw_char);
+      if (ditsanddahs.length() > 0)
+      {
+        send_the_dits_and_dahs(ditsanddahs.c_str());
+      }
+    }
+
     if (omit_letterspace != OMIT_LETTERSPACE)
     {
 
@@ -2409,179 +2049,6 @@ void send_char(byte cw_char, byte omit_letterspace)
       loop_element_lengths(1, additional_intercharacter_time_ms, 0);
     }
 #endif
-  }
-  else
-  {
-    if (char_send_mode == HELL)
-    {
-#ifdef FEATURE_HELL
-      transmit_hell_char(cw_char);
-#endif
-    }
-    else
-    {
-      if (char_send_mode == AMERICAN_MORSE)
-      {
-#ifdef FEATURE_AMERICAN_MORSE
-
-        /* 
-
-            ~  long dah (4 units)
-    
-            =  very long dah (5 units)
-      
-            &  an extra space (1 unit)
-
-          */
-
-        switch (cw_char)
-        { // THIS SECTION IS AMERICAN MORSE CODE - DO NOT TOUCH IT !
-
-        case 'A':
-          send_the_dits_and_dahs(".-");
-          break;
-        case 'B':
-          send_the_dits_and_dahs("-...");
-          break;
-        case 'C':
-          send_the_dits_and_dahs("..&.");
-          break;
-        case 'D':
-          send_the_dits_and_dahs("-..");
-          break;
-        case 'E':
-          send_the_dits_and_dahs(".");
-          break;
-        case 'F':
-          send_the_dits_and_dahs(".-.");
-          break;
-        case 'G':
-          send_the_dits_and_dahs("--.");
-          break;
-        case 'H':
-          send_the_dits_and_dahs("....");
-          break;
-        case 'I':
-          send_the_dits_and_dahs("..");
-          break;
-        case 'J':
-          send_the_dits_and_dahs("-.-.");
-          break;
-        case 'K':
-          send_the_dits_and_dahs("-.-");
-          break;
-        case 'L':
-          send_the_dits_and_dahs("~");
-          break;
-        case 'M':
-          send_the_dits_and_dahs("--");
-          break;
-        case 'N':
-          send_the_dits_and_dahs("-.");
-          break;
-        case 'O':
-          send_the_dits_and_dahs(".&.");
-          break;
-        case 'P':
-          send_the_dits_and_dahs(".....");
-          break;
-        case 'Q':
-          send_the_dits_and_dahs("..-.");
-          break;
-        case 'R':
-          send_the_dits_and_dahs(".&..");
-          break;
-        case 'S':
-          send_the_dits_and_dahs("...");
-          break;
-        case 'T':
-          send_the_dits_and_dahs("-");
-          break;
-        case 'U':
-          send_the_dits_and_dahs("..-");
-          break;
-        case 'V':
-          send_the_dits_and_dahs("...-");
-          break;
-        case 'W':
-          send_the_dits_and_dahs(".--");
-          break;
-        case 'X':
-          send_the_dits_and_dahs(".-..");
-          break;
-        case 'Y':
-          send_the_dits_and_dahs("..&..");
-          break;
-        case 'Z':
-          send_the_dits_and_dahs("...&.");
-          break;
-
-          // THIS SECTION IS AMERICAN MORSE CODE - DO NOT TOUCH IT !
-
-        case '&':
-          send_the_dits_and_dahs(".&...");
-          break;
-
-        case '0':
-          send_the_dits_and_dahs("=");
-          break;
-        case '1':
-          send_the_dits_and_dahs(".---.");
-          break;
-        case '2':
-          send_the_dits_and_dahs("..--..");
-          break;
-        case '3':
-          send_the_dits_and_dahs("...-.");
-          break;
-        case '4':
-          send_the_dits_and_dahs("....-");
-          break;
-        case '5':
-          send_the_dits_and_dahs("---");
-          break;
-        case '6':
-          send_the_dits_and_dahs("......");
-          break;
-        case '7':
-          send_the_dits_and_dahs("--..");
-          break;
-        case '8':
-          send_the_dits_and_dahs("-....");
-          break;
-        case '9':
-          send_the_dits_and_dahs("-..-");
-          break;
-
-          // THIS SECTION IS AMERICAN MORSE CODE - DO NOT TOUCH IT !
-
-        case ',':
-          send_the_dits_and_dahs(".-.-");
-          break;
-        case '.':
-          send_the_dits_and_dahs("..--..");
-          break;
-        case '?':
-          send_the_dits_and_dahs("-..-.");
-          break;
-        case '!':
-          send_the_dits_and_dahs("---.");
-          break;
-        case ':':
-          send_the_dits_and_dahs("-.-&.&.");
-          break;
-        case ';':
-          send_the_dits_and_dahs("...&..");
-          break;
-        case '-':
-          send_the_dits_and_dahs("....&.-..");
-          break;
-
-        } //switch (cw_char)
-
-#endif
-      }
-    }
   }
 }
 
