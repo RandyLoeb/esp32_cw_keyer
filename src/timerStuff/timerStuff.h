@@ -186,8 +186,10 @@ void IRAM_ATTR releaseLockForDitDahSpace()
 
 void IRAM_ATTR injectCharSpace()
 {
-
+#if (TIMER_INTERRUPT_DEBUG > 0)
     Serial.println("charspace");
+#endif
+    ditsNdahQueue.push("charspace");
     ISR_Timer.disable(charSpaceTimer);
 }
 
@@ -259,7 +261,10 @@ void processDitDahQueue()
             // start playing tone
             // apparently m5 speaker just plays tone continuously, that's fine,
             // we have a timer to shut it off.
-            M5.Speaker.tone(600);
+            if (ditOrDah != "charspace")
+            {
+                M5.Speaker.tone(600);
+            }
 
             // lock us up
             soundPlaying = true;
