@@ -1,4 +1,5 @@
-
+#ifndef CW_UTILS_H
+#define CW_UTILS_H
 #if defined(OPTION_PROSIGN_SUPPORT)
 char *convert_prosign(byte prosign_code)
 {
@@ -775,3 +776,4 @@ String convertCharToDitsAndDahs(byte cw_char)
     break;
   }
 }
+#endif

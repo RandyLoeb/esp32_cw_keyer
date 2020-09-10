@@ -1,4 +1,5 @@
-
+#ifndef M5KEYERDISPLAY_H
+#define M5KEYERDISPLAY_H
 #include <string>
 #include <vector>
 #include "displayBase.h"
@@ -36,3 +37,5 @@ public:
         return delayMode;
     }
 };
+
+#endif

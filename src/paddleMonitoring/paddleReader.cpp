@@ -27,7 +27,7 @@ bool PaddleReader::analyzeTimePassage(int ditsPassed, bool ditPressed, bool dahP
     else
     {
         //silence
-        if (ditsPassed >= 1)
+        if (ditsPassed >= 2)
         {
 
             if (this->lastInjection != PaddleReader::injections::char_space && this->lastInjection != PaddleReader::injections::word_space)
@@ -59,16 +59,19 @@ void PaddleReader::inject(injections injection)
     switch (injection)
     {
     case dit:
-        Serial.print(".");
+        //Serial.print(".");
+        this->bufferedDitsDahs = this->bufferedDitsDahs + ".";
         break;
     case dah:
-        Serial.print("-");
+        //Serial.print("-");
+        this->bufferedDitsDahs = this->bufferedDitsDahs + "-";
         break;
     case char_space:
-        Serial.print(" ");
+        this->bufferedDitsDahs = this->bufferedDitsDahs + " ";
         break;
     case word_space:
-        Serial.println("<endword>");
+        Serial.println(this->bufferedDitsDahs + "<endword>");
+        this->bufferedDitsDahs = "";
         break;
     default:
         break;
@@ -87,6 +90,7 @@ PaddleReader::PaddleReader(int (*readDitPaddle)(), int (*readDahPaddle)(), int w
     Serial.println("About to set wpm...");
     this->setWpm(wpm);
     Serial.println("wpm was set initially");
+    this->bufferedDitsDahs = "";
 }
 void PaddleReader::setWpm(int wpm)
 {
@@ -115,14 +119,15 @@ void PaddleReader::readPaddles()
 {
     //PaddleReading *activeReading = new PaddleReading();
     long const millisNow = millis();
-    int ditPressed = !this->_readDitPaddle();
-    int dahPressed = !this->_readDahPaddle();
+    int ditPressed = this->interruptDitPressed; //!this->_readDitPaddle();
+    int dahPressed = this->interruptDahPressed; //!this->_readDahPaddle();
     bool makeCurrentLast = false;
 
     if (lastReadingState == NULL)
     {
         //this is the new state
         Serial.println("passed the initial null");
+        lastReadingState = new PaddleReading();
         makeCurrentLast = true;
     }
     else
@@ -144,27 +149,52 @@ void PaddleReader::readPaddles()
         bool lastSilent = !this->lastReadingState->dahPaddlePressed && !this->lastReadingState->ditPaddlePressed;
         bool nowSilent = !(ditPressed || dahPressed);
         bool nowBoth = ditPressed && dahPressed;
-        if (nowBoth)
+        /* if (nowBoth)
         {
             Serial.println("nowboth");
-        }
+        } */
         bool lastDit = this->lastReadingState->ditPaddlePressed;
         bool lastDah = this->lastReadingState->dahPaddlePressed;
 
         if (nowBoth)
         {
-            if (lastSilent)
+            /* ditPressed = false;
+            dahPressed = false; */
+
+             if (this->ditLockedOut || this->dahLockedOut)
             {
-                dahPressed = false;
+                if (this->ditLockedOut)
+                {
+                    ditPressed = false;
+                }
+                else if (this->dahLockedOut)
+                {
+                    dahPressed = false;
+                }
             }
-            else if (lastDit)
+            else
             {
-                ditPressed = false;
+
+                if (lastSilent)
+                {
+                    dahPressed = false;
+                }
+                else if (lastDit)
+                {
+                    this->ditLockedOut = true;
+                    ditPressed = false;
+                }
+                else if (lastDah)
+                {
+                    this->dahLockedOut = true;
+                    dahPressed = false;
+                }
             }
-            else if (lastDah)
-            {
-                dahPressed = false;
-            }
+        }
+        else
+        {
+            this->ditLockedOut = false;
+            this->dahLockedOut = false;
         }
 
         bool changedSinceLast =
@@ -181,7 +211,7 @@ void PaddleReader::readPaddles()
             //analyze
             if (ditPressed)
             {
-                
+
                 this->inject(PaddleReader::injections::dit);
             }
             else if (dahPressed)
@@ -202,11 +232,9 @@ void PaddleReader::readPaddles()
 
     if (makeCurrentLast)
     {
-        //todo de we ned to destroy?
 
-        lastReadingState = new PaddleReading();
         lastReadingState->ditPaddlePressed = ditPressed;
         lastReadingState->dahPaddlePressed = dahPressed;
-        lastReadingState->startMillis = millisNow;
+        lastReadingState->startMillis = millis();
     }
 }

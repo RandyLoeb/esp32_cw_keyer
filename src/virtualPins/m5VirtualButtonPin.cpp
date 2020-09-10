@@ -13,6 +13,7 @@ int M5VirtualButtonPin::digRead()
     switch (this->btn)
     {
     case M5Btnslist::A:
+    
         isPressed = M5.BtnA.read();
         break;
     case M5Btnslist::B:

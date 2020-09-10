@@ -26,6 +26,9 @@ class PaddleReader
 
     int (*_readDitPaddle)();
     int (*_readDahPaddle)();
+    bool ditLockedOut;
+    bool dahLockedOut;
+    String bufferedDitsDahs;
 
 public:
     PaddleReader(int (*readDitPaddle)(), int (*readDahPaddle)(), int wpm);
@@ -33,5 +36,9 @@ public:
     void setWpm(int wpm);
 
     void readPaddles();
+
+    int interruptDitPressed = 0;
+
+    int interruptDahPressed = 0;
 };
 #endif
