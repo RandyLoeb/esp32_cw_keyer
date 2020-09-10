@@ -94,6 +94,8 @@ std::queue<String> injectedText;
 #include "paddleMonitoring/paddleReader.h"
 PaddleReader *paddleReader;
 
+#include "timerStuff/timerStuff.h"
+
 void setup()
 {
 
@@ -120,7 +122,7 @@ void setup()
   initialize_espnow_wireless(speed_set);
 #endif
 #endif
-  initialize_pins();
+  //initialize_pins();
 
   initialize_keyer_state();
   configControl.initialize(primary_serial_port);
@@ -133,29 +135,35 @@ void setup()
 
   initialize_default_modes();
   //configControl.configuration.wpm = 15;
-  check_for_beacon_mode();
+  //check_for_beacon_mode();
   displayControl.initialize([](char x) {
     send_char(x, KEYER_NORMAL);
   });
   wifiUtils.initialize();
 
   keyerWebServer->start();
-  paddleReader = new PaddleReader([]() { return virtualPins.pinsets.at(paddle_left)->digRead(); },
+  /* paddleReader = new PaddleReader([]() { return virtualPins.pinsets.at(paddle_left)->digRead(); },
                                   []() { return virtualPins.pinsets.at(paddle_right)->digRead(); },
-                                  configControl.configuration.wpm);
+                                  configControl.configuration.wpm); */
+
+  // put your setup code here, to run once:
+  initializeTimerStuff();
+
+  // turn on the speaker
+  M5.Speaker.begin();
 }
 
 // --------------------------------------------------------------------------------------------
 
 void loop()
 {
-
-  check_paddles();
+  detectInterrupts = true;
+  /* check_paddles();
 
   service_dit_dah_buffers();
 
   service_send_buffer(PRINTCHAR);
-  check_ptt_tail();
+  check_ptt_tail(); */
 
 #if !defined M5CORE
   wpmPot.checkPotentiometer(wpmSetCallBack);
@@ -163,16 +171,18 @@ void loop()
 
   check_for_dirty_configuration();
 
-  check_paddles();
-  service_send_buffer(PRINTCHAR);
+  /* check_paddles();
+  service_send_buffer(PRINTCHAR); */
   displayControl.service_display();
 
-  service_paddle_echo();
+  //service_paddle_echo();
 
   service_millis_rollover();
   wifiUtils.processNextDNSRequest();
   keyerWebServer->handleClient();
-  service_injected_text();
+  //service_injected_text();
+
+  processDitDahQueue();
 }
 
 byte service_tx_inhibit_and_pause()
@@ -736,7 +746,7 @@ void check_dit_paddle()
 
 void check_dah_paddle()
 {
-if (paddleReader != nullptr)
+  if (paddleReader != nullptr)
   {
     paddleReader->readPaddles();
   }
@@ -1678,14 +1688,14 @@ void service_dit_dah_buffers()
     if ((configControl.configuration.keyer_mode == IAMBIC_A) && (iambic_flag)
         //#if !defined M5CORE
         && (paddle_pin_read(paddle_left)) && (paddle_pin_read(paddle_right)
-        
-        && [](){
-          if (paddleReader!=nullptr)
-          {
-            paddleReader->readPaddles();
-          }
-          return true;
-        })
+
+                                              && []() {
+                                                   if (paddleReader != nullptr)
+                                                   {
+                                                     paddleReader->readPaddles();
+                                                   }
+                                                   return true;
+                                                 })
         //#endif
     )
     {
