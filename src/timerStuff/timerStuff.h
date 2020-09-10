@@ -104,6 +104,9 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             // pressed?
             if (*pressed && !pressedBefore)
             {
+                // disable the charspace timer
+                ISR_Timer.disable(charSpaceTimer);
+
                 ditsNdahQueue.push(message);
 #if (TIMER_INTERRUPT_DEBUG > 0)
 
@@ -120,6 +123,9 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             {
                 // released so stop the timer
                 ISR_Timer.disable(timer);
+
+                ISR_Timer.restartTimer(charSpaceTimer);
+                ISR_Timer.enable(charSpaceTimer);
             }
         }
 
