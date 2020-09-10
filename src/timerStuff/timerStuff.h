@@ -13,6 +13,8 @@ Is what it is for now
 #define TIMER_INTERRUPT_DEBUG 1
 #include "ESP32TimerInterrupt.h"
 #include "ESP32_ISR_Timer.h"
+#include "conversionStuff/conversionStuff.h"
+#include "paddlePress.h"
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -28,7 +30,7 @@ ESP32_ISR_Timer ISR_Timer;
 
 // queue to hold dits and dahs seen by the paddle monitorning,
 // sound loop will pull from here
-std::queue<String> ditsNdahQueue;
+std::queue<PaddlePressDetection *> ditsNdahQueue;
 
 // sort of a a lockout
 volatile bool soundPlaying = false;
@@ -45,7 +47,10 @@ void IRAM_ATTR doDits()
 {
     static unsigned long previousMillis = lastMillis;
     unsigned long deltaMillis = millis() - previousMillis;
-    ditsNdahQueue.push("dit");
+    //ditsNdahQueue.push("dit");
+    PaddlePressDetection *newPd = new PaddlePressDetection();
+    newPd->Detected = DitOrDah::DIT;
+    ditsNdahQueue.push(newPd);
 #if (TIMER_INTERRUPT_DEBUG > 0)
 
     Serial.print("dit = ");
@@ -59,7 +64,9 @@ void IRAM_ATTR doDahs()
 {
     static unsigned long previousMillis = lastMillis;
     unsigned long deltaMillis = millis() - previousMillis;
-    ditsNdahQueue.push("dah");
+    PaddlePressDetection *newPd = new PaddlePressDetection();
+    newPd->Detected = DitOrDah::DAH;
+    ditsNdahQueue.push(newPd);
 #if (TIMER_INTERRUPT_DEBUG > 0)
     Serial.print("dah = ");
     Serial.println(deltaMillis);
@@ -83,9 +90,13 @@ volatile bool ditLocked = false;
 volatile bool dahLocked = false;
 
 // this is triggerd by hardware interrupt indirectly
-void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int lockTimer, int pin, String message)
+void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int lockTimer, int pin, DitOrDah message)
 {
-
+    /*  if (digitalRead(ditpin) || digitalRead(dahpin))
+    {
+        // disable the charspace timer
+        ISR_Timer.disable(charSpaceTimer);
+    } */
     // locker is our debouce variable, i.e. we'll ignore any changes
     // to the pin during hte bounce
     if (!*locker)
@@ -104,13 +115,13 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             // pressed?
             if (*pressed && !pressedBefore)
             {
-                // disable the charspace timer
-                ISR_Timer.disable(charSpaceTimer);
-
-                ditsNdahQueue.push(message);
+                //ISR_Timer.disable(charSpaceTimer);
+                PaddlePressDetection *newPd = new PaddlePressDetection();
+                newPd->Detected = message;
+                ditsNdahQueue.push(newPd);
 #if (TIMER_INTERRUPT_DEBUG > 0)
 
-                Serial.println(message + "pressed");
+                //Serial.println(message + "pressed");
 #endif
 
                 //kickoff either the dit or dah timer passed in
@@ -124,8 +135,9 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
                 // released so stop the timer
                 ISR_Timer.disable(timer);
 
+                /* ISR_Timer.changeInterval(charSpaceTimer, 60L);
                 ISR_Timer.restartTimer(charSpaceTimer);
-                ISR_Timer.enable(charSpaceTimer);
+                ISR_Timer.enable(charSpaceTimer); */
             }
         }
 
@@ -139,12 +151,12 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
 // these two are triggered by hardware interrupts
 void IRAM_ATTR detectDitPress()
 {
-    detectPress(&ditLocked, &ditPressed, ditTimer, debounceDitTimer, ditpin, "dit");
+    detectPress(&ditLocked, &ditPressed, ditTimer, debounceDitTimer, ditpin, DitOrDah::DIT);
 }
 
 void IRAM_ATTR detectDahPress()
 {
-    detectPress(&dahLocked, &dahPressed, dahTimer, debounceDahTimer, dahpin, "dah");
+    detectPress(&dahLocked, &dahPressed, dahTimer, debounceDahTimer, dahpin, DitOrDah::DAH);
 }
 
 // fired by the timer that unlocks the debouncer indirectly
@@ -189,7 +201,7 @@ void IRAM_ATTR injectCharSpace()
 #if (TIMER_INTERRUPT_DEBUG > 0)
     Serial.println("charspace");
 #endif
-    ditsNdahQueue.push("charspace");
+    //ditsNdahQueue.push("charspace");
     ISR_Timer.disable(charSpaceTimer);
 }
 
@@ -255,24 +267,22 @@ void processDitDahQueue()
         //the last sound, plus spacing to be done
         if (!soundPlaying)
         {
-            String ditOrDah = ditsNdahQueue.front();
+            PaddlePressDetection *paddePress = ditsNdahQueue.front();
             ditsNdahQueue.pop();
 
             // start playing tone
             // apparently m5 speaker just plays tone continuously, that's fine,
             // we have a timer to shut it off.
-            if (ditOrDah != "charspace")
-            {
-                M5.Speaker.tone(600);
-            }
-
+            //if (ditOrDah != "charspace")
+            //{
+            M5.Speaker.tone(600);
             // lock us up
             soundPlaying = true;
 
             // figure out when the tone should stop
             // (and/or transmitter unkey)
             unsigned int interval = 60L;
-            if (ditOrDah == "dah")
+            if (paddePress->Detected == DitOrDah::DAH)
             {
                 interval = 180L;
             }
@@ -282,6 +292,9 @@ void processDitDahQueue()
             ISR_Timer.changeInterval(toneSilenceTimer, interval);
             ISR_Timer.restartTimer(toneSilenceTimer);
             ISR_Timer.enable(toneSilenceTimer);
+            delete paddePress;
+            //}
+            //convertDitsDahsToCharsAndSpaces(String(ditOrDah));
         }
         else
         {
