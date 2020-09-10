@@ -58,9 +58,7 @@ SpiffsPersistentConfig persistConfig;
 // and implements .initialize and .save
 persistentConfig &configControl{persistConfig};
 
-#include "displays/M5KeyerDisplay.h"
-M5KeyerDisplay disp;
-displayBase &displayControl{disp};
+#include "displays/keyerDisplay.h"
 
 #include "virtualPins/virtualPins.h"
 VirtualPins virtualPins;
