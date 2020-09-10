@@ -78,6 +78,7 @@ volatile int debounceDitTimer;
 volatile int debounceDahTimer;
 volatile int toneSilenceTimer;
 volatile int ditDahSpaceLockTimer;
+volatile int charSpaceTimer;
 volatile bool ditLocked = false;
 volatile bool dahLocked = false;
 
@@ -177,6 +178,13 @@ void IRAM_ATTR releaseLockForDitDahSpace()
     ISR_Timer.disable(ditDahSpaceLockTimer);
 }
 
+void IRAM_ATTR injectCharSpace()
+{
+
+    Serial.println("charspace");
+    ISR_Timer.disable(charSpaceTimer);
+}
+
 void initializeTimerStuff()
 {
     pinMode(ditpin, INPUT_PULLUP);
@@ -219,6 +227,8 @@ void initializeTimerStuff()
     // timer to unlock the sidetone (could be transmitter key)
     ditDahSpaceLockTimer = ISR_Timer.setInterval(60L, releaseLockForDitDahSpace);
 
+    charSpaceTimer = ISR_Timer.setInterval(60L, injectCharSpace);
+
     // not sure if disabled by default by do it
     ISR_Timer.disable(ditTimer);
     ISR_Timer.disable(dahTimer);
@@ -226,6 +236,7 @@ void initializeTimerStuff()
     ISR_Timer.disable(debounceDahTimer);
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.disable(ditDahSpaceLockTimer);
+    ISR_Timer.disable(charSpaceTimer);
 }
 
 void processDitDahQueue()
