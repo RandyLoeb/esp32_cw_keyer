@@ -16,6 +16,7 @@ Is what it is for now
 #include "conversionStuff/conversionStuff.h"
 #include "paddlePress.h"
 #include "virtualPins/keyerPins.h"
+#include "tone/keyerTone.h"
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -93,11 +94,7 @@ volatile bool dahLocked = false;
 // this is triggerd by hardware interrupt indirectly
 void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int lockTimer, int pin, DitOrDah message)
 {
-    /*  if (digitalRead(ditpin) || digitalRead(dahpin))
-    {
-        // disable the charspace timer
-        ISR_Timer.disable(charSpaceTimer);
-    } */
+
     // locker is our debouce variable, i.e. we'll ignore any changes
     // to the pin during hte bounce
     if (!*locker)
@@ -111,8 +108,6 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             int pressedBefore = *pressed;
 
             // get the pin
-            //*pressed = !digitalRead(pin);
-
             *pressed = !virtualPins.pinsets[pin]->digRead();
             // pressed?
             if (*pressed && !pressedBefore)
@@ -182,7 +177,8 @@ void IRAM_ATTR unlockDah()
 // fired by timer that ends a sidetone segment
 void IRAM_ATTR silenceTone()
 {
-    M5.Speaker.mute();
+    //M5.Speaker.mute();
+    toneControl.noTone();
 
     // kickoff the spacing timer between dits & dahs
     ISR_Timer.disable(toneSilenceTimer);
@@ -277,14 +273,14 @@ void processDitDahQueue()
             // start playing tone
             // apparently m5 speaker just plays tone continuously, that's fine,
             // we have a timer to shut it off.
-            //if (ditOrDah != "charspace")
-            //{
+
             if (paddePress->Detected != DitOrDah::DUMMY)
             {
 
                 if (paddePress->Detected != DitOrDah::SPACE && paddePress->Detected != DitOrDah::FORCED_CHARSPACE)
                 {
-                    M5.Speaker.tone(600);
+                    toneControl.tone(600);
+                    //M5.Speaker.tone(600);
                 }
                 // lock us up
                 soundPlaying = true;
@@ -309,8 +305,6 @@ void processDitDahQueue()
                 ISR_Timer.changeInterval(toneSilenceTimer, interval);
                 ISR_Timer.restartTimer(toneSilenceTimer);
                 ISR_Timer.enable(toneSilenceTimer);
-                //delete paddePress;
-                //}
             }
             convertDitsDahsToCharsAndSpaces(paddePress);
         }

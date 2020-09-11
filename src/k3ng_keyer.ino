@@ -18,8 +18,6 @@
 #endif
 #include "cw_utils.h"
 
-#define memory_area_start 113
-
 #if defined(ESP32)
 void add_to_send_buffer(byte incoming_serial_byte);
 
@@ -34,17 +32,7 @@ void add_to_send_buffer(byte incoming_serial_byte);
 #include "keyer_esp32.h"
 #endif
 
-// Different hardware might need different tone control capabilities,
-// so the approach is to use a global object that implements
-// .tone and .noTone.
-#if defined M5CORE
-#include "tone/M5Tone.h"
-M5Tone derivedFromToneBase;
-#endif
-
-// make sure your derived object is named derivedFromToneBase
-// and implements toneBase's .tone and .noTone
-toneBase &toneControl{derivedFromToneBase};
+#include "tone/keyerTone.h"
 
 // Different ways to persist config
 // E.g. if you wanted sd card inherit from persitentConfig
@@ -76,6 +64,9 @@ PaddleReader *paddleReader;
 #include "timerStuff/timerStuff.h"
 #include "virtualPins/keyerPins.h"
 
+//todo move
+void send_char(byte cw_char, byte omit_letterspace, bool display);
+
 void setup()
 {
 
@@ -94,7 +85,6 @@ void setup()
   initialize_espnow_wireless(speed_set);
 #endif
 #endif
-  //initialize_pins();
 
   initialize_keyer_state();
   configControl.initialize(primary_serial_port);
@@ -108,7 +98,7 @@ void setup()
   initialize_default_modes();
 
   displayControl.initialize([](char x) {
-    send_char(x, KEYER_NORMAL);
+    send_char(x, KEYER_NORMAL, false);
   });
   wifiUtils.initialize();
 
@@ -209,27 +199,7 @@ void adjust_dah_to_dit_ratio(int adjustment)
 
 //-------------------------------------------------------------------------------------------------------
 
-void sidetone_adj(int hz)
-{
-
-  if (((configControl.configuration.hz_sidetone + hz) > sidetone_hz_limit_low) && ((configControl.configuration.hz_sidetone + hz) < sidetone_hz_limit_high))
-  {
-    configControl.configuration.hz_sidetone = configControl.configuration.hz_sidetone + hz;
-    configControl.config_dirty = 1;
-#if defined(OPTION_MORE_DISPLAY_MSGS)
-    if (LCD_COLUMNS < 9)
-    {
-      displayControl.lcd_center_print_timed(String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
-    }
-    else
-    {
-      displayControl.lcd_center_print_timed("Sidetone " + String(configControl.configuration.hz_sidetone) + " Hz", 0, default_display_msg_delay);
-    }
-#endif
-  }
-}
-
-void send_char(byte cw_char, byte omit_letterspace)
+void send_char(byte cw_char, byte omit_letterspace, bool display = true)
 {
   PaddlePressDetection *newPd;
   if ((cw_char == 10) || (cw_char == 13))
@@ -256,6 +226,7 @@ void send_char(byte cw_char, byte omit_letterspace)
       //loop_element_lengths((configControl.configuration.length_wordspace - length_letterspace - 2), 0, configControl.configuration.wpm);
       newPd = new PaddlePressDetection();
       newPd->Detected = DitOrDah::SPACE;
+      newPd->Display = display;
       ditsNdahQueue.push(newPd);
       cwHandled = true;
       break;
@@ -281,10 +252,12 @@ void send_char(byte cw_char, byte omit_letterspace)
         {
           newPd = new PaddlePressDetection();
           newPd->Detected = ditsanddahs.charAt(i) == '.' ? DitOrDah::DIT : DitOrDah::DAH;
+          newPd->Display = display;
           ditsNdahQueue.push(newPd);
         }
         newPd = new PaddlePressDetection();
         newPd->Detected = DitOrDah::FORCED_CHARSPACE;
+        newPd->Display = display;
         ditsNdahQueue.push(newPd);
         //send_the_dits_and_dahs(ditsanddahs.c_str());
       }
@@ -402,10 +375,6 @@ void speed_set(int wpm_set)
       configuration.dah_to_dit_ratio = dynamicweightvalue;
     }
 #endif //FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
-
-#ifdef FEATURE_LED_RING
-    update_led_ring();
-#endif //FEATURE_LED_RING
 
     lcd_center_print_timed_wpm();
   }
