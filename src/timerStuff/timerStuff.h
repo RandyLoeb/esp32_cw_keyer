@@ -10,7 +10,7 @@ Is what it is for now
 #include <string>
 #include <M5Stack.h>
 //These define's must be placed at the beginning before #include "ESP32TimerInterrupt.h"
-#define TIMER_INTERRUPT_DEBUG 1
+#define TIMER_INTERRUPT_DEBUG 0
 #include "ESP32TimerInterrupt.h"
 #include "ESP32_ISR_Timer.h"
 #include "conversionStuff/conversionStuff.h"
@@ -45,8 +45,8 @@ void IRAM_ATTR TimerHandler(void)
 // has debugging to see if we are dead nuts accurate
 void IRAM_ATTR doDits()
 {
-    static unsigned long previousMillis = lastMillis;
-    unsigned long deltaMillis = millis() - previousMillis;
+    /* static unsigned long previousMillis = lastMillis;
+    unsigned long deltaMillis = millis() - previousMillis; */
     //ditsNdahQueue.push("dit");
     PaddlePressDetection *newPd = new PaddlePressDetection();
     newPd->Detected = DitOrDah::DIT;
@@ -57,13 +57,13 @@ void IRAM_ATTR doDits()
     Serial.println(deltaMillis);
 #endif
 
-    previousMillis = millis();
+    //previousMillis = millis();
 }
 
 void IRAM_ATTR doDahs()
 {
-    static unsigned long previousMillis = lastMillis;
-    unsigned long deltaMillis = millis() - previousMillis;
+    /* static unsigned long previousMillis = lastMillis;
+    unsigned long deltaMillis = millis() - previousMillis; */
     PaddlePressDetection *newPd = new PaddlePressDetection();
     newPd->Detected = DitOrDah::DAH;
     ditsNdahQueue.push(newPd);
@@ -72,7 +72,7 @@ void IRAM_ATTR doDahs()
     Serial.println(deltaMillis);
 #endif
 
-    previousMillis = millis();
+    //previousMillis = millis();
 }
 
 // holds our flags and timer handles
@@ -199,10 +199,12 @@ void IRAM_ATTR releaseLockForDitDahSpace()
 void IRAM_ATTR injectCharSpace()
 {
 #if (TIMER_INTERRUPT_DEBUG > 0)
-    Serial.println("charspace");
+    //Serial.println("charspace");
 #endif
-    //ditsNdahQueue.push("charspace");
-    ISR_Timer.disable(charSpaceTimer);
+    PaddlePressDetection *newPd = new PaddlePressDetection();
+    newPd->Detected = DitOrDah::DUMMY;
+    ditsNdahQueue.push(newPd);
+    //ISR_Timer.disable(charSpaceTimer);
 }
 
 void initializeTimerStuff()
@@ -247,7 +249,7 @@ void initializeTimerStuff()
     // timer to unlock the sidetone (could be transmitter key)
     ditDahSpaceLockTimer = ISR_Timer.setInterval(60L, releaseLockForDitDahSpace);
 
-    charSpaceTimer = ISR_Timer.setInterval(60L, injectCharSpace);
+    charSpaceTimer = ISR_Timer.setInterval(250L, injectCharSpace);
 
     // not sure if disabled by default by do it
     ISR_Timer.disable(ditTimer);
@@ -256,7 +258,7 @@ void initializeTimerStuff()
     ISR_Timer.disable(debounceDahTimer);
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.disable(ditDahSpaceLockTimer);
-    ISR_Timer.disable(charSpaceTimer);
+    ISR_Timer.enable(charSpaceTimer);
 }
 
 void processDitDahQueue()
@@ -275,26 +277,29 @@ void processDitDahQueue()
             // we have a timer to shut it off.
             //if (ditOrDah != "charspace")
             //{
-            M5.Speaker.tone(600);
-            // lock us up
-            soundPlaying = true;
-
-            // figure out when the tone should stop
-            // (and/or transmitter unkey)
-            unsigned int interval = 60L;
-            if (paddePress->Detected == DitOrDah::DAH)
+            if (paddePress->Detected != DitOrDah::DUMMY)
             {
-                interval = 180L;
-            }
+                M5.Speaker.tone(600);
+                // lock us up
+                soundPlaying = true;
 
-            // set up and start the timer that will stop the tone
-            // (and/or transmitter unkey)
-            ISR_Timer.changeInterval(toneSilenceTimer, interval);
-            ISR_Timer.restartTimer(toneSilenceTimer);
-            ISR_Timer.enable(toneSilenceTimer);
-            delete paddePress;
-            //}
-            //convertDitsDahsToCharsAndSpaces(String(ditOrDah));
+                // figure out when the tone should stop
+                // (and/or transmitter unkey)
+                unsigned int interval = 60L;
+                if (paddePress->Detected == DitOrDah::DAH)
+                {
+                    interval = 180L;
+                }
+
+                // set up and start the timer that will stop the tone
+                // (and/or transmitter unkey)
+                ISR_Timer.changeInterval(toneSilenceTimer, interval);
+                ISR_Timer.restartTimer(toneSilenceTimer);
+                ISR_Timer.enable(toneSilenceTimer);
+                //delete paddePress;
+                //}
+            }
+            convertDitsDahsToCharsAndSpaces(paddePress);
         }
         else
         {

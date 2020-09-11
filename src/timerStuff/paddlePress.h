@@ -1,9 +1,12 @@
+#ifndef PADDLEPRESS_H
+#define PADDLEPRESS_H
 #include <Arduino.h>
 
 enum DitOrDah
 {
     DIT,
-    DAH
+    DAH,
+    DUMMY
 };
 
 class PaddlePressDetection
@@ -16,3 +19,4 @@ public:
     DitOrDah Detected;
     long TimeStamp;
 };
+#endif
