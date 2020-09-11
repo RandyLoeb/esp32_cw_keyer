@@ -178,12 +178,10 @@ void loop()
   service_millis_rollover();
   wifiUtils.processNextDNSRequest();
   keyerWebServer->handleClient();
-  //service_injected_text();
+  service_injected_text();
 
   processDitDahQueue();
 }
-
-
 
 void check_for_dirty_configuration()
 {
@@ -199,10 +197,7 @@ void check_for_dirty_configuration()
 
 //-------------------------------------------------------------------------------------------------------
 
-
-
 //-------------------------------------------------------------------------------------------------------
-
 
 //-------------------------------------------------------------------------------------------------------
 
@@ -215,8 +210,6 @@ void save_persistent_configuration()
 
   configControl.config_dirty = 0;
 }
-
-
 
 void speed_change(int change)
 {
@@ -242,8 +235,6 @@ void speed_change_command_mode(int change)
 }
 
 //-------------------------------------------------------------------------------------------------------
-
-
 
 void adjust_dah_to_dit_ratio(int adjustment)
 {
@@ -294,8 +285,6 @@ void sidetone_adj(int hz)
 //-------------------------------------------------------------------------------------------------------
 
 //------------------------------------------------------------------
-
-
 
 //-------------------------------------------------------------------------------------------------------
 void send_the_dits_and_dahs(char const *cw_to_send)
@@ -407,7 +396,7 @@ void send_the_dits_and_dahs(char const *cw_to_send)
 
 void send_char(byte cw_char, byte omit_letterspace)
 {
-
+  PaddlePressDetection *newPd;
   if ((cw_char == 10) || (cw_char == 13))
   {
     return;
@@ -430,6 +419,9 @@ void send_char(byte cw_char, byte omit_letterspace)
       break;
     case ' ':
       //loop_element_lengths((configControl.configuration.length_wordspace - length_letterspace - 2), 0, configControl.configuration.wpm);
+      newPd = new PaddlePressDetection();
+      newPd->Detected = DitOrDah::SPACE;
+      ditsNdahQueue.push(newPd);
       cwHandled = true;
       break;
     case '|':
@@ -450,7 +442,16 @@ void send_char(byte cw_char, byte omit_letterspace)
       String ditsanddahs = "" + convertCharToDitsAndDahs(cw_char);
       if (ditsanddahs.length() > 0)
       {
-        send_the_dits_and_dahs(ditsanddahs.c_str());
+        for (int i = 0; i < ditsanddahs.length(); i++)
+        {
+          newPd = new PaddlePressDetection();
+          newPd->Detected = ditsanddahs.charAt(i) == '.' ? DitOrDah::DIT : DitOrDah::DAH;
+          ditsNdahQueue.push(newPd);
+        }
+        newPd = new PaddlePressDetection();
+        newPd->Detected = DitOrDah::FORCED_CHARSPACE;
+        ditsNdahQueue.push(newPd);
+        //send_the_dits_and_dahs(ditsanddahs.c_str());
       }
     }
 
@@ -473,7 +474,6 @@ void send_char(byte cw_char, byte omit_letterspace)
 
 //-------------------------------------------------------------------------------------------------------
 
-
 void service_injected_text()
 {
   while (!injectedText.empty())
@@ -484,50 +484,11 @@ void service_injected_text()
     for (int i = 0; i < s.length(); i++)
     {
       x = s.charAt(i);
-      add_to_send_buffer(x);
+      send_char(x, KEYER_NORMAL);
     }
     injectedText.pop();
   }
 }
-
-void service_paddle_echo()
-{
-#ifdef FEATURE_PADDLE_ECHO
-  static byte paddle_echo_space_sent = 1;
-
-  if ((paddle_echo_buffer) && (millis() > paddle_echo_buffer_decode_time))
-  {
-
-#ifdef FEATURE_DISPLAY
-    if (displayControl.lcd_paddle_echo)
-    {
-
-      displayControl.displayUpdate(convert_cw_number_to_string(paddle_echo_buffer));
-    }
-#endif //FEATURE_DISPLAY
-
-    paddle_echo_buffer = 0;
-    paddle_echo_buffer_decode_time = millis() + (float(600 / configControl.configuration.wpm) * length_letterspace);
-    paddle_echo_space_sent = 0;
-  }
-
-  // is it time to echo a space?
-  if ((paddle_echo_buffer == 0) && (millis() > (paddle_echo_buffer_decode_time + (float(1200 / configControl.configuration.wpm) * (configControl.configuration.length_wordspace - length_letterspace)))) && (!paddle_echo_space_sent))
-  {
-
-#ifdef FEATURE_DISPLAY
-    if (displayControl.lcd_paddle_echo)
-    {
-      displayControl.displayUpdate(' ');
-    }
-#endif //FEATURE_DISPLAY
-
-    paddle_echo_space_sent = 1;
-  }
-#endif //FEATURE_PADDLE_ECHO
-}
-
-
 
 //---------------------------------------------------------------------
 
@@ -572,8 +533,6 @@ void initialize_default_modes()
 //---------------------------------------------------------------------
 
 //---------------------------------------------------------------------
-
-
 
 void service_millis_rollover()
 {

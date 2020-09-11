@@ -6,7 +6,9 @@ enum DitOrDah
 {
     DIT,
     DAH,
-    DUMMY
+    DUMMY,
+    SPACE,
+    FORCED_CHARSPACE
 };
 
 class PaddlePressDetection

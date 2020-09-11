@@ -279,7 +279,11 @@ void processDitDahQueue()
             //{
             if (paddePress->Detected != DitOrDah::DUMMY)
             {
-                M5.Speaker.tone(600);
+
+                if (paddePress->Detected != DitOrDah::SPACE && paddePress->Detected != DitOrDah::FORCED_CHARSPACE)
+                {
+                    M5.Speaker.tone(600);
+                }
                 // lock us up
                 soundPlaying = true;
 
@@ -290,7 +294,14 @@ void processDitDahQueue()
                 {
                     interval = 180L;
                 }
-
+                if (paddePress->Detected == DitOrDah::SPACE)
+                {
+                    interval = 360L;
+                }
+                if (paddePress->Detected == DitOrDah::FORCED_CHARSPACE)
+                {
+                    interval = 180L;
+                }
                 // set up and start the timer that will stop the tone
                 // (and/or transmitter unkey)
                 ISR_Timer.changeInterval(toneSilenceTimer, interval);

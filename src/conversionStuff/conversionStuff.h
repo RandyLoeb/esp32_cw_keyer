@@ -16,17 +16,20 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
     bool charSpaceDetected = false;
     bool wordSpaceDetected = false;
     bool isDummy = ditDahOrSpace->Detected == DitOrDah::DUMMY;
+    bool isSpace = ditDahOrSpace->Detected == DitOrDah::SPACE;
+    bool isForcedCharSpace = ditDahOrSpace->Detected == DitOrDah::FORCED_CHARSPACE;
 
     if (!(lastPress == nullptr))
     {
         long timeDiff = ditDahOrSpace->TimeStamp - lastPress->TimeStamp;
 
-        if (timeDiff > (60 * 4))
+        if (timeDiff > (60 * 7) || isSpace)
         {
             wordSpaceDetected = true;
             cachedWordSpace = true;
         }
 
+        
         if (lastPress->Detected == DitOrDah::DIT && (timeDiff > (60 + 60 + 30)))
         {
             if (conversionQueue.size() > 0)
@@ -44,6 +47,11 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
                 Serial.print("after dah time:");
                 Serial.println(timeDiff);
             }
+            charSpaceDetected = true;
+        }
+
+        if (isForcedCharSpace)
+        {
             charSpaceDetected = true;
         }
     }
@@ -105,7 +113,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
         //lastMilis = -1;
     }
 
-    if (!isDummy)
+    if (!isDummy && !isSpace & !isForcedCharSpace)
     {
         conversionQueue.push_back(ditDahOrSpace);
         lastPress = ditDahOrSpace;
