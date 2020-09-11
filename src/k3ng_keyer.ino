@@ -59,24 +59,6 @@ persistentConfig &configControl{persistConfig};
 
 #include "displays/keyerDisplay.h"
 
-/* #include "virtualPins/virtualPins.h"
-VirtualPins virtualPins;
-#include "virtualPins/m5VirtualButtonPin.h"
-M5VirtualButtonPin btnA{M5Btnslist::A};
-M5VirtualButtonPin btnC{M5Btnslist::C};
-#include "virtualPins/virtualArduinoStyleInputPin.h"
-VirtualArduinoStyleInputPin p2(2, VitualArduinoPinPull::VAPP_HIGH);
-VirtualArduinoStyleInputPin p5(5, VitualArduinoPinPull::VAPP_HIGH);
-
-VirtualPin &vpA{btnA};
-VirtualPin &vpC{btnC};
-VirtualPin &vp2{p2};
-VirtualPin &vp5{p5};
-
-#include "virtualPins/virtualPinSet.h"
-VirtualPinSet ditPaddles;
-VirtualPinSet dahPaddles; */
-
 // move this later
 void lcd_center_print_timed_wpm();
 
@@ -92,6 +74,7 @@ std::queue<String> injectedText;
 PaddleReader *paddleReader;
 
 #include "timerStuff/timerStuff.h"
+#include "virtualPins/keyerPins.h"
 
 void setup()
 {
@@ -105,15 +88,7 @@ void setup()
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
   keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl);
-
-  /* ditPaddles.pins.push_back(&vpA);
-  ditPaddles.pins.push_back(&vp2);
-  dahPaddles.pins.push_back(&vpC);
-  dahPaddles.pins.push_back(&vp5);
-
-  virtualPins.pinsets.insert(std::make_pair(paddle_left, &ditPaddles));
-  virtualPins.pinsets.insert(std::make_pair(paddle_right, &dahPaddles));
- */
+  initialize_virtualPins();
 #ifdef ESPNOW_WIRELESS_KEYER
 #ifndef M5CORE
   initialize_espnow_wireless(speed_set);

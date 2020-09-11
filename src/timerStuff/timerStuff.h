@@ -15,6 +15,7 @@ Is what it is for now
 #include "ESP32_ISR_Timer.h"
 #include "conversionStuff/conversionStuff.h"
 #include "paddlePress.h"
+#include "virtualPins/keyerPins.h"
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -110,8 +111,9 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             int pressedBefore = *pressed;
 
             // get the pin
-            *pressed = !digitalRead(pin);
+            //*pressed = !digitalRead(pin);
 
+            *pressed = !virtualPins.pinsets[pin]->digRead();
             // pressed?
             if (*pressed && !pressedBefore)
             {
@@ -151,12 +153,12 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
 // these two are triggered by hardware interrupts
 void IRAM_ATTR detectDitPress()
 {
-    detectPress(&ditLocked, &ditPressed, ditTimer, debounceDitTimer, ditpin, DitOrDah::DIT);
+    detectPress(&ditLocked, &ditPressed, ditTimer, debounceDitTimer, VIRTUAL_DITS, DitOrDah::DIT);
 }
 
 void IRAM_ATTR detectDahPress()
 {
-    detectPress(&dahLocked, &dahPressed, dahTimer, debounceDahTimer, dahpin, DitOrDah::DAH);
+    detectPress(&dahLocked, &dahPressed, dahTimer, debounceDahTimer, VIRTUAL_DAHS, DitOrDah::DAH);
 }
 
 // fired by the timer that unlocks the debouncer indirectly
@@ -214,10 +216,10 @@ void initializeTimerStuff()
 
     //seems like pin can only have one interrupt attached
     attachInterrupt(digitalPinToInterrupt(ditpin), detectDitPress, CHANGE);
-    //attachInterrupt(digitalPinToInterrupt(GPIO_NUM_39), detectDitRelease, RISING);
+    attachInterrupt(digitalPinToInterrupt(GPIO_NUM_39), detectDitPress, CHANGE);
 
     attachInterrupt(digitalPinToInterrupt(dahpin), detectDahPress, CHANGE);
-
+    attachInterrupt(digitalPinToInterrupt(GPIO_NUM_37), detectDahPress, CHANGE);
     // Using ESP32  => 80 / 160 / 240MHz CPU clock ,
     // For 64-bit timer counter
     // For 16-bit timer prescaler up to 1024
