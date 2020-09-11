@@ -1,6 +1,5 @@
-#define CODE_VERSION "2020.02.13.01"
+
 #define M5CORE
-#define eeprom_magic_number 35 // you can change this number to have the unit re-initialize EEPROM
 
 #include <stdio.h>
 #include <queue>
@@ -60,7 +59,7 @@ persistentConfig &configControl{persistConfig};
 
 #include "displays/keyerDisplay.h"
 
-#include "virtualPins/virtualPins.h"
+/* #include "virtualPins/virtualPins.h"
 VirtualPins virtualPins;
 #include "virtualPins/m5VirtualButtonPin.h"
 M5VirtualButtonPin btnA{M5Btnslist::A};
@@ -76,7 +75,7 @@ VirtualPin &vp5{p5};
 
 #include "virtualPins/virtualPinSet.h"
 VirtualPinSet ditPaddles;
-VirtualPinSet dahPaddles;
+VirtualPinSet dahPaddles; */
 
 // move this later
 void lcd_center_print_timed_wpm();
@@ -107,14 +106,14 @@ void setup()
   //also needs place to inject text
   keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl);
 
-  ditPaddles.pins.push_back(&vpA);
+  /* ditPaddles.pins.push_back(&vpA);
   ditPaddles.pins.push_back(&vp2);
   dahPaddles.pins.push_back(&vpC);
   dahPaddles.pins.push_back(&vp5);
 
   virtualPins.pinsets.insert(std::make_pair(paddle_left, &ditPaddles));
   virtualPins.pinsets.insert(std::make_pair(paddle_right, &dahPaddles));
-
+ */
 #ifdef ESPNOW_WIRELESS_KEYER
 #ifndef M5CORE
   initialize_espnow_wireless(speed_set);
@@ -132,19 +131,13 @@ void setup()
 #endif
 
   initialize_default_modes();
-  //configControl.configuration.wpm = 15;
-  //check_for_beacon_mode();
+
   displayControl.initialize([](char x) {
     send_char(x, KEYER_NORMAL);
   });
   wifiUtils.initialize();
 
   keyerWebServer->start();
-  /* paddleReader = new PaddleReader([]() { return virtualPins.pinsets.at(paddle_left)->digRead(); },
-                                  []() { return virtualPins.pinsets.at(paddle_right)->digRead(); },
-                                  configControl.configuration.wpm); */
-
-  // put your setup code here, to run once:
   initializeTimerStuff();
 
   // turn on the speaker
@@ -156,12 +149,6 @@ void setup()
 void loop()
 {
   detectInterrupts = true;
-  /* check_paddles();
-
-  service_dit_dah_buffers();
-
-  service_send_buffer(PRINTCHAR);
-  check_ptt_tail(); */
 
 #if !defined M5CORE
   wpmPot.checkPotentiometer(wpmSetCallBack);
@@ -169,11 +156,7 @@ void loop()
 
   check_for_dirty_configuration();
 
-  /* check_paddles();
-  service_send_buffer(PRINTCHAR); */
   displayControl.service_display();
-
-  //service_paddle_echo();
 
   service_millis_rollover();
   wifiUtils.processNextDNSRequest();
@@ -193,17 +176,6 @@ void check_for_dirty_configuration()
   }
 }
 
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
 void save_persistent_configuration()
 {
   configControl.save();
@@ -281,118 +253,6 @@ void sidetone_adj(int hz)
 #endif
   }
 }
-
-//-------------------------------------------------------------------------------------------------------
-
-//------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-void send_the_dits_and_dahs(char const *cw_to_send)
-{
-
-  /* American Morse - Special Symbols
-
-    ~  long dah (4 units)
-
-    =  very long dah (5 units)
-
-    &  an extra space (1 unit)
-
-  */
-
-  //debug_serial_port->println(F("send_the_dits_and_dahs()"));
-
-  sending_mode = AUTOMATIC_SENDING;
-
-#if defined(FEATURE_SERIAL) && !defined(OPTION_DISABLE_SERIAL_PORT_CHECKING_WHILE_SENDING_CW)
-  dump_current_character_flag = 0;
-#endif
-
-#if defined(FEATURE_FARNSWORTH)
-  float additional_intercharacter_time_ms;
-#endif
-
-  for (int x = 0; x < 12; x++)
-  {
-    switch (cw_to_send[x])
-    {
-    case '.':
-      //Serial.println("About to send dit...");
-      //send_dit();
-      break;
-    case '-':
-      //send_dah();
-      break;
-#if defined(FEATURE_AMERICAN_MORSE) // this is a bit of a hack, but who cares!  :-)
-    case '~':
-
-      being_sent = SENDING_DAH;
-      tx_and_sidetone_key(1);
-      if ((tx_key_dah) && (key_tx))
-      {
-        digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_active_state);
-      }
-      loop_element_lengths((float(4.0) * (float(configControl.configuration.weighting) / 50)), keying_compensation, configControl.configuration.wpm);
-      if ((tx_key_dah) && (key_tx))
-      {
-        digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_inactive_state);
-      }
-      tx_and_sidetone_key(0);
-      loop_element_lengths((4.0 - (3.0 * (float(configControl.configuration.weighting) / 50))), (-1.0 * keying_compensation), configControl.configuration.wpm);
-      break;
-
-    case '=':
-      being_sent = SENDING_DAH;
-      tx_and_sidetone_key(1);
-      if ((tx_key_dah) && (key_tx))
-      {
-        digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_active_state);
-      }
-      loop_element_lengths((float(5.0) * (float(configControl.configuration.weighting) / 50)), keying_compensation, configControl.configuration.wpm);
-      if ((tx_key_dah) && (key_tx))
-      {
-        digitalWrite(tx_key_dah, tx_key_dit_and_dah_pins_inactive_state);
-      }
-      tx_and_sidetone_key(0);
-      loop_element_lengths((4.0 - (3.0 * (float(configControl.configuration.weighting) / 50))), (-1.0 * keying_compensation), configControl.configuration.wpm);
-      break;
-
-    case '&':
-      loop_element_lengths((4.0 - (3.0 * (float(configControl.configuration.weighting) / 50))), (-1.0 * keying_compensation), configControl.configuration.wpm);
-      break;
-#endif //FEATURE_AMERICAN_MORSE
-    default:
-      //return;
-      x = 12;
-      break;
-    }
-
-    if ((dit_buffer || dah_buffer || sending_mode == AUTOMATIC_SENDING_INTERRUPTED) && (keyer_machine_mode != BEACON))
-    {
-      dit_buffer = 0;
-      dah_buffer = 0;
-      //debug_serial_port->println(F("send_the_dits_and_dahs: AUTOMATIC_SENDING_INTERRUPTED"));
-      //return;
-      x = 12;
-    }
-#if defined(FEATURE_SERIAL)
-    check_serial();
-#if !defined(OPTION_DISABLE_SERIAL_PORT_CHECKING_WHILE_SENDING_CW)
-    if (dump_current_character_flag)
-    {
-      x = 12;
-    }
-#endif
-#endif
-
-#ifdef OPTION_WATCHDOG_TIMER
-    wdt_reset();
-#endif //OPTION_WATCHDOG_TIMER
-
-  } // for (int x = 0;x < 12;x++)
-}
-
-//-------------------------------------------------------------------------------------------------------
 
 void send_char(byte cw_char, byte omit_letterspace)
 {
@@ -490,12 +350,6 @@ void service_injected_text()
   }
 }
 
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
 void initialize_keyer_state()
 {
 
@@ -506,12 +360,6 @@ void initialize_keyer_state()
   //switch_to_tx_silent(1);
 #endif
 }
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
 
 void initialize_default_modes()
 {
@@ -527,12 +375,6 @@ void initialize_default_modes()
 
   delay(250); // wait a little bit for the caps to charge up on the paddle lines
 }
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
-
-//---------------------------------------------------------------------
 
 void service_millis_rollover()
 {
