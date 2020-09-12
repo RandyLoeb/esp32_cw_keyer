@@ -2,7 +2,7 @@
 #define TIMINGCONTROL_H
 #include <Arduino.h>
 #include <string>
-
+//https://morsecode.world/international/timing.html
 class TimingSettings
 {
 public:
@@ -20,6 +20,8 @@ public:
     double wordsPerSecond;
     double ditsPerWord;
     double secondsPerDit;
+    double farnsworthUnit_s;
+    double farnsworthUnit_ms;
 
     void setWpm(int wpm_new, int farnsworth_slow = -1)
     {
@@ -34,8 +36,18 @@ public:
         this->dit_ms = this->secondsPerDit * 1000;
         this->dah_ms = this->dit_ms * 3;
         this->intraCharSpace_ms = this->dit_ms;
-        this->wordSpace_ms = this->dit_ms * 7;
-        this->interCharSpace_ms = this->dit_ms * 3;
+        if (farnsworth_slow == -1)
+        {
+            this->wordSpace_ms = this->dit_ms * 7;
+            this->interCharSpace_ms = this->dit_ms * 3;
+        }
+        else
+        {
+            this->farnsworthUnit_s = ((60 / (double)this->wpm_farnsworth_slow) - (31 * this->secondsPerDit)) / (double)19;
+            this->farnsworthUnit_ms = this->farnsworthUnit_s * 1000;
+            this->wordSpace_ms = this->farnsworthUnit_ms * 7;
+            this->interCharSpace_ms = this->farnsworthUnit_ms * 3;
+        }
 
         Serial.print("dit_ms:" + String(this->dit_ms) + " ");
         Serial.print("ddah_ms:" + String(this->dah_ms) + " ");

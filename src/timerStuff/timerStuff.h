@@ -230,7 +230,7 @@ void reEnableTimers()
 
 void changeTimerWpm()
 {
-    timingControl.setWpm(configControl.configuration.wpm,configControl.configuration.wpm_farnsworth,configControl.configuration.wpm_farnsworth_slow);
+    timingControl.setWpm(configControl.configuration.wpm, configControl.configuration.wpm_farnsworth, configControl.configuration.wpm_farnsworth_slow);
     ISR_Timer.disable(ditTimer);
     ISR_Timer.disable(dahTimer);
     ISR_Timer.disable(toneSilenceTimer);
@@ -252,7 +252,7 @@ void changeTimerWpm()
 
 void initializeTimerStuff()
 {
-    timingControl.setWpm(configControl.configuration.wpm,configControl.configuration.wpm_farnsworth,configControl.configuration.wpm_farnsworth_slow);
+    timingControl.setWpm(configControl.configuration.wpm, configControl.configuration.wpm_farnsworth, configControl.configuration.wpm_farnsworth_slow);
 
     // have to play nice with the configControl and turn off
     // timers when saving to spiffs otherwise we get kernal panics
@@ -287,7 +287,6 @@ void initializeTimerStuff()
 
     // Just to demonstrate, don't use too many ISR Timers if not absolutely necessary
 
-    
     // this timer monitors the dit paddle held down
     ditTimer = ISR_Timer.setInterval(1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms, doDits);
 
@@ -338,7 +337,7 @@ void processDitDahQueue()
 
     while (!ditsNdahQueue.empty())
     {
-        TimingSettings *timingSettings = &timingControl.Paddles;
+
         //soundPlaying is a kind of "lock" to make sure we wait for
         //the last sound, plus spacing to be done
         if (!soundPlaying)
@@ -352,6 +351,18 @@ void processDitDahQueue()
 
             if (paddePress->Detected != DitOrDah::DUMMY)
             {
+                TimingSettings *timingSettings;
+
+                if (paddePress->Source == PaddlePressSource::ARTIFICIAL)
+                {
+                    timingSettings = &timingControl.Farnsworth;
+                    //Serial.println("using farnsworth");
+                }
+                else
+                {
+                    timingSettings = &timingControl.Paddles;
+                    //Serial.println("using regular");
+                }
 
                 if (paddePress->Detected != DitOrDah::SPACE && paddePress->Detected != DitOrDah::FORCED_CHARSPACE)
                 {
@@ -379,9 +390,11 @@ void processDitDahQueue()
                 if (paddePress->Detected == DitOrDah::FORCED_CHARSPACE)
                 {
                     //interval = 180L;
+                    interval = timingSettings->interCharSpace_ms - timingSettings->intraCharSpace_ms;
                 }
                 // set up and start the timer that will stop the tone
                 // (and/or transmitter unkey)
+
                 ISR_Timer.changeInterval(toneSilenceTimer, interval);
                 ISR_Timer.restartTimer(toneSilenceTimer);
                 ISR_Timer.enable(toneSilenceTimer);
