@@ -6,6 +6,7 @@
 #include "cw_utils.h"
 #include "displays/keyerDisplay.h"
 #include "timerStuff/paddlePress.h"
+#include "timerStuff/timingControl.h"
 std::vector<PaddlePressDetection *> conversionQueue;
 PaddlePressDetection *lastPress;
 bool cachedWordSpace = false;
@@ -38,8 +39,8 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
                 //wordSpaceDetected = true;
                 cachedWordSpace = true;
             }
-
-            if (lastPress->Detected == DitOrDah::DIT && (timeDiff > (60 + 60 + 30)))
+            //was dit(60) + 60 + 30
+            if (lastPress->Detected == DitOrDah::DIT && (timeDiff > (timingControl.dit_ms + timingControl.interCharSpace_ms)))
             {
                 if (conversionQueue.size() > 0)
                 {
@@ -49,7 +50,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
                 charSpaceDetected = true;
             }
 
-            if (lastPress->Detected == DitOrDah::DAH && (timeDiff > (180 + 60 + 30)))
+            if (lastPress->Detected == DitOrDah::DAH && (timeDiff > (timingControl.dah_ms + timingControl.interCharSpace_ms)))
             {
                 if (conversionQueue.size() > 0)
                 {
@@ -99,7 +100,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
 
                     long lastWordDiff = (*it)->TimeStamp - lastWordLetterTimestamp;
                     Serial.print(lastWordDiff);
-                    if (lastWordDiff > 240)
+                    if (lastWordDiff > timingControl.wordSpace_ms)
                     {
                         cachedWordSpace = true;
                     }

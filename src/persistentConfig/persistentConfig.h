@@ -2,6 +2,8 @@
 #define PERSISTENTCONFIG_H
 #include <Arduino.h>
 #include <string>
+#include <vector>
+#include <queue>
 #define PRIMARY_SERIAL_CLS HardwareSerial
 class persistentConfig
 {
@@ -61,9 +63,48 @@ public:
 
     virtual void save();
 
+    virtual void preSave()
+    {
+        for (std::vector<void (*)()>::iterator it = preSaveCallbacks.begin(); it != preSaveCallbacks.end(); ++it)
+        {
+            (*it)();
+        }
+    };
+
+    virtual void postSave()
+    {
+        for (std::vector<void (*)()>::iterator it = postSaveCallbacks.begin(); it != postSaveCallbacks.end(); ++it)
+        {
+            (*it)();
+        }
+
+        while (!postSaveOneTimeCallbacks.empty())
+        {
+            void (*oneTime)() = postSaveOneTimeCallbacks.front();
+            postSaveOneTimeCallbacks.pop();
+            oneTime();
+        }
+    };
+
     String
     getJsonStringFromConfiguration();
 
     byte config_dirty = 0;
+
+    std::vector<void (*)()> wpmChangeCallbacks;
+
+    std::vector<void (*)()> preSaveCallbacks;
+    std::vector<void (*)()> postSaveCallbacks;
+    std::queue<void (*)()> postSaveOneTimeCallbacks;
+
+    void setWpm(int newWpm)
+    {
+
+        this->configuration.wpm = newWpm;
+        for (std::vector<void (*)()>::iterator it = wpmChangeCallbacks.begin(); it != wpmChangeCallbacks.end(); ++it)
+        {
+            postSaveOneTimeCallbacks.push((*it));
+        }
+    };
 };
 #endif

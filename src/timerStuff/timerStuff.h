@@ -206,9 +206,56 @@ void IRAM_ATTR injectCharSpace()
     //ISR_Timer.disable(charSpaceTimer);
 }
 
+void disableAllTimers()
+{
+    /* ISR_Timer.disable(ditTimer);
+    ISR_Timer.disable(dahTimer);
+    ISR_Timer.disable(toneSilenceTimer);
+    ISR_Timer.disable(ditDahSpaceLockTimer);
+    ISR_Timer.disable(charSpaceTimer);
+    ISR_Timer.disable(debounceDitTimer);
+    ISR_Timer.disable(debounceDahTimer); */
+    ISR_Timer.disableAll();
+}
+
+void reEnableTimers()
+{
+    ISR_Timer.enable(charSpaceTimer);
+    ISR_Timer.enable(debounceDitTimer);
+    ISR_Timer.enable(debounceDahTimer);
+}
+
+void changeTimerWpm()
+{
+    timingControl.setWpm(configControl.configuration.wpm);
+    ISR_Timer.disable(ditTimer);
+    ISR_Timer.disable(dahTimer);
+    ISR_Timer.disable(toneSilenceTimer);
+    ISR_Timer.disable(ditDahSpaceLockTimer);
+    ISR_Timer.disable(charSpaceTimer);
+
+    ISR_Timer.changeInterval(ditTimer, 1 + timingControl.dit_ms + timingControl.intraCharSpace_ms);
+    ISR_Timer.changeInterval(dahTimer, 1 + timingControl.dah_ms + timingControl.intraCharSpace_ms);
+    ISR_Timer.changeInterval(toneSilenceTimer, timingControl.dit_ms);
+    ISR_Timer.changeInterval(ditDahSpaceLockTimer, timingControl.intraCharSpace_ms);
+    ISR_Timer.changeInterval(charSpaceTimer, 10 + timingControl.dah_ms + timingControl.intraCharSpace_ms);
+
+    ISR_Timer.disable(ditTimer);
+    ISR_Timer.disable(dahTimer);
+    ISR_Timer.disable(toneSilenceTimer);
+    ISR_Timer.disable(ditDahSpaceLockTimer);
+    ISR_Timer.enable(charSpaceTimer);
+}
+
 void initializeTimerStuff()
 {
     timingControl.setWpm(configControl.configuration.wpm);
+
+    // have to play nice with the configControl and turn off
+    // timers when saving to spiffs otherwise we get kernal panics
+    configControl.wpmChangeCallbacks.push_back(changeTimerWpm);
+    configControl.preSaveCallbacks.push_back(disableAllTimers);
+    configControl.postSaveCallbacks.push_back(reEnableTimers);
 
     pinMode(ditpin, INPUT_PULLUP);
     pinMode(dahpin, INPUT_PULLUP);

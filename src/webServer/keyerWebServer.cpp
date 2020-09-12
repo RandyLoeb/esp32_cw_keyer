@@ -149,7 +149,8 @@ void KeyerWebServer::initializeServer()
             if (settingName=="wpm")
             {
                 Serial.println("setting for wpm matched!");
-                this->_persistentConfig->configuration.wpm=settingsObj["value"].as<int>();
+                this->_persistentConfig->setWpm(settingsObj["value"].as<int>());
+                //this->_persistentConfig->configuration.wpm=settingsObj["value"].as<int>();
                 debugMatched=true;
             }
             if (settingName=="wpm_farnsworth")

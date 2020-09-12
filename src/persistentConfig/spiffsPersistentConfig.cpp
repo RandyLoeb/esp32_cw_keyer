@@ -8,7 +8,6 @@
 #define FORMAT_SPIFFS_IF_FAILED true
 #define SPIFFS_LOG_SERIAL false
 
-
 void SpiffsPersistentConfig::makeSpiffsReady()
 {
     if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED))
@@ -41,7 +40,7 @@ void SpiffsPersistentConfig::makeSpiffsReady()
             file = root.openNextFile();
         }
  */
-        _SPIFFS_MADE_READY = 1;
+        this->_SPIFFS_MADE_READY = 1;
     }
 }
 int SpiffsPersistentConfig::configFileExists()
@@ -200,9 +199,9 @@ void SpiffsPersistentConfig::setConfigurationFromFile()
 
 void SpiffsPersistentConfig::writeConfigurationToFile()
 {
-    if (!_SPIFFS_MADE_READY)
+    if (!this->_SPIFFS_MADE_READY)
     {
-        makeSpiffsReady();
+        this->makeSpiffsReady();
     }
     String jsonToWrite = getJsonStringFromConfiguration();
     File newfile = SPIFFS.open(CONFIG_JSON_FILENAME, FILE_WRITE);
@@ -258,5 +257,7 @@ void SpiffsPersistentConfig::initialize(PRIMARY_SERIAL_CLS *loggingPortToUse)
 }
 void SpiffsPersistentConfig::save()
 {
+    this->preSave();
     writeConfigurationToFile();
+    this->postSave();
 };
