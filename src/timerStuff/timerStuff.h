@@ -230,18 +230,18 @@ void reEnableTimers()
 
 void changeTimerWpm()
 {
-    timingControl.setWpm(configControl.configuration.wpm);
+    timingControl.setWpm(configControl.configuration.wpm,configControl.configuration.wpm_farnsworth,configControl.configuration.wpm_farnsworth_slow);
     ISR_Timer.disable(ditTimer);
     ISR_Timer.disable(dahTimer);
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.disable(ditDahSpaceLockTimer);
     ISR_Timer.disable(charSpaceTimer);
 
-    ISR_Timer.changeInterval(ditTimer, 1 + timingControl.dit_ms + timingControl.intraCharSpace_ms);
-    ISR_Timer.changeInterval(dahTimer, 1 + timingControl.dah_ms + timingControl.intraCharSpace_ms);
-    ISR_Timer.changeInterval(toneSilenceTimer, timingControl.dit_ms);
-    ISR_Timer.changeInterval(ditDahSpaceLockTimer, timingControl.intraCharSpace_ms);
-    ISR_Timer.changeInterval(charSpaceTimer, 10 + timingControl.dah_ms + timingControl.intraCharSpace_ms);
+    ISR_Timer.changeInterval(ditTimer, 1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms);
+    ISR_Timer.changeInterval(dahTimer, 1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms);
+    ISR_Timer.changeInterval(toneSilenceTimer, timingControl.Paddles.dit_ms);
+    ISR_Timer.changeInterval(ditDahSpaceLockTimer, timingControl.Paddles.intraCharSpace_ms);
+    ISR_Timer.changeInterval(charSpaceTimer, 10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms);
 
     ISR_Timer.disable(ditTimer);
     ISR_Timer.disable(dahTimer);
@@ -252,7 +252,7 @@ void changeTimerWpm()
 
 void initializeTimerStuff()
 {
-    timingControl.setWpm(configControl.configuration.wpm);
+    timingControl.setWpm(configControl.configuration.wpm,configControl.configuration.wpm_farnsworth,configControl.configuration.wpm_farnsworth_slow);
 
     // have to play nice with the configControl and turn off
     // timers when saving to spiffs otherwise we get kernal panics
@@ -287,11 +287,12 @@ void initializeTimerStuff()
 
     // Just to demonstrate, don't use too many ISR Timers if not absolutely necessary
 
+    
     // this timer monitors the dit paddle held down
-    ditTimer = ISR_Timer.setInterval(1 + timingControl.dit_ms + timingControl.intraCharSpace_ms, doDits);
+    ditTimer = ISR_Timer.setInterval(1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms, doDits);
 
     // this timer monitors the dah paddle held down
-    dahTimer = ISR_Timer.setInterval(1 + timingControl.dah_ms + timingControl.intraCharSpace_ms, doDahs);
+    dahTimer = ISR_Timer.setInterval(1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms, doDahs);
 
     // debouncers, needs some tweaking
     debounceDitTimer = ISR_Timer.setInterval(1L, unlockDit);
@@ -300,13 +301,13 @@ void initializeTimerStuff()
     // timer to silence tone (could be used to unkey transmitter)
     // note this will be changed depending on dit dah but just
     // give initial value here
-    toneSilenceTimer = ISR_Timer.setInterval(timingControl.dit_ms, silenceTone);
+    toneSilenceTimer = ISR_Timer.setInterval(timingControl.Paddles.dit_ms, silenceTone);
 
     // timer to unlock the sidetone (could be transmitter key)
     // another way to think of this is as intra-character timer?
-    ditDahSpaceLockTimer = ISR_Timer.setInterval(timingControl.intraCharSpace_ms, releaseLockForDitDahSpace);
+    ditDahSpaceLockTimer = ISR_Timer.setInterval(timingControl.Paddles.intraCharSpace_ms, releaseLockForDitDahSpace);
 
-    charSpaceTimer = ISR_Timer.setInterval(10 + timingControl.dah_ms + timingControl.intraCharSpace_ms, injectCharSpace);
+    charSpaceTimer = ISR_Timer.setInterval(10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms, injectCharSpace);
 
     // not sure if disabled by default by do it
     ISR_Timer.disable(ditTimer);
@@ -337,6 +338,7 @@ void processDitDahQueue()
 
     while (!ditsNdahQueue.empty())
     {
+        TimingSettings *timingSettings = &timingControl.Paddles;
         //soundPlaying is a kind of "lock" to make sure we wait for
         //the last sound, plus spacing to be done
         if (!soundPlaying)
@@ -361,10 +363,10 @@ void processDitDahQueue()
 
                 // figure out when the tone should stop
                 // (and/or transmitter unkey)
-                unsigned int interval = timingControl.dit_ms;
+                unsigned int interval = timingSettings->dit_ms;
                 if (paddePress->Detected == DitOrDah::DAH)
                 {
-                    interval = timingControl.dah_ms;
+                    interval = timingSettings->dah_ms;
                 }
 
                 // if we are locking for intracharacter, i think we just account
@@ -372,7 +374,7 @@ void processDitDahQueue()
                 if (paddePress->Detected == DitOrDah::SPACE)
                 {
                     //interval = 360L;
-                    interval = timingControl.wordSpace_ms - timingControl.intraCharSpace_ms;
+                    interval = timingSettings->wordSpace_ms - timingSettings->intraCharSpace_ms;
                 }
                 if (paddePress->Detected == DitOrDah::FORCED_CHARSPACE)
                 {

@@ -58,8 +58,7 @@ WifiUtils wifiUtils{};
 
 std::queue<String> injectedText;
 
-#include "paddleMonitoring/paddleReader.h"
-PaddleReader *paddleReader;
+
 
 #include "timerStuff/timerStuff.h"
 #include "virtualPins/keyerPins.h"

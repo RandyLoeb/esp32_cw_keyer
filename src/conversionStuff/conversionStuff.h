@@ -40,7 +40,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
                 cachedWordSpace = true;
             }
             //was dit(60) + 60 + 30
-            if (lastPress->Detected == DitOrDah::DIT && (timeDiff > (timingControl.dit_ms + timingControl.interCharSpace_ms)))
+            if (lastPress->Detected == DitOrDah::DIT && (timeDiff > (timingControl.Paddles.dit_ms + timingControl.Paddles.interCharSpace_ms)))
             {
                 if (conversionQueue.size() > 0)
                 {
@@ -50,7 +50,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
                 charSpaceDetected = true;
             }
 
-            if (lastPress->Detected == DitOrDah::DAH && (timeDiff > (timingControl.dah_ms + timingControl.interCharSpace_ms)))
+            if (lastPress->Detected == DitOrDah::DAH && (timeDiff > (timingControl.Paddles.dah_ms + timingControl.Paddles.interCharSpace_ms)))
             {
                 if (conversionQueue.size() > 0)
                 {
@@ -100,7 +100,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
 
                     long lastWordDiff = (*it)->TimeStamp - lastWordLetterTimestamp;
                     Serial.print(lastWordDiff);
-                    if (lastWordDiff > timingControl.wordSpace_ms)
+                    if (lastWordDiff > timingControl.Paddles.wordSpace_ms)
                     {
                         cachedWordSpace = true;
                     }
