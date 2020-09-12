@@ -2,11 +2,17 @@ var myViewModel = {
   keyerText: ko.observable("hello world"),
   wpm: ko.observable(0),
   wpm_farnsworth: ko.observable(0),
+  wpm_farnsworth_slow: ko.observable(0),
   onWpm: function () {
     this.setConfig([{ name: "wpm", value: this.wpm() }]);
   },
   onWpmFarnsworth: function () {
     this.setConfig([{ name: "wpm_farnsworth", value: this.wpm_farnsworth() }]);
+  },
+  onWpmFarnsworthSlow: function () {
+    this.setConfig([
+      { name: "wpm_farnsworth_slow", value: this.wpm_farnsworth_slow() },
+    ]);
   },
   onSendText: function () {
     $.ajax({
@@ -28,11 +34,7 @@ var myViewModel = {
       dataType: "json",
       contentType: "application/json",
       success: function (data) {
-        // $('#target').html(data.msg);
-        //this.keyerText("");
-        console.log(data);
-        myViewModel.wpm(data.wpm);
-        myViewModel.wpm_farnsworth(data.wpm_farnsworth);
+        myViewModel.updateFresh(data);
       },
     });
   },
@@ -43,11 +45,15 @@ var myViewModel = {
       dataType: "json",
       contentType: "application/json",
       success: function (data) {
-        console.log(data);
-        myViewModel.wpm(data.wpm);
-        myViewModel.wpm_farnsworth(data.wpm_farnsworth);
+        myViewModel.updateFresh(data);
       },
       data: JSON.stringify({ settings: settings }),
     });
+  },
+  updateFresh: function (data) {
+    console.log(data);
+    myViewModel.wpm(data.wpm);
+    myViewModel.wpm_farnsworth(data.wpm_farnsworth);
+    myViewModel.wpm_farnsworth_slow(data.wpm_farnsworth_slow);
   },
 };

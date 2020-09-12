@@ -96,7 +96,33 @@
           </button>
         </div>
       </div>
-    </div>
+      <div class="divTableHeading" id="otherHead">
+        <div class="divTableRow">
+          <div>&nbsp;&nbsp;WPM Farnsworth Slow:</div>
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center">
+        <div class="divTableCell">
+          <input
+            id="wpm_farnsworth_slow"
+            class="myInput"
+            size="16"
+            type="text"
+            id="other"
+            data-bind="value: wpm_farnsworth_slow"
+          />
+          <button
+            id="wpmFarnsworthSlowButton"
+            class="myButton"
+            data-unseenSSID="true"
+            data-networkType="type4"
+            data-isknown="false"
+            data-bind="click: onWpmFarnsworthSlow"
+          >
+            Set WPM Farnsworth Slow
+          </button>
+        </div>  
+      </div>    
     <br />
     <script>
       $(function () {

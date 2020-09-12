@@ -39,6 +39,7 @@ public:
         unsigned int hz_sidetone;
         unsigned int dah_to_dit_ratio;
         unsigned int wpm_farnsworth;
+        unsigned int wpm_farnsworth_slow;
         unsigned int memory_repeat_time;
         unsigned int wpm_command_mode;
         unsigned int link_receive_udp_port;
@@ -97,14 +98,18 @@ public:
     std::vector<void (*)()> postSaveCallbacks;
     std::queue<void (*)()> postSaveOneTimeCallbacks;
 
-    void setWpm(int newWpm)
+    void setWpm(int newWpm, int newWpmFarnsworth, int newWpmFarnsworthSlow)
     {
 
         this->configuration.wpm = newWpm;
+        this->configuration.wpm_farnsworth = newWpmFarnsworth;
+        this->configuration.wpm_farnsworth_slow = newWpmFarnsworthSlow;
         for (std::vector<void (*)()>::iterator it = wpmChangeCallbacks.begin(); it != wpmChangeCallbacks.end(); ++it)
         {
             postSaveOneTimeCallbacks.push((*it));
         }
     };
+
+    /* virtual String readFileIntoString(String fileName); */
 };
 #endif

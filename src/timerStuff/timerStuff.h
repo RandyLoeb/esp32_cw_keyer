@@ -18,6 +18,7 @@ Is what it is for now
 #include "virtualPins/keyerPins.h"
 #include "tone/keyerTone.h"
 #include "timingControl.h"
+#include "webServer/webServer.h"
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -216,10 +217,12 @@ void disableAllTimers()
     ISR_Timer.disable(debounceDitTimer);
     ISR_Timer.disable(debounceDahTimer); */
     ISR_Timer.disableAll();
+    Serial.println("disabled all timers");
 }
 
 void reEnableTimers()
 {
+    Serial.println("reenabling timers");
     ISR_Timer.enable(charSpaceTimer);
     ISR_Timer.enable(debounceDitTimer);
     ISR_Timer.enable(debounceDahTimer);
@@ -256,6 +259,9 @@ void initializeTimerStuff()
     configControl.wpmChangeCallbacks.push_back(changeTimerWpm);
     configControl.preSaveCallbacks.push_back(disableAllTimers);
     configControl.postSaveCallbacks.push_back(reEnableTimers);
+
+    keyerWebServer->preSPIFFSCallbacks.push_back(disableAllTimers);
+    keyerWebServer->postSPIFFSCallbacks.push_back(reEnableTimers);
 
     pinMode(ditpin, INPUT_PULLUP);
     pinMode(dahpin, INPUT_PULLUP);
@@ -314,6 +320,21 @@ void initializeTimerStuff()
 
 void processDitDahQueue()
 {
+    //deal with web server, as it may have turned off all timers
+    //while it needed SPIFFS, and it needs "help"  to turn them
+    //back on
+    if (keyerWebServer->safeToTurnTimersBackOn > -1)
+    {
+        //i just used 1 second here and it worked, didn't try shorter,
+        //maybe it can go lower....
+        if ((millis() - keyerWebServer->safeToTurnTimersBackOn) > 1000)
+        {
+            Serial.println("about to reenable timers");
+            reEnableTimers();
+            keyerWebServer->safeToTurnTimersBackOn = -1;
+        }
+    }
+
     while (!ditsNdahQueue.empty())
     {
         //soundPlaying is a kind of "lock" to make sure we wait for

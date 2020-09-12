@@ -103,20 +103,37 @@ void KeyerWebServer::initializeServer()
          request->send(200, "text/html", "rebooting");
         ESP.restart(); });
     server.on("/keyer.html", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        this->preSPIFFS();
+        request->onDisconnect([this](){this->postSPIFFS();});
+        
+        //request->send(200, "text/html", "ok");
         request->send(SPIFFS, "/keyer.html", "text/html");
+        //this->postSPIFFS();
     });
 
     server.on("/jquery-3.5.1.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        this->preSPIFFS();
+        request->onDisconnect([this](){this->postSPIFFS();});
         request->send(SPIFFS, "/jquery-3.5.1.min.js", "text/javascript");
+        //this->postSPIFFS();
     });
     server.on("/knockout-3.5.1.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        this->preSPIFFS();
+        request->onDisconnect([this](){this->postSPIFFS();});
         request->send(SPIFFS, "/knockout-3.5.1.min.js", "text/javascript");
+        //this->postSPIFFS();
     });
     server.on("/axios.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        this->preSPIFFS();
+        request->onDisconnect([this](){this->postSPIFFS();});
         request->send(SPIFFS, "/axios.min.js", "text/javascript");
+        //this->postSPIFFS();
     });
     server.on("/keyer.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        this->preSPIFFS();
+        request->onDisconnect([this](){this->postSPIFFS();});
         request->send(SPIFFS, "/keyer.js", "text/javascript");
+        //this->postSPIFFS();
     });
 
     server.on(
@@ -146,20 +163,28 @@ void KeyerWebServer::initializeServer()
         for (JsonObject settingsObj : settingsAry) {
             String settingName = settingsObj["name"].as<String>();
             
-            if (settingName=="wpm")
+            if (settingName.startsWith("wpm"))
             {
-                Serial.println("setting for wpm matched!");
-                this->_persistentConfig->setWpm(settingsObj["value"].as<int>());
-                //this->_persistentConfig->configuration.wpm=settingsObj["value"].as<int>();
-                debugMatched=true;
+                int wpm = _persistentConfig->configuration.wpm;
+                int wpmf = _persistentConfig->configuration.wpm_farnsworth;
+                int wpmfs = _persistentConfig->configuration.wpm_farnsworth_slow;
+                if (settingName=="wpm")
+                {
+                    wpm=settingsObj["value"].as<int>();
+                    debugMatched=true;
+                }
+                if (settingName=="wpm_farnsworth")
+                {
+                    wpmf=settingsObj["value"].as<int>();
+                    debugMatched=true;
+                }
+                if (settingName=="wpm_farnsworth_slow")
+                {
+                    wpmfs=settingsObj["value"].as<int>();
+                    debugMatched=true;
+                }
+                this->_persistentConfig->setWpm(wpm,wpmf,wpmfs);
             }
-            if (settingName=="wpm_farnsworth")
-            {
-                this->_persistentConfig->configuration.wpm_farnsworth=settingsObj["value"].as<int>();
-                debugMatched=true;
-            }
-                
-            
 
         }
         Serial.print("settings matched?"); Serial.println(debugMatched);

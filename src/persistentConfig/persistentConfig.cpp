@@ -78,6 +78,7 @@ persistentConfig::getJsonStringFromConfiguration()
     doc["hz_sidetone"] = configuration.hz_sidetone;
     doc["dah_to_dit_ratio"] = configuration.dah_to_dit_ratio;
     doc["wpm_farnsworth"] = configuration.wpm_farnsworth;
+    doc["wpm_farnsworth_slow"] = configuration.wpm_farnsworth_slow;
     doc["memory_repeat_time"] = configuration.memory_repeat_time;
     doc["wpm_command_mode"] = configuration.wpm_command_mode;
     doc["link_receive_udp_port"] = configuration.link_receive_udp_port;

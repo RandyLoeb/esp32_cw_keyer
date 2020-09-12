@@ -11,6 +11,12 @@ enum DitOrDah
     FORCED_CHARSPACE
 };
 
+enum PaddlePressSource
+{
+    PADDLES,
+    ARTIFICIAL
+};
+
 class PaddlePressDetection
 {
 public:
@@ -20,7 +26,9 @@ public:
         this->Display = true;
         this->Transmit = true;
         this->SideTone = true;
+        this->Source = PADDLES;
     }
+    PaddlePressSource Source;
     DitOrDah Detected;
     long TimeStamp;
     bool Display;

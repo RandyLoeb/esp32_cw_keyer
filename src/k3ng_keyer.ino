@@ -53,8 +53,8 @@ void lcd_center_print_timed_wpm();
 #include "webServer/wifiUtils.h"
 WifiUtils wifiUtils{};
 
-#include "webServer/keyerWebServer.h"
-KeyerWebServer *keyerWebServer;
+#include "webServer/webServer.h"
+
 
 std::queue<String> injectedText;
 
@@ -227,6 +227,7 @@ void send_char(byte cw_char, byte omit_letterspace, bool display = true)
       newPd = new PaddlePressDetection();
       newPd->Detected = DitOrDah::SPACE;
       newPd->Display = display;
+      newPd->Source = PaddlePressSource::ARTIFICIAL;
       ditsNdahQueue.push(newPd);
       cwHandled = true;
       break;
@@ -252,11 +253,13 @@ void send_char(byte cw_char, byte omit_letterspace, bool display = true)
         {
           newPd = new PaddlePressDetection();
           newPd->Detected = ditsanddahs.charAt(i) == '.' ? DitOrDah::DIT : DitOrDah::DAH;
+          newPd->Source = PaddlePressSource::ARTIFICIAL;
           newPd->Display = display;
           ditsNdahQueue.push(newPd);
         }
         newPd = new PaddlePressDetection();
         newPd->Detected = DitOrDah::FORCED_CHARSPACE;
+        newPd->Source = PaddlePressSource::ARTIFICIAL;
         newPd->Display = display;
         ditsNdahQueue.push(newPd);
         //send_the_dits_and_dahs(ditsanddahs.c_str());

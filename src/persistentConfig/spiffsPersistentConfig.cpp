@@ -8,6 +8,30 @@
 #define FORMAT_SPIFFS_IF_FAILED true
 #define SPIFFS_LOG_SERIAL false
 
+/* String SpiffsPersistentConfig::readFileIntoString(String fileName)
+{
+    if (!_SPIFFS_MADE_READY)
+    {
+        makeSpiffsReady();
+    }
+#ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_GET_FILE_JSON
+    Serial.println("About to open config file");
+#endif
+    File file = SPIFFS.open(fileName, FILE_READ);
+#ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_GET_FILE_JSON
+    Serial.println("config file contents:");
+#endif
+    String sReturn = "";
+    while (file.available())
+    {
+        sReturn = sReturn + file.readString();
+    }
+    file.close();
+#ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_GET_FILE_JSON
+    Serial.println(sReturn);
+#endif
+    return sReturn;
+} */
 void SpiffsPersistentConfig::makeSpiffsReady()
 {
     if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED))
@@ -115,9 +139,10 @@ void SpiffsPersistentConfig::setConfigurationFromFile()
         esp32_port_to_use->println(configuration.wpm);
     }      */
     // 1
-    configuration.hz_sidetone = doc["hz_sidetone"];                     // 1
-    configuration.dah_to_dit_ratio = doc["dah_to_dit_ratio"];           // 1
-    configuration.wpm_farnsworth = doc["wpm_farnsworth"];               // 1
+    configuration.hz_sidetone = doc["hz_sidetone"];           // 1
+    configuration.dah_to_dit_ratio = doc["dah_to_dit_ratio"]; // 1
+    configuration.wpm_farnsworth = doc["wpm_farnsworth"];
+    configuration.wpm_farnsworth_slow = doc["wpm_farnsworth_slow"];     // 1
     configuration.memory_repeat_time = doc["memory_repeat_time"];       // 1
     configuration.wpm_command_mode = doc["wpm_command_mode"];           // 1
     configuration.link_receive_udp_port = doc["link_receive_udp_port"]; // 1
