@@ -16,18 +16,26 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
     if (ditDahOrSpace->Display)
     {
         bool charSpaceDetected = false;
-        bool wordSpaceDetected = false;
+        //bool wordSpaceDetected = false;
         bool isDummy = ditDahOrSpace->Detected == DitOrDah::DUMMY;
+        //if (isDummy) {Serial.println("is dummy");}
         bool isSpace = ditDahOrSpace->Detected == DitOrDah::SPACE;
         bool isForcedCharSpace = ditDahOrSpace->Detected == DitOrDah::FORCED_CHARSPACE;
 
         if (!(lastPress == nullptr))
         {
+
+            /* if (lastPress->TimeStamp > ditDahOrSpace->TimeStamp)
+            {
+                Serial.println("ROLLOVER! ROLLOVER!");
+            } */
             long timeDiff = ditDahOrSpace->TimeStamp - lastPress->TimeStamp;
 
-            if (timeDiff > (60 * 7) || isSpace)
+            if (isSpace)
             {
-                wordSpaceDetected = true;
+                //Serial.print("Caching a wordspace:");
+                //Serial.println(timeDiff);
+                //wordSpaceDetected = true;
                 cachedWordSpace = true;
             }
 
@@ -65,8 +73,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
             //we got a space, time to analyze
             for (std::vector<PaddlePressDetection *>::iterator it = conversionQueue.begin(); it != conversionQueue.end(); ++it)
             {
-                //if (*it != "charspace")
-                //{
+
                 characterCode *= 10;
                 if ((*it)->Detected == DitOrDah::DIT)
                 {
@@ -89,7 +96,13 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
                 else if (lastWordLetterTimestamp > 0)
                 {
                     Serial.print("(");
-                    Serial.print((*it)->TimeStamp - lastWordLetterTimestamp);
+
+                    long lastWordDiff = (*it)->TimeStamp - lastWordLetterTimestamp;
+                    Serial.print(lastWordDiff);
+                    if (lastWordDiff > 240)
+                    {
+                        cachedWordSpace = true;
+                    }
                     Serial.print(")");
                 }
                 lastTimeStamp = (*it)->TimeStamp;
@@ -100,9 +113,6 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
             lastWordLetterTimestamp = lastTimeStamp;
             Serial.println("");
             conversionQueue.clear();
-            //conversionQueue.push_back(ditDahOrSpace);
-            //td::cout << ' ' << *it;
-            //    std::cout << '\n';
 
             String cwCharacter = convert_cw_number_to_string(characterCode);
             if (cachedWordSpace)
@@ -111,7 +121,6 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
                 cachedWordSpace = false;
             }
             displayControl.displayUpdate(cwCharacter);
-            //lastMilis = -1;
         }
 
         if (!isDummy && !isSpace & !isForcedCharSpace)

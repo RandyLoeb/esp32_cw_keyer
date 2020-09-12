@@ -17,6 +17,7 @@ Is what it is for now
 #include "paddlePress.h"
 #include "virtualPins/keyerPins.h"
 #include "tone/keyerTone.h"
+#include "timingControl.h"
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -207,6 +208,8 @@ void IRAM_ATTR injectCharSpace()
 
 void initializeTimerStuff()
 {
+    timingControl.setWpm(configControl.configuration.wpm);
+
     pinMode(ditpin, INPUT_PULLUP);
     pinMode(dahpin, INPUT_PULLUP);
 
@@ -232,22 +235,25 @@ void initializeTimerStuff()
     // Just to demonstrate, don't use too many ISR Timers if not absolutely necessary
 
     // this timer monitors the dit paddle held down
-    ditTimer = ISR_Timer.setInterval(121L, doDits);
+    ditTimer = ISR_Timer.setInterval(1 + timingControl.dit_ms + timingControl.intraCharSpace_ms, doDits);
 
     // this timer monitors the dah paddle held down
-    dahTimer = ISR_Timer.setInterval(241L, doDahs);
+    dahTimer = ISR_Timer.setInterval(1 + timingControl.dah_ms + timingControl.intraCharSpace_ms, doDahs);
 
     // debouncers, needs some tweaking
     debounceDitTimer = ISR_Timer.setInterval(1L, unlockDit);
     debounceDahTimer = ISR_Timer.setInterval(10L, unlockDah);
 
     // timer to silence tone (could be used to unkey transmitter)
-    toneSilenceTimer = ISR_Timer.setInterval(60L, silenceTone);
+    // note this will be changed depending on dit dah but just
+    // give initial value here
+    toneSilenceTimer = ISR_Timer.setInterval(timingControl.dit_ms, silenceTone);
 
     // timer to unlock the sidetone (could be transmitter key)
-    ditDahSpaceLockTimer = ISR_Timer.setInterval(60L, releaseLockForDitDahSpace);
+    // another way to think of this is as intra-character timer?
+    ditDahSpaceLockTimer = ISR_Timer.setInterval(timingControl.intraCharSpace_ms, releaseLockForDitDahSpace);
 
-    charSpaceTimer = ISR_Timer.setInterval(250L, injectCharSpace);
+    charSpaceTimer = ISR_Timer.setInterval(10 + timingControl.dah_ms + timingControl.intraCharSpace_ms, injectCharSpace);
 
     // not sure if disabled by default by do it
     ISR_Timer.disable(ditTimer);
@@ -287,18 +293,22 @@ void processDitDahQueue()
 
                 // figure out when the tone should stop
                 // (and/or transmitter unkey)
-                unsigned int interval = 60L;
+                unsigned int interval = timingControl.dit_ms;
                 if (paddePress->Detected == DitOrDah::DAH)
                 {
-                    interval = 180L;
+                    interval = timingControl.dah_ms;
                 }
+
+                // if we are locking for intracharacter, i think we just account
+                // for that
                 if (paddePress->Detected == DitOrDah::SPACE)
                 {
-                    interval = 360L;
+                    //interval = 360L;
+                    interval = timingControl.wordSpace_ms - timingControl.intraCharSpace_ms;
                 }
                 if (paddePress->Detected == DitOrDah::FORCED_CHARSPACE)
                 {
-                    interval = 180L;
+                    //interval = 180L;
                 }
                 // set up and start the timer that will stop the tone
                 // (and/or transmitter unkey)
