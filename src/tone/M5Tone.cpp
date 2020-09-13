@@ -3,7 +3,7 @@
 
 M5Tone::M5Tone()
 {
-    M5.Speaker.begin();
+    //M5.Speaker.begin();
 }
 void M5Tone::noTone()
 {
@@ -12,5 +12,8 @@ void M5Tone::noTone()
 void M5Tone::tone(unsigned short freq,
                   unsigned duration)
 {
-    M5.Speaker.tone(freq, duration);
+    if (this->enabled)
+    {
+        M5.Speaker.tone(freq, duration);
+    }
 }

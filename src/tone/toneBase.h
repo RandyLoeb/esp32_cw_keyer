@@ -9,7 +9,12 @@ protected:
     uint8_t pin;
 
 public:
-    virtual void initialize();
+    toneBase()
+    {
+        this->enabled = true;
+    }
+    bool enabled;
+    virtual void initialize(){};
     virtual void noTone(){};
     virtual void tone(unsigned short freq,
                       unsigned duration = 0)

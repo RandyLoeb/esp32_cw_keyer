@@ -23,9 +23,12 @@ void esp32Tone::tone(unsigned short freq,
     Serial.print(" Pin:");
     Serial.println(pin); */
 
-    ledcSetup(SOUND_PWM_CHANNEL, freq, SOUND_RESOLUTION); // Set up PWM channel
-    ledcAttachPin(pin, SOUND_PWM_CHANNEL);
-    ledcWriteTone(SOUND_PWM_CHANNEL, freq); // Attach channel to pin
+    if (this->enabled)
+    {
+        ledcSetup(SOUND_PWM_CHANNEL, freq, SOUND_RESOLUTION); // Set up PWM channel
+        ledcAttachPin(pin, SOUND_PWM_CHANNEL);
+        ledcWriteTone(SOUND_PWM_CHANNEL, freq); // Attach channel to pin
 
-    delay(duration);
+        delay(duration);
+    }
 }

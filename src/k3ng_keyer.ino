@@ -55,10 +55,7 @@ WifiUtils wifiUtils{};
 
 #include "webServer/webServer.h"
 
-
 std::queue<String> injectedText;
-
-
 
 #include "timerStuff/timerStuff.h"
 #include "virtualPins/keyerPins.h"
@@ -96,6 +93,8 @@ void setup()
 
   initialize_default_modes();
 
+  // initialize tone stuff
+  initializeTone();
   displayControl.initialize([](char x) {
     send_char(x, KEYER_NORMAL, false);
   });
@@ -103,9 +102,6 @@ void setup()
 
   keyerWebServer->start();
   initializeTimerStuff();
-
-  // turn on the speaker
-  M5.Speaker.begin();
 }
 
 // --------------------------------------------------------------------------------------------
