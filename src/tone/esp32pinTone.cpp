@@ -27,7 +27,7 @@ void ESP32PINTONE::end()
 
 void ESP32PINTONE::tone(uint16_t frequency)
 {
-    Serial.println("got tone 1 param");
+    //Serial.println("got tone 1 param");
     if (!_begun)
         begin();
     ledcWriteTone(this->tone_pin_channel, frequency);
@@ -36,7 +36,7 @@ void ESP32PINTONE::tone(uint16_t frequency)
 
 void ESP32PINTONE::tone(uint16_t frequency, uint32_t duration)
 {
-    Serial.println("got tone 2 param");
+    //Serial.println("got tone 2 param");
     tone(frequency);
     _count = millis() + duration;
     speaker_on = 1;
