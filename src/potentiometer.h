@@ -1,4 +1,7 @@
-#ifndef M5CORE
+#ifndef KEYERPOTENTIOMETER_H
+#define KEYERPOTENTIOMETER_H
+#include "keyer_esp32.h"
+#if !defined M5CORE && !defined REMOTE_KEYER
 #include "display.h"
 #ifdef ESP32
 #define default_pot_full_scale_reading 4095
@@ -84,4 +87,5 @@ public:
 
 wpmPotentiometer wpmPot;
 
+#endif
 #endif

@@ -27,8 +27,6 @@ class WifiUtils
 
     bool tryWifis();
 
-    void disconnectWiFi();
-
     void writeToApFile(String out);
 
     String getEmptyConfigString();
@@ -77,5 +75,10 @@ public:
     void forgetAp(String jsonIn);
     void processNextDNSRequest();
     void showJson();
+    void disconnectWiFi();
+    void justStation()
+    {
+        WiFi.mode(WIFI_MODE_STA);
+    }
 };
 #endif

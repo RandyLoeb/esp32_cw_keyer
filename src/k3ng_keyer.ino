@@ -1,5 +1,5 @@
-
-#define M5CORE
+#include "keyer_esp32.h"
+//#define M5CORE
 
 #include <stdio.h>
 #include <queue>
@@ -23,11 +23,8 @@ void add_to_send_buffer(byte incoming_serial_byte);
 #include <M5Stack.h>
 #endif
 
-
 #include "keyer_esp32now.h"
 
-
-#include "keyer_esp32.h"
 #endif
 
 #include "tone/keyerTone.h"
@@ -66,22 +63,19 @@ void setup()
 
 #if defined M5CORE
   M5.begin();
+
+#endif
   Serial.begin(115200);
   Serial.println("In setup()");
-#endif
-
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
   keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl);
   initialize_virtualPins();
 
-  
-
-
   initialize_keyer_state();
   configControl.initialize(primary_serial_port);
 
-#if !defined M5CORE
+#if !defined M5CORE && !defined REMOTE_KEYER
   // potentiometer
   wpmPot.initialize(potentiometer_pin);
   configControl.configuration.pot_activated = 1;
@@ -91,11 +85,13 @@ void setup()
 
   // initialize tone stuff
   initializeTone();
-  
+
   wifiUtils.initialize();
+  //wifiUtils.disconnectWiFi();
   configControl.IPAddress = String(wifiUtils.getIp());
   configControl.MacAddress = String(wifiUtils.getMac());
   keyerWebServer->start();
+  wifiUtils.justStation();
   initialize_espnow_wireless();
   initializeTimerStuff();
   detectInterrupts = true;
@@ -108,9 +104,8 @@ void setup()
 
 void loop()
 {
-  
 
-#if !defined M5CORE
+#if !defined M5CORE && !defined REMOTE_KEYER
   wpmPot.checkPotentiometer(wpmSetCallBack);
 #endif
 
@@ -119,7 +114,7 @@ void loop()
   displayControl.service_display();
 
   service_millis_rollover();
-  wifiUtils.processNextDNSRequest();
+  //wifiUtils.processNextDNSRequest();
   keyerWebServer->handleClient();
   service_injected_text();
 

@@ -19,7 +19,9 @@ Is what it is for now
 #include "tone/keyerTone.h"
 #include "timingControl.h"
 #include "webServer/webServer.h"
+#include "keyer_esp32.h"
 #include "keyer_esp32now.h"
+
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -274,6 +276,7 @@ void initializeTimerStuff()
     keyerWebServer->preSPIFFSCallbacks.push_back(disableAllTimers);
     keyerWebServer->postSPIFFSCallbacks.push_back(reEnableTimers);
 
+#if defined M5CORE
     pinMode(ditpin, INPUT_PULLUP);
     pinMode(dahpin, INPUT_PULLUP);
 
@@ -283,6 +286,8 @@ void initializeTimerStuff()
 
     attachInterrupt(digitalPinToInterrupt(dahpin), detectDahPress, CHANGE);
     attachInterrupt(digitalPinToInterrupt(GPIO_NUM_37), detectDahPress, CHANGE);
+#endif
+
     // Using ESP32  => 80 / 160 / 240MHz CPU clock ,
     // For 64-bit timer counter
     // For 16-bit timer prescaler up to 1024
@@ -361,7 +366,9 @@ void processDitDahQueue()
 
             if (isDit || isDah)
             {
+#if defined M5CORE
                 sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
+#endif
             }
             // start playing tone
             // apparently m5 speaker just plays tone continuously, that's fine,

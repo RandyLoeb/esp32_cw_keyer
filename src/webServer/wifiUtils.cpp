@@ -163,7 +163,7 @@ int WifiUtils::connectToWifi(char *apName, char *pass)
     //WiFi.softAPdisconnect();
     //dnsServer.stop();
     //server.stop();
-    WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_MODE_STA);
     delay(500);
     Serial.print("About to connect with:");
     Serial.print(apName);
@@ -247,6 +247,7 @@ bool WifiUtils::tryWifis()
             {
                 this->_ipAddr = WiFi.localIP().toString();
                 this->_apName = apToTry;
+                
             }
         }
         j++;
@@ -270,9 +271,9 @@ bool WifiUtils::tryWifis()
 
 void WifiUtils::disconnectWiFi()
 {
-    WiFi.disconnect(true, false);
+    WiFi.disconnect(false, false);
     delay(1);
-    WiFi.mode(WIFI_OFF);
+    //WiFi.mode(WIFI_OFF);
     delay(1);
     btStop();
     delay(1);
