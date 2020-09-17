@@ -19,6 +19,7 @@ Is what it is for now
 #include "tone/keyerTone.h"
 #include "timingControl.h"
 #include "webServer/webServer.h"
+#include "keyer_esp32now.h"
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -355,6 +356,13 @@ void processDitDahQueue()
             PaddlePressDetection *paddePress = ditsNdahQueue.front();
             ditsNdahQueue.pop();
 
+            bool isDit = paddePress->Detected == DitOrDah::DIT;
+            bool isDah = paddePress->Detected == DitOrDah::DAH;
+
+            if (isDit || isDah)
+            {
+                sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
+            }
             // start playing tone
             // apparently m5 speaker just plays tone continuously, that's fine,
             // we have a timer to shut it off.

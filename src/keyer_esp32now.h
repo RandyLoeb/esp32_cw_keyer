@@ -1,8 +1,10 @@
-#ifndef M5CORE
+#ifndef KEYER_ESP32NOW_H
+#define KEYER_ESP32NOW_H
+
 #include <esp_now.h>
 #include "WiFi.h"
 //A4:CF:12:75:BB:68
-#define SLAVE_ESPNOW
+//#define SLAVE_ESPNOW
 // Structure example to receive data
 // Must match the sender structure
 #define ESPNOW_CHARBUFSIZE 32
@@ -39,6 +41,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
     ESPNOW_ISSENDING = false;
 }
 
+#ifdef ESPNOWRECEIVER
 // callback function that will be executed when data is received
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
@@ -89,12 +92,13 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     }
     //}
 }
+#endif
 
-void initialize_espnow_wireless(void (*speedCallback)(int))
+void initialize_espnow_wireless()
 {
-    _speedCallback = speedCallback;
+    /* _speedCallback = speedCallback;
     WiFi.mode(WIFI_MODE_STA);
-    Serial.println(WiFi.macAddress());
+    Serial.println(WiFi.macAddress()); */
 
     // Init ESP-NOW
     if (esp_now_init() != ESP_OK)
@@ -123,7 +127,7 @@ void initialize_espnow_wireless(void (*speedCallback)(int))
 
     // Once ESPNow is successfully Init, we will register for recv CB to
     // get recv packer info
-    esp_now_register_recv_cb(OnDataRecv);
+    //esp_now_register_recv_cb(OnDataRecv);
 }
 
 void sendEspNowDitDah(bool ditdah)
@@ -132,7 +136,7 @@ void sendEspNowDitDah(bool ditdah)
 #ifndef SLAVE_ESPNOW
 
     strcpy(myData.charactersToSend, "");
-    myData.wpm = configuration.wpm;
+    myData.wpm = 20;
     myData.c = 1.2;
     myData.d = "Hello";
     myData.ditdahmode = true;
@@ -214,4 +218,5 @@ int getEspNowBuff(bool ditdah)
 
     return 1;
 }
+
 #endif

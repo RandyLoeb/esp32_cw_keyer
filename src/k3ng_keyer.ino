@@ -23,9 +23,9 @@ void add_to_send_buffer(byte incoming_serial_byte);
 #include <M5Stack.h>
 #endif
 
-#if !defined M5CORE
+
 #include "keyer_esp32now.h"
-#endif
+
 
 #include "keyer_esp32.h"
 #endif
@@ -74,11 +74,9 @@ void setup()
   //also needs place to inject text
   keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl);
   initialize_virtualPins();
-#ifdef ESPNOW_WIRELESS_KEYER
-#ifndef M5CORE
-  initialize_espnow_wireless(speed_set);
-#endif
-#endif
+
+  
+
 
   initialize_keyer_state();
   configControl.initialize(primary_serial_port);
@@ -98,6 +96,7 @@ void setup()
   configControl.IPAddress = String(wifiUtils.getIp());
   configControl.MacAddress = String(wifiUtils.getMac());
   keyerWebServer->start();
+  initialize_espnow_wireless();
   initializeTimerStuff();
   detectInterrupts = true;
   displayControl.initialize([](char x) {
