@@ -3,8 +3,8 @@
 
 #define GENERIC_CHARGRAB
 
-#define M5CORE
-//#define REMOTE_KEYER
+//#define M5CORE
+#define REMOTE_KEYER
 #endif
 
 #ifndef M5CORE
@@ -16,5 +16,5 @@
 
 //#define REMOTE_UDP
 
-//#define KEYER_WEBSERVER
+#define KEYER_WEBSERVER
 #define TEST_BEACON

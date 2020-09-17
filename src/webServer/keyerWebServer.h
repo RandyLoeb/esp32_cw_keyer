@@ -5,6 +5,7 @@
 #include "SPIFFS.h"
 #include "wifiUtils.h"
 #include "persistentConfig/persistentConfig.h"
+#include "timerStuff/paddlePress.h"
 #include <queue>
 #include <string>
 #include <vector>
@@ -12,6 +13,9 @@ class KeyerWebServer
 {
     //WebServer server;
     AsyncWebServer server;
+
+    AsyncWebSocket ws;
+
     //WifiUtils *_wifiUtils;
     void handleRoot();
 
@@ -85,7 +89,8 @@ public:
     WifiUtils *_wifiUtils;
     std::queue<String> *_textQueue;
     persistentConfig *_persistentConfig;
-    KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, void (*ditCallback)());
+    KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, void (*ditCallback)(),
+                   void (*ditdahCB)(DitOrDah ditOrDah));
 
     void start()
     {

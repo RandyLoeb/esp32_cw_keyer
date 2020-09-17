@@ -23,6 +23,83 @@ Is what it is for now
 #include "keyer_esp32now.h"
 /* #include "HTTPClient.h"
 HTTPClient http; */
+#if !defined REMOTE_KEYER
+/* #include <WebSocketsClient.h>
+//https://github.com/Links2004/arduinoWebSockets
+WebSocketsClient webSocket;
+
+void webSocketClientEvent(WStype_t type, uint8_t *payload, size_t length)
+{
+
+    switch (type)
+    {
+    case WStype_DISCONNECTED:
+        Serial.println("ws client disconnected.");
+        //USE_SERIAL.printf("[WSc] Disconnected!\n");
+        break;
+    case WStype_CONNECTED:
+        Serial.println("ws client connected.");
+        //USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
+
+        // send message to server when Connected
+        //webSocket.sendTXT("Connected");
+        break;
+    case WStype_TEXT:
+        Serial.println("ws client text.");
+        //USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+
+        // send message to server
+        // webSocket.sendTXT("message here");
+        break;
+    case WStype_BIN:
+        Serial.println("ws client bin.");
+        //USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
+        //hexdump(payload, length);
+
+        // send data to server
+        // webSocket.sendBIN(payload, length);
+        break;
+    case WStype_ERROR:
+        Serial.println("ws client error.");
+        break;
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+        break;
+    }
+} */
+#include <ArduinoWebsockets.h>
+//https://github.com/gilmaimon/ArduinoWebsockets?utm_source=platformio&utm_medium=piohome
+using namespace websockets;
+void onMessageCallback(WebsocketsMessage message)
+{
+    Serial.print("Got Message: ");
+    Serial.println(message.data());
+}
+
+void onEventsCallback(WebsocketsEvent event, String data)
+{
+    if (event == WebsocketsEvent::ConnectionOpened)
+    {
+        Serial.println("Connnection Opened");
+    }
+    else if (event == WebsocketsEvent::ConnectionClosed)
+    {
+        Serial.println("Connnection Closed");
+    }
+    else if (event == WebsocketsEvent::GotPing)
+    {
+        Serial.println("Got a Ping!");
+    }
+    else if (event == WebsocketsEvent::GotPong)
+    {
+        Serial.println("Got a Pong!");
+    }
+}
+
+WebsocketsClient client;
+#endif
 
 #if defined REMOTE_UDP
 #if defined M5CORE
@@ -262,6 +339,30 @@ void changeTimerWpm()
 
 void initializeTimerStuff()
 {
+#if !defined REMOTE_KEYER
+    /* // server address, port and URL
+    webSocket.beginSocketIO("ws://192.168.0.129", 80, "/ws");
+    
+
+    // event handler
+    webSocket.onEvent(webSocketClientEvent);
+
+    // use HTTP Basic Authorization this is optional remove if not needed
+    //webSocket.setAuthorization("user", "Password");
+
+    // try ever 5000 again if connection has failed
+    webSocket.setReconnectInterval(5000); */
+    // run callback when messages are received
+    client.onMessage(onMessageCallback);
+
+    // run callback when events are occuring
+    client.onEvent(onEventsCallback);
+
+    // Connect to server
+    client.connect("192.168.0.129", 80, "/ws");
+
+#endif
+
     if (configControl.configuration.wpm_farnsworth <= 0)
     {
         configControl.configuration.wpm_farnsworth = configControl.configuration.wpm;
@@ -347,6 +448,10 @@ void initializeTimerStuff()
 void processDitDahQueue()
 {
 
+#if !defined REMOTE_KEYER
+    /* webSocket.loop(); */
+     client.poll();
+#endif
 #if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
     //deal with web server, as it may have turned off all timers
     //while it needed SPIFFS, and it needs "help"  to turn them
@@ -395,6 +500,14 @@ void processDitDahQueue()
                 Serial.println("Calling sendespnowditdah");
                 sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
 #endif
+
+#endif
+
+#if !defined REMOTE_KEYER
+                //Serial.print("about to send sendTXT:");
+                /*  Serial.println(webSocket.isConnected());
+                webSocket.sendTXT(isDit ? "dit" : "dah"); */
+                client.send(isDit ? "dit" : "dah");
 
 #endif
             }

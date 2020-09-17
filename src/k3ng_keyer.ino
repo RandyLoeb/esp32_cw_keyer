@@ -85,9 +85,9 @@ void ditdahCallBack(DitOrDah ditOrDah)
 
 void setup()
 {
-
+  
 #if defined M5CORE
-  M5.begin();
+      M5.begin();
 
 #endif
   Serial.begin(115200);
@@ -96,7 +96,8 @@ void setup()
 #if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
-  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl, &ditCallBack);
+  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl, &ditCallBack, &ditdahCallBack);
+  
 #endif
 
   initialize_virtualPins();
