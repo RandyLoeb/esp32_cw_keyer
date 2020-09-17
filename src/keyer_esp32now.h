@@ -1,6 +1,7 @@
 #ifndef KEYER_ESP32NOW_H
 #define KEYER_ESP32NOW_H
 #include "keyer_esp32.h"
+#if defined ESPNOW
 #include <esp_now.h>
 #include "WiFi.h"
 #include "timerStuff/paddlePress.h"
@@ -37,7 +38,8 @@ struct_message myData;
 #if defined M5CORE
 //My MAC is:A4:CF:12:75:AE:90
 //uint8_t broadcastAddress[] = {0xA4, 0xCF, 0x12, 0x75, 0xBB, 0x68};
-uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+//uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+uint8_t broadcastAddress[] = {0xA4, 0xCF, 0x12, 0x75, 0xAE, 0x90};
 #endif
 
 #if defined REMOTE_KEYER
@@ -98,13 +100,13 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     {
         //Serial.println("got a dit!");
         //ESPNOW_DIT_BUFF = true;
-        d=DitOrDah::DIT;
+        d = DitOrDah::DIT;
     }
     else
     {
         //Serial.println("got a dah!");
         //ESPNOW_DAH_BUFF = true;
-        d=DitOrDah::DAH;
+        d = DitOrDah::DAH;
     }
     _ditdahCallBack(d);
     //}
@@ -245,5 +247,5 @@ int getEspNowBuff(bool ditdah)
 
     return 1;
 }
-
+#endif
 #endif

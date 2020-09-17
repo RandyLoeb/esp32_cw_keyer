@@ -280,7 +280,7 @@ void initializeTimerStuff()
     configControl.preSaveCallbacks.push_back(disableAllTimers);
     configControl.postSaveCallbacks.push_back(reEnableTimers);
 
-#if !defined ESPNOW_ONLY
+#if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
     keyerWebServer->preSPIFFSCallbacks.push_back(disableAllTimers);
     keyerWebServer->postSPIFFSCallbacks.push_back(reEnableTimers);
 #endif
@@ -347,7 +347,7 @@ void initializeTimerStuff()
 void processDitDahQueue()
 {
 
-#if !defined ESPNOW_ONLY
+#if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
     //deal with web server, as it may have turned off all timers
     //while it needed SPIFFS, and it needs "help"  to turn them
     //back on
@@ -391,7 +391,7 @@ void processDitDahQueue()
                 udp.broadcastTo(isDit ? "dit" : "dah", 1234);
 #endif
 
-#if defined ESPNOW_ONLY
+#if defined ESPNOW
                 Serial.println("Calling sendespnowditdah");
                 sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
 #endif

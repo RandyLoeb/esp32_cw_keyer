@@ -55,7 +55,7 @@ std::queue<String> injectedText;
 #include "timerStuff/timerStuff.h"
 #include "virtualPins/keyerPins.h"
 
-#if defined REMOTE_KEYER
+#if defined REMOTE_KEYER && defined REMOTE_UDP
 #include "AsyncUDP.h"
 AsyncUDP udp;
 #endif
@@ -93,7 +93,7 @@ void setup()
   Serial.begin(115200);
   Serial.println("In setup()");
 
-#if !defined ESPNOW_ONLY
+#if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
   keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl, &ditCallBack);
@@ -121,7 +121,7 @@ void setup()
   configControl.IPAddress = String(wifiUtils.getIp());
   configControl.MacAddress = String(wifiUtils.getMac());
 #endif
-#if !defined ESPNOW_ONLY
+#if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
   keyerWebServer->start();
 #endif
 
@@ -135,8 +135,10 @@ void setup()
   Serial.println(wifiUtils.getMac());
 
   Serial.println("Calling espnow initialization");
+#if defined ESPNOW
   initialize_espnow_wireless();
   _ditdahCallBack = &ditdahCallBack;
+#endif
   Serial.println("Calling initializing timer");
   initializeTimerStuff();
   detectInterrupts = true;
@@ -184,12 +186,21 @@ void loop()
   service_millis_rollover();
   //wifiUtils.processNextDNSRequest();
 
-#if !defined ESPNOW_ONLY
+#if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
   keyerWebServer->handleClient();
 #endif
   service_injected_text();
 
   processDitDahQueue();
+
+#if defined TEST_BEACON && !defined REMOTE_KEYER
+  if (ditsNdahQueue.empty())
+  {
+    delay(5000);
+    String testText = "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS. 1234567890";
+    injectedText.push(testText);
+  }
+#endif
 }
 
 void check_for_dirty_configuration()
