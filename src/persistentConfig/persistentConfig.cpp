@@ -163,6 +163,8 @@ persistentConfig::getJsonStringFromConfiguration()
     */
     doc["sidetone_volume"] = configuration.sidetone_volume;
 
+    doc["ip"] = this->IPAddress;
+    doc["mac"] = this->MacAddress;
     String returnString;
     serializeJson(doc, returnString);
 

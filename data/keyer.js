@@ -3,6 +3,8 @@ var myViewModel = {
   wpm: ko.observable(0),
   wpm_farnsworth: ko.observable(0),
   wpm_farnsworth_slow: ko.observable(0),
+  ip: ko.observable(""),
+  mac: ko.observable(""),
   onWpm: function () {
     this.setConfig([{ name: "wpm", value: this.wpm() }]);
   },
@@ -55,5 +57,7 @@ var myViewModel = {
     myViewModel.wpm(data.wpm);
     myViewModel.wpm_farnsworth(data.wpm_farnsworth);
     myViewModel.wpm_farnsworth_slow(data.wpm_farnsworth_slow);
+    myViewModel.ip(data.ip);
+    myViewModel.mac(data.mac);
   },
 };

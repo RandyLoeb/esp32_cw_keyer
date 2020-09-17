@@ -1,3 +1,4 @@
+#ifndef M5CORE
 #include "display.h"
 #ifdef ESP32
 #define default_pot_full_scale_reading 4095
@@ -83,3 +84,4 @@ public:
 
 wpmPotentiometer wpmPot;
 
+#endif

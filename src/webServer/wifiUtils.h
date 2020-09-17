@@ -67,6 +67,11 @@ public:
         return this->_apName;
     }
 
+    String getMac()
+    {
+        return WiFi.macAddress();
+    }
+
     String getWiFiScan();
     void updateAp(String jsonIn);
     void forgetAp(String jsonIn);

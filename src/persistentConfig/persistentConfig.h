@@ -60,6 +60,9 @@ public:
 
     } configuration;
 
+    String IPAddress;
+    String MacAddress;
+
     virtual void initialize(PRIMARY_SERIAL_CLS *loggingPortToUse);
 
     virtual void save();
@@ -113,3 +116,5 @@ public:
     /* virtual String readFileIntoString(String fileName); */
 };
 #endif
+    
+

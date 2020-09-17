@@ -245,7 +245,7 @@ bool WifiUtils::tryWifis()
             connected = connectToWifi(apx, passx);
             if (connected)
             {
-                this->_ipAddr = String(WiFi.localIP());
+                this->_ipAddr = WiFi.localIP().toString();
                 this->_apName = apToTry;
             }
         }

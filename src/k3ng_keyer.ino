@@ -7,8 +7,6 @@
 #include "keyer_hardware.h"
 #include "keyer_features_and_options.h"
 #include "keyer.h"
-#include "keyer_dependencies.h"
-#include "keyer_debug.h"
 #include "keyer_pin_settings.h"
 #include "keyer_settings.h"
 #include "display.h"
@@ -95,20 +93,23 @@ void setup()
 
   // initialize tone stuff
   initializeTone();
+  
+  wifiUtils.initialize();
+  configControl.IPAddress = String(wifiUtils.getIp());
+  configControl.MacAddress = String(wifiUtils.getMac());
+  keyerWebServer->start();
+  initializeTimerStuff();
+  detectInterrupts = true;
   displayControl.initialize([](char x) {
     send_char(x, KEYER_NORMAL, false);
   });
-  wifiUtils.initialize();
-
-  keyerWebServer->start();
-  initializeTimerStuff();
 }
 
 // --------------------------------------------------------------------------------------------
 
 void loop()
 {
-  detectInterrupts = true;
+  
 
 #if !defined M5CORE
   wpmPot.checkPotentiometer(wpmSetCallBack);
