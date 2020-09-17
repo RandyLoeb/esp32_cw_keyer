@@ -75,7 +75,7 @@ public:
         {
             this->safeToTurnTimersBackOn = millis();
         }
-        };
+    };
 
     std::vector<void (*)()> preSPIFFSCallbacks;
 
@@ -85,7 +85,7 @@ public:
     WifiUtils *_wifiUtils;
     std::queue<String> *_textQueue;
     persistentConfig *_persistentConfig;
-    KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf);
+    KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, void (*ditCallback)());
 
     void start()
     {
@@ -97,6 +97,8 @@ public:
     {
         this->_wifiUtils->showJson();
     }
+
+    void (*ditCallbck)();
 };
 
 #endif

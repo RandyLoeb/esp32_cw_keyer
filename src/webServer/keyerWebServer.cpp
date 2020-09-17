@@ -6,14 +6,16 @@
 #include "keyerWebServer.h"
 #include <queue>
 #include <string>
+#include "timerStuff/paddlePress.h"
 
-KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf) : server(80)
+KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, void (*ditCallback)()) : server(80)
 {
     Serial.println("got addr of wifi utils");
     //Serial.println(wifiUtils);
     this->_wifiUtils = wifiUtils;
     this->_textQueue = textQueue;
     this->_persistentConfig = persistentConf;
+    this->ditCallbck = ditCallback;
 };
 
 void KeyerWebServer::handleRoot()
@@ -104,8 +106,8 @@ void KeyerWebServer::initializeServer()
         ESP.restart(); });
     server.on("/keyer.html", HTTP_GET, [this](AsyncWebServerRequest *request) {
         this->preSPIFFS();
-        request->onDisconnect([this](){this->postSPIFFS();});
-        
+        request->onDisconnect([this]() { this->postSPIFFS(); });
+
         //request->send(200, "text/html", "ok");
         request->send(SPIFFS, "/keyer.html", "text/html");
         //this->postSPIFFS();
@@ -113,25 +115,25 @@ void KeyerWebServer::initializeServer()
 
     server.on("/jquery-3.5.1.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
         this->preSPIFFS();
-        request->onDisconnect([this](){this->postSPIFFS();});
+        request->onDisconnect([this]() { this->postSPIFFS(); });
         request->send(SPIFFS, "/jquery-3.5.1.min.js", "text/javascript");
         //this->postSPIFFS();
     });
     server.on("/knockout-3.5.1.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
         this->preSPIFFS();
-        request->onDisconnect([this](){this->postSPIFFS();});
+        request->onDisconnect([this]() { this->postSPIFFS(); });
         request->send(SPIFFS, "/knockout-3.5.1.min.js", "text/javascript");
         //this->postSPIFFS();
     });
     server.on("/axios.min.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
         this->preSPIFFS();
-        request->onDisconnect([this](){this->postSPIFFS();});
+        request->onDisconnect([this]() { this->postSPIFFS(); });
         request->send(SPIFFS, "/axios.min.js", "text/javascript");
         //this->postSPIFFS();
     });
     server.on("/keyer.js", HTTP_GET, [this](AsyncWebServerRequest *request) {
         this->preSPIFFS();
-        request->onDisconnect([this](){this->postSPIFFS();});
+        request->onDisconnect([this]() { this->postSPIFFS(); });
         request->send(SPIFFS, "/keyer.js", "text/javascript");
         //this->postSPIFFS();
     });
@@ -193,6 +195,11 @@ void KeyerWebServer::initializeServer()
         String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();
         request->send(200, "application/json", scanJson); });
 
+    server.on("/dit", [this](AsyncWebServerRequest *request) {
+        Serial.println("got dit!");
+        this->ditCallbck();
+        request->send(200, "text/html", "");
+    });
     server.onNotFound([this](AsyncWebServerRequest *request) { request->redirect("http://" + WiFi.softAPIP().toString() + "/"); });
 }
 

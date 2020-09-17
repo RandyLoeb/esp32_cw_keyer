@@ -3,6 +3,7 @@
 #include "keyer_esp32.h"
 #include <esp_now.h>
 #include "WiFi.h"
+#include "timerStuff/paddlePress.h"
 //A4:CF:12:75:BB:68
 //#define SLAVE_ESPNOW
 // Structure example to receive data
@@ -34,7 +35,9 @@ struct_message myData;
 //24:6F:28:0B:A6:20
 
 #if defined M5CORE
-uint8_t broadcastAddress[] = {0xA4, 0xCF, 0x12, 0x75, 0xBB, 0x68};
+//My MAC is:A4:CF:12:75:AE:90
+//uint8_t broadcastAddress[] = {0xA4, 0xCF, 0x12, 0x75, 0xBB, 0x68};
+uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 #endif
 
 #if defined REMOTE_KEYER
@@ -43,6 +46,7 @@ uint8_t broadcastAddress[] = {0xA4, 0xCF, 0x12, 0x75, 0xBB, 0x68};
 uint8_t broadcastAddress[] = {0xFC, 0xF5, 0xC4, 0x30, 0xE3, 0x30};
 #endif
 void (*_speedCallback)(int);
+void (*_ditdahCallBack)(DitOrDah ditOrDah);
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
     Serial.print("\r\nLast Packet Send Status:\t");
@@ -50,11 +54,10 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
     ESPNOW_ISSENDING = false;
 }
 
-
 // callback function that will be executed when data is received
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
-    Serial.println("Received data!");
+    //Serial.println("Received data!");
     memcpy(&myData, incomingData, sizeof(myData));
     /*Serial.print("Bytes received: ");
     Serial.println(len);
@@ -90,16 +93,20 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
     }
     else
     { */
-        if (myData.ditdah == ESPNOW_DIT)
-        {
-            Serial.println("got a dit!");
-            //ESPNOW_DIT_BUFF = true;
-        }
-        else
-        {
-             Serial.println("got a dah!");
-            //ESPNOW_DAH_BUFF = true;
-        }
+    DitOrDah d;
+    if (myData.ditdah == ESPNOW_DIT)
+    {
+        //Serial.println("got a dit!");
+        //ESPNOW_DIT_BUFF = true;
+        d=DitOrDah::DIT;
+    }
+    else
+    {
+        //Serial.println("got a dah!");
+        //ESPNOW_DAH_BUFF = true;
+        d=DitOrDah::DAH;
+    }
+    _ditdahCallBack(d);
     //}
     //}
 }
@@ -118,11 +125,12 @@ void initialize_espnow_wireless()
         return;
     }
 
-
-    // Register peer
-    
+// Register peer
+#if defined M5CORE
     memcpy(peerInfo.peer_addr, broadcastAddress, 6);
     peerInfo.channel = WiFi.channel();
+    Serial.print("Expecting remote on channel:");
+    Serial.print(WiFi.channel());
     peerInfo.encrypt = false;
 
     // Add peer
@@ -135,14 +143,18 @@ void initialize_espnow_wireless()
     {
         Serial.println("seems like peer added ok");
     }
+#endif
 
+#if defined M5CORE
     // Once ESPNow is successfully Init, we will register for Send CB to
     // get the status of Trasnmitted packet
     esp_now_register_send_cb(OnDataSent);
-
+#endif
+#if !defined M5CORE
     // Once ESPNow is successfully Init, we will register for recv CB to
     // get recv packer info
     esp_now_register_recv_cb(OnDataRecv);
+#endif
 }
 
 void sendEspNowDitDah(bool ditdah)

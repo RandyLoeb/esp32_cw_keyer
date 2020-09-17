@@ -5,6 +5,7 @@ ESP32PINTONE::ESP32PINTONE(int pnum)
     this->pin = pnum;
     this->tone_pin_channel = 0;
     _volume = 100;
+    
     _begun = false;
 }
 
@@ -31,7 +32,7 @@ void ESP32PINTONE::tone(uint16_t frequency)
     if (!_begun)
         begin();
     ledcWriteTone(this->tone_pin_channel, frequency);
-    //ledcWrite(this->tone_pin_channel, 0x400 >> _volume);
+    ledcWrite(this->tone_pin_channel, 0x400 >> _volume);
 }
 
 void ESP32PINTONE::tone(uint16_t frequency, uint32_t duration)

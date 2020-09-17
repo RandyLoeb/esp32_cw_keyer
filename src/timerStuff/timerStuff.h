@@ -21,7 +21,18 @@ Is what it is for now
 #include "webServer/webServer.h"
 #include "keyer_esp32.h"
 #include "keyer_esp32now.h"
+/* #include "HTTPClient.h"
+HTTPClient http; */
 
+#if defined REMOTE_UDP
+#if defined M5CORE
+#include "AsyncUDP.h"
+AsyncUDP udp;
+#endif
+#endif
+// queue to hold dits and dahs seen by the paddle monitorning,
+// sound loop will pull from here
+std::queue<PaddlePressDetection *> ditsNdahQueue;
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -34,10 +45,6 @@ ESP32_ISR_Timer ISR_Timer;
 
 #define ditpin GPIO_NUM_2
 #define dahpin GPIO_NUM_5
-
-// queue to hold dits and dahs seen by the paddle monitorning,
-// sound loop will pull from here
-std::queue<PaddlePressDetection *> ditsNdahQueue;
 
 // sort of a a lockout
 volatile bool soundPlaying = false;
@@ -273,8 +280,10 @@ void initializeTimerStuff()
     configControl.preSaveCallbacks.push_back(disableAllTimers);
     configControl.postSaveCallbacks.push_back(reEnableTimers);
 
+#if !defined ESPNOW_ONLY
     keyerWebServer->preSPIFFSCallbacks.push_back(disableAllTimers);
     keyerWebServer->postSPIFFSCallbacks.push_back(reEnableTimers);
+#endif
 
 #if defined M5CORE
     pinMode(ditpin, INPUT_PULLUP);
@@ -332,10 +341,13 @@ void initializeTimerStuff()
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.disable(ditDahSpaceLockTimer);
     ISR_Timer.enable(charSpaceTimer);
+    Serial.println("Timer stuff initialized.");
 }
 
 void processDitDahQueue()
 {
+
+#if !defined ESPNOW_ONLY
     //deal with web server, as it may have turned off all timers
     //while it needed SPIFFS, and it needs "help"  to turn them
     //back on
@@ -350,6 +362,7 @@ void processDitDahQueue()
             keyerWebServer->safeToTurnTimersBackOn = -1;
         }
     }
+#endif
 
     while (!ditsNdahQueue.empty())
     {
@@ -367,7 +380,22 @@ void processDitDahQueue()
             if (isDit || isDah)
             {
 #if defined M5CORE
+                //sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
+                /* String target = "http://192.168.0.129/";
+                target += isDit ? "dit" : "dah";
+                http.begin(target.c_str());
+                http.GET() */
+                //;
+
+#if defined REMOTE_UDP
+                udp.broadcastTo(isDit ? "dit" : "dah", 1234);
+#endif
+
+#if defined ESPNOW_ONLY
+                Serial.println("Calling sendespnowditdah");
                 sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
+#endif
+
 #endif
             }
             // start playing tone
@@ -391,7 +419,9 @@ void processDitDahQueue()
 
                 if (paddePress->Detected != DitOrDah::SPACE && paddePress->Detected != DitOrDah::FORCED_CHARSPACE)
                 {
+#if defined TONE_ON
                     toneControl.tone(600);
+#endif
                     //M5.Speaker.tone(600);
                 }
                 // lock us up

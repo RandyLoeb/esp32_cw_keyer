@@ -1,6 +1,7 @@
 #ifndef PADDLEPRESS_H
 #define PADDLEPRESS_H
 #include <Arduino.h>
+#include <queue>
 
 enum DitOrDah
 {
@@ -35,4 +36,6 @@ public:
     bool Transmit;
     bool SideTone;
 };
+
+
 #endif

@@ -7,7 +7,7 @@
 
 void oled64x128::displayUpdate(char character)
 {
-    Serial.println("In oled displayUpdate...");
+    //Serial.println("In oled displayUpdate...");
     //sendEspNowData(character);
     //#ifdef OLED_DISPLAY_64_128
     displayContents += character;

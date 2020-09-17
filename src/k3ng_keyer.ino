@@ -55,8 +55,33 @@ std::queue<String> injectedText;
 #include "timerStuff/timerStuff.h"
 #include "virtualPins/keyerPins.h"
 
+#if defined REMOTE_KEYER
+#include "AsyncUDP.h"
+AsyncUDP udp;
+#endif
+
 //todo move
 void send_char(byte cw_char, byte omit_letterspace, bool display);
+
+void ditCallBack()
+{
+  PaddlePressDetection *newPd;
+  newPd = new PaddlePressDetection();
+  newPd->Detected = DitOrDah::SPACE;
+  newPd->Display = true;
+  newPd->Source = PaddlePressSource::ARTIFICIAL;
+  ditsNdahQueue.push(newPd);
+}
+
+void ditdahCallBack(DitOrDah ditOrDah)
+{
+  PaddlePressDetection *newPd;
+  newPd = new PaddlePressDetection();
+  newPd->Detected = ditOrDah;
+  newPd->Display = true;
+  newPd->Source = PaddlePressSource::ARTIFICIAL;
+  ditsNdahQueue.push(newPd);
+}
 
 void setup()
 {
@@ -67,9 +92,13 @@ void setup()
 #endif
   Serial.begin(115200);
   Serial.println("In setup()");
+
+#if !defined ESPNOW_ONLY
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
-  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl);
+  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl, &ditCallBack);
+#endif
+
   initialize_virtualPins();
 
   initialize_keyer_state();
@@ -86,18 +115,57 @@ void setup()
   // initialize tone stuff
   initializeTone();
 
+#if !defined ESPNOW_ONLY
+
   wifiUtils.initialize();
-  //wifiUtils.disconnectWiFi();
   configControl.IPAddress = String(wifiUtils.getIp());
   configControl.MacAddress = String(wifiUtils.getMac());
+#endif
+#if !defined ESPNOW_ONLY
   keyerWebServer->start();
+#endif
+
+#if defined ESPNOW_ONLY
+  //wifiUtils.disconnectWiFi();
+  Serial.println("Calling juststation");
   wifiUtils.justStation();
+#endif
+
+  Serial.print("My MAC is:");
+  Serial.println(wifiUtils.getMac());
+
+  Serial.println("Calling espnow initialization");
   initialize_espnow_wireless();
+  _ditdahCallBack = &ditdahCallBack;
+  Serial.println("Calling initializing timer");
   initializeTimerStuff();
   detectInterrupts = true;
+
+  Serial.println("Calling initializing display control");
   displayControl.initialize([](char x) {
     send_char(x, KEYER_NORMAL, false);
   });
+
+#if defined REMOTE_KEYER
+#if defined REMOTE_UDP
+  if (udp.listen(1234))
+  {
+    udp.onPacket([](AsyncUDPPacket packet) {
+      /* Serial.print("Received data: ");
+      Serial.write(packet.data(), packet.length());
+      Serial.println(); */
+      String myString = (const char *)packet.data();
+      //Serial.println(myString);
+      PaddlePressDetection *newPd;
+      newPd = new PaddlePressDetection();
+      newPd->Detected = myString == "dit" ? DitOrDah::DIT : DitOrDah::DAH;
+      newPd->Display = true;
+      newPd->Source = PaddlePressSource::ARTIFICIAL;
+      ditsNdahQueue.push(newPd);
+    });
+  }
+#endif
+#endif
 }
 
 // --------------------------------------------------------------------------------------------
@@ -115,7 +183,10 @@ void loop()
 
   service_millis_rollover();
   //wifiUtils.processNextDNSRequest();
+
+#if !defined ESPNOW_ONLY
   keyerWebServer->handleClient();
+#endif
   service_injected_text();
 
   processDitDahQueue();
