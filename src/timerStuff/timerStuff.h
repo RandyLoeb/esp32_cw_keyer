@@ -252,6 +252,16 @@ void changeTimerWpm()
 
 void initializeTimerStuff()
 {
+    if (configControl.configuration.wpm_farnsworth <= 0)
+    {
+        configControl.configuration.wpm_farnsworth = configControl.configuration.wpm;
+    }
+
+    if (configControl.configuration.wpm_farnsworth_slow <= 0)
+    {
+        configControl.configuration.wpm_farnsworth_slow = configControl.configuration.wpm;
+    }
+
     timingControl.setWpm(configControl.configuration.wpm, configControl.configuration.wpm_farnsworth, configControl.configuration.wpm_farnsworth_slow);
 
     // have to play nice with the configControl and turn off
