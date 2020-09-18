@@ -72,6 +72,14 @@ void webSocketClientEvent(WStype_t type, uint8_t *payload, size_t length)
 #include <ArduinoWebsockets.h>
 //https://github.com/gilmaimon/ArduinoWebsockets?utm_source=platformio&utm_medium=piohome
 using namespace websockets;
+WebsocketsClient client;
+bool clientIntiialized = false;
+void connectWsClient()
+{
+    // Connect to server
+    client.connect("192.168.0.129", 80, "/ws");
+}
+
 void onMessageCallback(WebsocketsMessage message)
 {
     Serial.print("Got Message: ");
@@ -83,10 +91,12 @@ void onEventsCallback(WebsocketsEvent event, String data)
     if (event == WebsocketsEvent::ConnectionOpened)
     {
         Serial.println("Connnection Opened");
+        clientIntiialized = true;
     }
     else if (event == WebsocketsEvent::ConnectionClosed)
     {
         Serial.println("Connnection Closed");
+        clientIntiialized = false;
     }
     else if (event == WebsocketsEvent::GotPing)
     {
@@ -98,7 +108,6 @@ void onEventsCallback(WebsocketsEvent event, String data)
     }
 }
 
-WebsocketsClient client;
 #endif
 
 #if defined REMOTE_UDP
@@ -359,7 +368,7 @@ void initializeTimerStuff()
     client.onEvent(onEventsCallback);
 
     // Connect to server
-    client.connect("192.168.0.129", 80, "/ws");
+    connectWsClient();
 
 #endif
 
@@ -450,7 +459,11 @@ void processDitDahQueue()
 
 #if !defined REMOTE_KEYER
     /* webSocket.loop(); */
-     client.poll();
+    client.poll();
+    if (!clientIntiialized)
+    {
+        connectWsClient();
+    }
 #endif
 #if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
     //deal with web server, as it may have turned off all timers
@@ -484,6 +497,7 @@ void processDitDahQueue()
 
             if (isDit || isDah)
             {
+#if defined REMOTE_DITDAHMODE
 #if defined M5CORE
                 //sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
                 /* String target = "http://192.168.0.129/";
@@ -509,6 +523,7 @@ void processDitDahQueue()
                 webSocket.sendTXT(isDit ? "dit" : "dah"); */
                 client.send(isDit ? "dit" : "dah");
 
+#endif
 #endif
             }
             // start playing tone
@@ -567,7 +582,11 @@ void processDitDahQueue()
                 ISR_Timer.restartTimer(toneSilenceTimer);
                 ISR_Timer.enable(toneSilenceTimer);
             }
-            convertDitsDahsToCharsAndSpaces(paddePress);
+#if !defined REMOTE_KEYER
+            convertDitsDahsToCharsAndSpaces(paddePress, &client);
+#else
+            convertDitsDahsToCharsAndSpaces(paddePress, nullptr);
+#endif
         }
         else
         {

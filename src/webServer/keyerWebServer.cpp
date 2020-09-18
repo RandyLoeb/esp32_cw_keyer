@@ -10,6 +10,7 @@
 #include "keyer_esp32.h"
 
 void (*_ditdahCallBack)(DitOrDah ditOrDah);
+std::queue<String> *txtQueue;
 
 #if defined REMOTE_KEYER
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
@@ -55,7 +56,15 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 data[len] = 0;
                 String myData = String((char *)data);
                 //Serial.println(myData);
-                _ditdahCallBack(myData == "dit" ? DitOrDah::DIT : DitOrDah::DAH);
+                if (myData == "dit" || myData == "dah")
+                {
+                    _ditdahCallBack(myData == "dit" ? DitOrDah::DIT : DitOrDah::DAH);
+                }
+                else
+                {
+                    txtQueue->push(myData);
+                }
+
                 //os_printf("%s\n", (char *)data);
             }
             else
@@ -125,6 +134,7 @@ KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQue
     //Serial.println(wifiUtils);
     this->_wifiUtils = wifiUtils;
     this->_textQueue = textQueue;
+    txtQueue = textQueue;
     this->_persistentConfig = persistentConf;
     this->ditCallbck = ditCallback;
     _ditdahCallBack = ditdahCB;

@@ -7,11 +7,14 @@
 #include "displays/keyerDisplay.h"
 #include "timerStuff/paddlePress.h"
 #include "timerStuff/timingControl.h"
+#include <ArduinoWebsockets.h>
+//https://github.com/gilmaimon/ArduinoWebsockets?utm_source=platformio&utm_medium=piohome
+using namespace websockets;
 std::vector<PaddlePressDetection *> conversionQueue;
 PaddlePressDetection *lastPress;
 bool cachedWordSpace = false;
 long lastWordLetterTimestamp = 0;
-void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
+void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace,WebsocketsClient *client)
 {
 
     if (ditDahOrSpace->Display)
@@ -121,6 +124,15 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace)
                 displayControl.displayUpdate(" ");
                 cachedWordSpace = false;
             }
+
+#if !defined REMOTE_KEYER && defined REMOTE_CHARMODE
+            //Serial.print("about to send sendTXT:");
+            /*  Serial.println(webSocket.isConnected());
+                webSocket.sendTXT(isDit ? "dit" : "dah"); */
+            client->send(cwCharacter);
+
+#endif
+
             displayControl.displayUpdate(cwCharacter);
         }
 
