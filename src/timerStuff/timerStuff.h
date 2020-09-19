@@ -320,8 +320,13 @@ void reEnableTimers()
 {
     Serial.println("reenabling timers");
     ISR_Timer.enable(charSpaceTimer);
+
+//not sure these need to be re-enabled, but maybe causing problem with slave that doesn't have pin interrupts?
+#if !defined REMOTE_KEYER
+    Serial.println("re-enabling debouncers");
     ISR_Timer.enable(debounceDitTimer);
     ISR_Timer.enable(debounceDahTimer);
+#endif
 }
 
 void changeTimerWpm()
@@ -548,6 +553,7 @@ void processDitDahQueue()
                 if (paddePress->Detected != DitOrDah::SPACE && paddePress->Detected != DitOrDah::FORCED_CHARSPACE)
                 {
 #if defined TONE_ON
+                    //Serial.println("inentional tone");
                     toneControl.tone(600);
 #endif
                     //M5.Speaker.tone(600);

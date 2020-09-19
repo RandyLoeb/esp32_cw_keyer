@@ -3,7 +3,7 @@
 
 #define GENERIC_CHARGRAB
 
-#define M5CORE
+//#define M5CORE
 
 #if !defined M5CORE
 #define REMOTE_KEYER
