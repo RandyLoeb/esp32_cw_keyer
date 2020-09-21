@@ -21,6 +21,12 @@ Is what it is for now
 #include "webServer/webServer.h"
 #include "keyer_esp32.h"
 #include "keyer_esp32now.h"
+
+#if defined TRANSMIT
+#include "transmitControl/transmitContol.h"
+TransmitControl transmitControl;
+#endif
+
 /* #include "HTTPClient.h"
 HTTPClient http; */
 #if !defined REMOTE_KEYER
@@ -275,9 +281,15 @@ void IRAM_ATTR unlockDah()
 // fired by timer that ends a sidetone segment
 void IRAM_ATTR silenceTone()
 {
+
+#if defined TRANSMIT
+    transmitControl.unkey();
+#endif
+
+#if defined TONE_ON
     //M5.Speaker.mute();
     toneControl.noTone();
-
+#endif
     // kickoff the spacing timer between dits & dahs
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.restartTimer(ditDahSpaceLockTimer);
@@ -353,6 +365,11 @@ void changeTimerWpm()
 
 void initializeTimerStuff()
 {
+
+#if defined TRANSMIT
+    transmitControl.initialize();
+#endif
+
 #if !defined REMOTE_KEYER
     /* // server address, port and URL
     webSocket.beginSocketIO("ws://192.168.0.129", 80, "/ws");
@@ -552,6 +569,11 @@ void processDitDahQueue()
 
                 if (paddePress->Detected != DitOrDah::SPACE && paddePress->Detected != DitOrDah::FORCED_CHARSPACE)
                 {
+
+#if defined TRANSMIT
+                    transmitControl.key();
+#endif
+
 #if defined TONE_ON
                     //Serial.println("inentional tone");
                     toneControl.tone(600);

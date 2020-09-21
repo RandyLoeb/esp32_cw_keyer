@@ -1,5 +1,6 @@
 #ifndef KEYER_ESP32_H
 #define KEYER_ESP32_H
+#include <Arduino.h>
 
 #define GENERIC_CHARGRAB
 
@@ -11,6 +12,8 @@
 
 #ifndef M5CORE
 #define TONE_ON
+#define TRANSMIT
+
 #endif
 
 //#define ESPNOW_ONLY
@@ -23,6 +26,10 @@
 //#define REMOTE_DITDAHMODE
 #if !defined REMOTE_DITDAHMODE
 #define REMOTE_CHARMODE
+#endif
+
+#if defined TRANSMIT
+#define TRANSMIT_PIN GPIO_NUM_15 //GPIO_NUM_4 //GPIO_NUM_2 //GPIO_NUM_15
 #endif
 
 #endif
