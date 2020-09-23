@@ -139,6 +139,34 @@
           </button>
         </div>  
       </div>    
+
+      <div class="divTableHeading" id="otherHead">
+        <div class="divTableRow">
+          <div>&nbsp;&nbsp;Tx:</div>
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center">
+        <div class="divTableCell">
+          <input
+            id="tx"
+            class="myInput"
+            size="16"
+            type="text"
+            id="other"
+            data-bind="value: tx"
+          />
+          <button
+            id="TxButton"
+            class="myButton"
+            data-unseenSSID="true"
+            data-networkType="type4"
+            data-isknown="false"
+            data-bind="click: onTx"
+          >
+            Set Tx
+          </button>
+        </div>  
+      </div> 
     <br />
     <script>
       $(function () {

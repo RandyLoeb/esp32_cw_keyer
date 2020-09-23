@@ -29,7 +29,7 @@
 #endif
 
 #if defined TRANSMIT
-#define TRANSMIT_PIN GPIO_NUM_15 //GPIO_NUM_4 //GPIO_NUM_2 //GPIO_NUM_15
+#define TRANSMIT_PIN GPIO_NUM_23 //GPIO_NUM_15 //GPIO_NUM_4 //GPIO_NUM_2 //GPIO_NUM_15
 #endif
 
 #endif

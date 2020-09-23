@@ -315,6 +315,11 @@ void KeyerWebServer::initializeServer()
                 this->_persistentConfig->setWpm(wpm,wpmf,wpmfs);
             }
 
+            if (settingName == "tx")
+            {
+                this->_persistentConfig->configuration.tx = settingsObj["value"].as<int>();
+            }
+
         }
         Serial.print("settings matched?"); Serial.println(debugMatched);
         this->_persistentConfig->config_dirty=1;

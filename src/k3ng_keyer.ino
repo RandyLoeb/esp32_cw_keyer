@@ -141,7 +141,7 @@ void setup()
   _ditdahCallBack = &ditdahCallBack;
 #endif
   Serial.println("Calling initializing timer");
-  initializeTimerStuff();
+  initializeTimerStuff(&configControl);
   detectInterrupts = true;
 
   Serial.println("Calling initializing display control");

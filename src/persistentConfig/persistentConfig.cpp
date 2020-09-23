@@ -165,6 +165,7 @@ persistentConfig::getJsonStringFromConfiguration()
 
     doc["ip"] = this->IPAddress;
     doc["mac"] = this->MacAddress;
+    doc["tx"] = this->configuration.tx;
     String returnString;
     serializeJson(doc, returnString);
 

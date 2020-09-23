@@ -279,6 +279,7 @@ void SpiffsPersistentConfig::initialize(PRIMARY_SERIAL_CLS *loggingPortToUse)
 
     Serial.println("setting config from file");
     setConfigurationFromFile();
+    this->configuration.tx = 0;
 }
 void SpiffsPersistentConfig::save()
 {

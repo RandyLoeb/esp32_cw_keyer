@@ -21,6 +21,7 @@ Is what it is for now
 #include "webServer/webServer.h"
 #include "keyer_esp32.h"
 #include "keyer_esp32now.h"
+#include "persistentConfig/persistentConfig.h"
 
 #if defined TRANSMIT
 #include "transmitControl/transmitContol.h"
@@ -125,6 +126,7 @@ AsyncUDP udp;
 // queue to hold dits and dahs seen by the paddle monitorning,
 // sound loop will pull from here
 std::queue<PaddlePressDetection *> ditsNdahQueue;
+persistentConfig *_timerStuffConfig;
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -363,11 +365,12 @@ void changeTimerWpm()
     ISR_Timer.enable(charSpaceTimer);
 }
 
-void initializeTimerStuff()
+void initializeTimerStuff(persistentConfig *_config)
 {
 
+    _timerStuffConfig = _config;
 #if defined TRANSMIT
-    transmitControl.initialize();
+    transmitControl.initialize(_timerStuffConfig);
 #endif
 
 #if !defined REMOTE_KEYER
@@ -569,16 +572,17 @@ void processDitDahQueue()
 
                 if (paddePress->Detected != DitOrDah::SPACE && paddePress->Detected != DitOrDah::FORCED_CHARSPACE)
                 {
-
+                    if (_timerStuffConfig->configuration.tx > 0)
+                    {
 #if defined TRANSMIT
-                    transmitControl.key();
+                        transmitControl.key();
 #endif
 
 #if defined TONE_ON
-                    //Serial.println("inentional tone");
-                    toneControl.tone(600);
+
+                        toneControl.tone(600);
 #endif
-                    //M5.Speaker.tone(600);
+                    }
                 }
                 // lock us up
                 soundPlaying = true;

@@ -2,25 +2,34 @@
 #define TRANSMITCONTROL_H
 #include <Arduino.h>
 #include "keyer_esp32.h"
+#include "persistentConfig/persistentConfig.h"
 
 class TransmitControl
 {
+    persistentConfig *_config;
 
 public:
-    void initialize()
+    void initialize(persistentConfig *config)
     {
         pinMode(TRANSMIT_PIN, OUTPUT);
-        this->unkey();
+        this->unkey(true);
+        this->_config = config;
     }
 
     void key()
     {
-        digitalWrite(TRANSMIT_PIN, HIGH);
+        if (_config->configuration.tx > 0)
+        {
+            digitalWrite(TRANSMIT_PIN, HIGH);
+        }
     }
 
-    void unkey()
+    void unkey(bool force = false)
     {
-        digitalWrite(TRANSMIT_PIN, LOW);
+        if (_config->configuration.tx > 0 || force)
+        {
+            digitalWrite(TRANSMIT_PIN, LOW);
+        }
     }
 };
 

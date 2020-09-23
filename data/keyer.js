@@ -5,6 +5,7 @@ var myViewModel = {
   wpm_farnsworth_slow: ko.observable(0),
   ip: ko.observable(""),
   mac: ko.observable(""),
+  tx: ko.observable(1),
   onWpm: function () {
     this.setConfig([{ name: "wpm", value: this.wpm() }]);
   },
@@ -15,6 +16,9 @@ var myViewModel = {
     this.setConfig([
       { name: "wpm_farnsworth_slow", value: this.wpm_farnsworth_slow() },
     ]);
+  },
+  onTx: function () {
+    this.setConfig([{ name: "tx", value: this.tx() }]);
   },
   onSendText: function () {
     $.ajax({
@@ -59,5 +63,6 @@ var myViewModel = {
     myViewModel.wpm_farnsworth_slow(data.wpm_farnsworth_slow);
     myViewModel.ip(data.ip);
     myViewModel.mac(data.mac);
+    myViewModel.tx(data.tx);
   },
 };

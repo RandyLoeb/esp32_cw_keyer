@@ -57,7 +57,7 @@ public:
 
         int sidetone_volume;
         // 2 bytes
-
+        int tx;
     } configuration;
 
     String IPAddress;
@@ -116,5 +116,4 @@ public:
     /* virtual String readFileIntoString(String fileName); */
 };
 #endif
-    
 
