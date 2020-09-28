@@ -312,7 +312,11 @@ void KeyerWebServer::initializeServer()
                     wpmfs=settingsObj["value"].as<int>();
                     debugMatched=true;
                 }
-                this->_persistentConfig->setWpm(wpm,wpmf,wpmfs);
+
+                if (wpmf>=wpmfs) 
+                {
+                    this->_persistentConfig->setWpm(wpm,wpmf,wpmfs);
+                }
             }
 
             if (settingName == "tx")
@@ -322,6 +326,7 @@ void KeyerWebServer::initializeServer()
 
         }
         Serial.print("settings matched?"); Serial.println(debugMatched);
+
         this->_persistentConfig->config_dirty=1;
         //send the config
         String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();

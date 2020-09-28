@@ -577,12 +577,11 @@ void processDitDahQueue()
 #if defined TRANSMIT
                         transmitControl.key();
 #endif
-
+                    }
 #if defined TONE_ON
 
-                        toneControl.tone(600);
+                    toneControl.tone(600);
 #endif
-                    }
                 }
                 // lock us up
                 soundPlaying = true;

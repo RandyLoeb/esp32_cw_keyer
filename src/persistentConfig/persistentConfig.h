@@ -105,8 +105,11 @@ public:
     {
 
         this->configuration.wpm = newWpm;
-        this->configuration.wpm_farnsworth = newWpmFarnsworth;
-        this->configuration.wpm_farnsworth_slow = newWpmFarnsworthSlow;
+        if (newWpmFarnsworth >= newWpmFarnsworthSlow)
+        {
+            this->configuration.wpm_farnsworth = newWpmFarnsworth;
+            this->configuration.wpm_farnsworth_slow = newWpmFarnsworthSlow;
+        }
         for (std::vector<void (*)()>::iterator it = wpmChangeCallbacks.begin(); it != wpmChangeCallbacks.end(); ++it)
         {
             postSaveOneTimeCallbacks.push((*it));
@@ -116,4 +119,3 @@ public:
     /* virtual String readFileIntoString(String fileName); */
 };
 #endif
-
