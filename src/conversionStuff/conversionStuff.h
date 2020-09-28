@@ -8,13 +8,15 @@
 #include "timerStuff/paddlePress.h"
 #include "timerStuff/timingControl.h"
 #include <ArduinoWebsockets.h>
+#include "persistentConfig/persistentConfig.h"
 //https://github.com/gilmaimon/ArduinoWebsockets?utm_source=platformio&utm_medium=piohome
 using namespace websockets;
 std::vector<PaddlePressDetection *> conversionQueue;
 PaddlePressDetection *lastPress;
 bool cachedWordSpace = false;
 long lastWordLetterTimestamp = 0;
-void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace,WebsocketsClient *client)
+//persistentConfig *_timerStuffConfig;
+void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, WebsocketsClient *client, persistentConfig *_timerStuffConfig)
 {
 
     if (ditDahOrSpace->Display)
@@ -129,7 +131,10 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace,Websock
             //Serial.print("about to send sendTXT:");
             /*  Serial.println(webSocket.isConnected());
                 webSocket.sendTXT(isDit ? "dit" : "dah"); */
-            client->send(cwCharacter);
+            if (_timerStuffConfig->configJsonDoc["ws_connect"].as<int>() == 1 && _timerStuffConfig->configJsonDoc["ws_ip"].as<String>().length() > 0)
+            {
+                client->send(cwCharacter);
+            }
 
 #endif
 

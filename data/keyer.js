@@ -6,6 +6,8 @@ var myViewModel = {
   ip: ko.observable(""),
   mac: ko.observable(""),
   tx: ko.observable(1),
+  ws_connect: ko.observable(0),
+  ws_ip: ko.observable(""),
   onWpm: function () {
     this.setConfig([{ name: "wpm", value: this.wpm() }]);
   },
@@ -19,6 +21,12 @@ var myViewModel = {
   },
   onTx: function () {
     this.setConfig([{ name: "tx", value: this.tx() }]);
+  },
+  onWsConnect: function () {
+    this.setConfig([{ name: "ws_connect", value: this.ws_connect() }]);
+  },
+  onWsIp: function () {
+    this.setConfig([{ name: "ws_ip", value: this.ws_ip() }]);
   },
   onSendText: function () {
     $.ajax({
@@ -64,5 +72,7 @@ var myViewModel = {
     myViewModel.ip(data.ip);
     myViewModel.mac(data.mac);
     myViewModel.tx(data.tx);
+    myViewModel.ws_connect(data.ws_connect);
+    myViewModel.ws_ip(data.ws_ip);
   },
 };

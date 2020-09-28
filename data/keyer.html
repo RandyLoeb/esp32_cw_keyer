@@ -29,8 +29,6 @@
         </div>
       </div>
 
-
-
       <div class="divTableHeading" id="otherHead">
         <div class="divTableRow">
           <div>&nbsp;&nbsp;Text to key:</div>
@@ -137,8 +135,8 @@
           >
             Set WPM Farnsworth Slow
           </button>
-        </div>  
-      </div>    
+        </div>
+      </div>
 
       <div class="divTableHeading" id="otherHead">
         <div class="divTableRow">
@@ -165,8 +163,65 @@
           >
             Set Tx
           </button>
-        </div>  
-      </div> 
+        </div>
+      </div>
+
+      <div class="divTableHeading" id="otherHead">
+        <div class="divTableRow">
+          <div>&nbsp;&nbsp;wsConnect:</div>
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center">
+        <div class="divTableCell">
+          <input
+            id="wsConnect"
+            class="myInput"
+            size="16"
+            type="text"
+            id="other"
+            data-bind="value: ws_connect"
+          />
+          <button
+            id="wsConnectButton"
+            class="myButton"
+            data-unseenSSID="true"
+            data-networkType="type4"
+            data-isknown="false"
+            data-bind="click: onWsConnect"
+          >
+            Set WsConnect
+          </button>
+        </div>
+      </div>
+
+      div class="divTableHeading" id="otherHead">
+      <div class="divTableRow">
+        <div>&nbsp;&nbsp;wsIp:</div>
+      </div>
+    </div>
+    <div class="divTableRow" style="text-align: center">
+      <div class="divTableCell">
+        <input
+          id="wsIp"
+          class="myInput"
+          size="16"
+          type="text"
+          id="other"
+          data-bind="value: ws_ip"
+        />
+        <button
+          id="wsIpButton"
+          class="myButton"
+          data-unseenSSID="true"
+          data-networkType="type4"
+          data-isknown="false"
+          data-bind="click: onWsIp"
+        >
+          Set wsIp
+        </button>
+      </div>
+    </div>
+
     <br />
     <script>
       $(function () {

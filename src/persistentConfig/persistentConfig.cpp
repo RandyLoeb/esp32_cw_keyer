@@ -4,26 +4,26 @@
 #include "ArduinoJson.h"
 #include "keyer_settings.h"
 #include "keyer.h"
-persistentConfig::persistentConfig()
+persistentConfig::persistentConfig(): configJsonDoc(DEFAULT_CONFIG_JSON_DOC_SIZE)
 {
-    this->configuration.wpm = initial_speed_wpm;
+    //this->configuration.wpm = initial_speed_wpm;
 
-    this->configuration.paddle_interruption_quiet_time_element_lengths = default_paddle_interruption_quiet_time_element_lengths;
-    this->configuration.hz_sidetone = initial_sidetone_freq;
-    this->configuration.memory_repeat_time = default_memory_repeat_time;
-    this->configuration.cmos_super_keyer_iambic_b_timing_percent = default_cmos_super_keyer_iambic_b_timing_percent;
-    this->configuration.dah_to_dit_ratio = initial_dah_to_dit_ratio;
-    this->configuration.length_wordspace = default_length_wordspace;
-    this->configuration.weighting = default_weighting;
-    this->configuration.wordsworth_wordspace = default_wordsworth_wordspace;
-    this->configuration.wordsworth_repetition = default_wordsworth_repetition;
-    this->configuration.wpm_farnsworth = initial_speed_wpm;
-    this->configuration.cli_mode = CLI_NORMAL_MODE;
-    this->configuration.wpm_command_mode = initial_command_mode_speed_wpm;
-    this->configuration.ptt_buffer_hold_active = 0;
-    this->configuration.sidetone_volume = sidetone_volume_low_limit + ((sidetone_volume_high_limit - sidetone_volume_low_limit) / 2);
+    //this->configuration.paddle_interruption_quiet_time_element_lengths = default_paddle_interruption_quiet_time_element_lengths;
+    //this->configuration.hz_sidetone = initial_sidetone_freq;
+    //this->configuration.memory_repeat_time = default_memory_repeat_time;
+    //this->configuration.cmos_super_keyer_iambic_b_timing_percent = default_cmos_super_keyer_iambic_b_timing_percent;
+    //this->configuration.dah_to_dit_ratio = initial_dah_to_dit_ratio;
+    //this->configuration.length_wordspace = default_length_wordspace;
+    //this->configuration.weighting = default_weighting;
+    //this->configuration.wordsworth_wordspace = default_wordsworth_wordspace;
+    //this->configuration.wordsworth_repetition = default_wordsworth_repetition;
+    //this->configuration.wpm_farnsworth = initial_speed_wpm;
+    //this->configuration.cli_mode = CLI_NORMAL_MODE;
+    //this->configuration.wpm_command_mode = initial_command_mode_speed_wpm;
+    //this->configuration.ptt_buffer_hold_active = 0;
+    //this->configuration.sidetone_volume = sidetone_volume_low_limit + ((sidetone_volume_high_limit - sidetone_volume_low_limit) / 2);
 
-    this->configuration.ptt_lead_time[0] = initial_ptt_lead_time_tx1;
+    /* this->configuration.ptt_lead_time[0] = initial_ptt_lead_time_tx1;
     this->configuration.ptt_tail_time[0] = initial_ptt_tail_time_tx1;
     this->configuration.ptt_lead_time[1] = initial_ptt_lead_time_tx2;
     this->configuration.ptt_tail_time[1] = initial_ptt_tail_time_tx2;
@@ -35,19 +35,19 @@ persistentConfig::persistentConfig()
     this->configuration.ptt_lead_time[4] = initial_ptt_lead_time_tx5;
     this->configuration.ptt_tail_time[4] = initial_ptt_tail_time_tx5;
     this->configuration.ptt_lead_time[5] = initial_ptt_lead_time_tx6;
-    this->configuration.ptt_tail_time[5] = initial_ptt_tail_time_tx6;
+    this->configuration.ptt_tail_time[5] = initial_ptt_tail_time_tx6; */
 
-    for (int x = 0; x < 5; x++)
+    /* for (int x = 0; x < 5; x++)
     {
         this->configuration.ptt_active_to_sequencer_active_time[x] = 0;
         this->configuration.ptt_inactive_to_sequencer_inactive_time[x] = 0;
-    }
-    this->configuration.paddle_mode = PADDLE_NORMAL;
-    this->configuration.keyer_mode = IAMBIC_B;
-    this->configuration.sidetone_mode = SIDETONE_ON;
+    } */
+    //this->configuration.paddle_mode = PADDLE_NORMAL;
+    //this->configuration.keyer_mode = IAMBIC_B;
+    //this->configuration.sidetone_mode = SIDETONE_ON;
 
 #ifdef initial_sidetone_mode
-    this->configuration.sidetone_mode = initial_sidetone_mode;
+    //this->configuration.sidetone_mode = initial_sidetone_mode;
 #endif
 }
 
@@ -64,17 +64,17 @@ String
 persistentConfig::getJsonStringFromConfiguration()
 {
     //const size_t capacity = 6 * JSON_ARRAY_SIZE(2) + 4 * JSON_ARRAY_SIZE(4) + 2 * JSON_ARRAY_SIZE(5) + 2 * JSON_ARRAY_SIZE(6) + JSON_OBJECT_SIZE(23);
-    const size_t capacity = 4096;
-    DynamicJsonDocument doc(capacity);
+    //const size_t capacity = 4096;
+    //DynamicJsonDocument doc(capacity);
 
-    doc["cli_mode"] = configuration.cli_mode;
-    doc["ptt_buffer_hold_active"] = configuration.ptt_buffer_hold_active;
+   // doc["cli_mode"] = configuration.cli_mode;
+   // doc["ptt_buffer_hold_active"] = configuration.ptt_buffer_hold_active;
     /* if (SPIFFS_LOG_SERIAL)
     {
         esp32_port_to_use->print("Configuration.wpm is about to set json to:");
         esp32_port_to_use->println(configuration.wpm);
     } */
-    doc["wpm"] = configuration.wpm;
+   /*  doc["wpm"] = configuration.wpm;
     doc["hz_sidetone"] = configuration.hz_sidetone;
     doc["dah_to_dit_ratio"] = configuration.dah_to_dit_ratio;
     doc["wpm_farnsworth"] = configuration.wpm_farnsworth;
@@ -84,7 +84,7 @@ persistentConfig::getJsonStringFromConfiguration()
     doc["link_receive_udp_port"] = configuration.link_receive_udp_port;
     doc["wpm_ps2_usb_keyboard"] = configuration.wpm_ps2_usb_keyboard;
     doc["wpm_cli"] = configuration.wpm_cli;
-    doc["wpm_winkey"] = configuration.wpm_winkey;
+    doc["wpm_winkey"] = configuration.wpm_winkey; */
 
     /*
     JsonArray ip = doc.createNestedArray("ip");
@@ -161,13 +161,13 @@ persistentConfig::getJsonStringFromConfiguration()
     ptt_inactive_to_sequencer_inactive_time.add(5);
     ptt_inactive_to_sequencer_inactive_time.add(5);
     */
-    doc["sidetone_volume"] = configuration.sidetone_volume;
+    /* doc["sidetone_volume"] = configuration.sidetone_volume;
 
     doc["ip"] = this->IPAddress;
     doc["mac"] = this->MacAddress;
-    doc["tx"] = this->configuration.tx;
+    doc["tx"] = this->configuration.tx; */
     String returnString;
-    serializeJson(doc, returnString);
+    serializeJson(this->configJsonDoc, returnString);
 
     return returnString;
 }

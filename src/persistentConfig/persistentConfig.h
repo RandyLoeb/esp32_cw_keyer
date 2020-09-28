@@ -4,14 +4,17 @@
 #include <string>
 #include <vector>
 #include <queue>
+#include "ArduinoJson.h"
+#define DEFAULT_CONFIG_JSON_DOC_SIZE 4096
 #define PRIMARY_SERIAL_CLS HardwareSerial
 class persistentConfig
 {
 
 public:
+    DynamicJsonDocument configJsonDoc;
     persistentConfig();
 
-    struct config_t
+    /* struct config_t
     { // 111 bytes total
 
         uint8_t paddle_mode;
@@ -59,7 +62,7 @@ public:
         // 2 bytes
         int tx;
     } configuration;
-
+ */
     String IPAddress;
     String MacAddress;
 
@@ -104,11 +107,16 @@ public:
     void setWpm(int newWpm, int newWpmFarnsworth, int newWpmFarnsworthSlow)
     {
 
-        this->configuration.wpm = newWpm;
+        //this->configuration.wpm = newWpm;
+        this->configJsonDoc["wpm"] = newWpm;
+
         if (newWpmFarnsworth >= newWpmFarnsworthSlow)
         {
-            this->configuration.wpm_farnsworth = newWpmFarnsworth;
-            this->configuration.wpm_farnsworth_slow = newWpmFarnsworthSlow;
+            //this->configuration.wpm_farnsworth = newWpmFarnsworth;
+            this->configJsonDoc["wpm_farnsworth"] = newWpmFarnsworth;
+
+            //this->configuration.wpm_farnsworth_slow = newWpmFarnsworthSlow;
+            this->configJsonDoc["wpm_farnsworth_slow"] = newWpmFarnsworthSlow;
         }
         for (std::vector<void (*)()>::iterator it = wpmChangeCallbacks.begin(); it != wpmChangeCallbacks.end(); ++it)
         {

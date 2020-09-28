@@ -85,9 +85,9 @@ void ditdahCallBack(DitOrDah ditOrDah)
 
 void setup()
 {
-  
+
 #if defined M5CORE
-      M5.begin();
+  M5.begin();
 
 #endif
   Serial.begin(115200);
@@ -97,7 +97,7 @@ void setup()
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
   keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl, &ditCallBack, &ditdahCallBack);
-  
+
 #endif
 
   initialize_virtualPins();
@@ -223,9 +223,9 @@ void save_persistent_configuration()
 
 void speed_change(int change)
 {
-  if (((configControl.configuration.wpm + change) > wpm_limit_low) && ((configControl.configuration.wpm + change) < wpm_limit_high))
+  if (((configControl.configJsonDoc["wpm"].as<int>() + change) > wpm_limit_low) && ((configControl.configJsonDoc["wpm"].as<int>() + change) < wpm_limit_high))
   {
-    speed_set(configControl.configuration.wpm + change);
+    speed_set(configControl.configJsonDoc["wpm"].as<int>() + change);
   }
 
   lcd_center_print_timed_wpm();
@@ -233,42 +233,7 @@ void speed_change(int change)
 
 //-------------------------------------------------------------------------------------------------------
 
-void speed_change_command_mode(int change)
-{
-  if (((configControl.configuration.wpm_command_mode + change) > wpm_limit_low) && ((configControl.configuration.wpm_command_mode + change) < wpm_limit_high))
-  {
-    configControl.configuration.wpm_command_mode = configControl.configuration.wpm_command_mode + change;
-    configControl.config_dirty = 1;
-  }
-
-  displayControl.lcd_center_print_timed(String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
-}
-
 //-------------------------------------------------------------------------------------------------------
-
-void adjust_dah_to_dit_ratio(int adjustment)
-{
-
-  if ((configControl.configuration.dah_to_dit_ratio + adjustment) > 150 && (configControl.configuration.dah_to_dit_ratio + adjustment) < 810)
-  {
-    configControl.configuration.dah_to_dit_ratio = configControl.configuration.dah_to_dit_ratio + adjustment;
-#ifdef FEATURE_DISPLAY
-#ifdef OPTION_MORE_DISPLAY_MSGS
-    if (LCD_COLUMNS < 9)
-    {
-      displayControl.lcd_center_print_timed("DDR:" + String(configControl.configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
-    }
-    else
-    {
-      displayControl.lcd_center_print_timed("Dah/Dit: " + String(configControl.configuration.dah_to_dit_ratio), 0, default_display_msg_delay);
-    }
-    service_display();
-#endif
-#endif
-  }
-
-  configControl.config_dirty = 1;
-}
 
 //-------------------------------------------------------------------------------------------------------
 
@@ -339,20 +304,6 @@ void send_char(byte cw_char, byte omit_letterspace, bool display = true)
       }
     }
 
-    if (omit_letterspace != OMIT_LETTERSPACE)
-    {
-
-      //loop_element_lengths((length_letterspace - 1), 0, configControl.configuration.wpm); //this is minus one because send_dit and send_dah have a trailing element space
-    }
-
-#ifdef FEATURE_FARNSWORTH
-    // Farnsworth Timing : http://www.arrl.org/files/file/Technology/x9004008.pdf
-    if (configControl.configuration.wpm_farnsworth > configControl.configuration.wpm)
-    {
-      float additional_intercharacter_time_ms = ((((1.0 * farnsworth_timing_calibration) * ((60.0 * float(configControl.configuration.wpm_farnsworth)) - (37.2 * float(configControl.configuration.wpm))) / (float(configControl.configuration.wpm) * float(configControl.configuration.wpm_farnsworth))) / 19.0) * 1000.0) - (1200.0 / float(configControl.configuration.wpm_farnsworth));
-      //loop_element_lengths(1, additional_intercharacter_time_ms, 0);
-    }
-#endif
   }
 }
 
@@ -432,14 +383,14 @@ void lcd_center_print_timed_wpm()
   displayControl.lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm * 5) + " cpm", 0, default_display_msg_delay);
   displayControl.lcd_center_print_timed(String(1200 / configuration.wpm) + ":" + (((1200 / configuration.wpm) * configuration.dah_to_dit_ratio) / 100) + "ms 1:" + (float(configuration.dah_to_dit_ratio) / 100.00), 1, default_display_msg_delay);
 #else
-  displayControl.lcd_center_print_timed(String(configControl.configuration.wpm) + " wpm", 0, default_display_msg_delay);
+  displayControl.lcd_center_print_timed(String(configControl.configJsonDoc["wpm"].as<int>()) + " wpm", 0, default_display_msg_delay);
 #endif
 }
 
 void speed_set(int wpm_set)
 {
 
-  if ((wpm_set > 0) && (wpm_set < 1000))
+  /* if ((wpm_set > 0) && (wpm_set < 1000))
   {
     configControl.configuration.wpm = wpm_set;
     configControl.config_dirty = 1;
@@ -453,10 +404,10 @@ void speed_set(int wpm_set)
 #endif //FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
 
     lcd_center_print_timed_wpm();
-  }
+  } */
 }
 
-void command_speed_set(int wpm_set)
+/* void command_speed_set(int wpm_set)
 {
   if ((wpm_set > 0) && (wpm_set < 1000))
   {
@@ -466,12 +417,12 @@ void command_speed_set(int wpm_set)
     displayControl.lcd_center_print_timed("Cmd Spd " + String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
 
   } // end if
-} // end command_speed_set
+} // end command_speed_set */
 
 void wpmSetCallBack(byte pot_value_wpm_read)
 {
-  if (keyer_machine_mode == KEYER_COMMAND_MODE)
-    command_speed_set(pot_value_wpm_read);
+  /* if (keyer_machine_mode == KEYER_COMMAND_MODE)
+    //command_speed_set(pot_value_wpm_read);
   else
-    speed_set(pot_value_wpm_read);
+    speed_set(pot_value_wpm_read); */
 }

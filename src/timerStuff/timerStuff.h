@@ -81,10 +81,14 @@ void webSocketClientEvent(WStype_t type, uint8_t *payload, size_t length)
 using namespace websockets;
 WebsocketsClient client;
 bool clientIntiialized = false;
+persistentConfig *_timerStuffConfig;
 void connectWsClient()
 {
-    // Connect to server
-    client.connect("192.168.0.129", 80, "/ws");
+    if (_timerStuffConfig->configJsonDoc["ws_connect"].as<int>() == 1 && _timerStuffConfig->configJsonDoc["ws_ip"].as<String>().length() > 0)
+    {
+        // Connect to server
+        client.connect(_timerStuffConfig->configJsonDoc["ws_ip"].as<String>(), 80, "/ws");
+    }
 }
 
 void onMessageCallback(WebsocketsMessage message)
@@ -126,7 +130,7 @@ AsyncUDP udp;
 // queue to hold dits and dahs seen by the paddle monitorning,
 // sound loop will pull from here
 std::queue<PaddlePressDetection *> ditsNdahQueue;
-persistentConfig *_timerStuffConfig;
+
 volatile uint32_t lastMillis = 0;
 // Init ESP32 timer 1
 ESP32Timer ITimer(1);
@@ -345,7 +349,8 @@ void reEnableTimers()
 
 void changeTimerWpm()
 {
-    timingControl.setWpm(configControl.configuration.wpm, configControl.configuration.wpm_farnsworth, configControl.configuration.wpm_farnsworth_slow);
+
+    timingControl.setWpm(configControl.configJsonDoc["wpm"].as<int>(), configControl.configJsonDoc["wpm_farnsworth"].as<int>(), configControl.configJsonDoc["wpm_farnsworth_slow"].as<int>());
     ISR_Timer.disable(ditTimer);
     ISR_Timer.disable(dahTimer);
     ISR_Timer.disable(toneSilenceTimer);
@@ -397,17 +402,17 @@ void initializeTimerStuff(persistentConfig *_config)
 
 #endif
 
-    if (configControl.configuration.wpm_farnsworth <= 0)
+    if (configControl.configJsonDoc["wpm_farnsworth"].as<int>() <= 0)
     {
-        configControl.configuration.wpm_farnsworth = configControl.configuration.wpm;
+        configControl.configJsonDoc["wpm_farnsworth"] = configControl.configJsonDoc["wpm"].as<int>();
     }
 
-    if (configControl.configuration.wpm_farnsworth_slow <= 0)
+    if (configControl.configJsonDoc["wpm_farnsworth_slow"].as<int>() <= 0)
     {
-        configControl.configuration.wpm_farnsworth_slow = configControl.configuration.wpm;
+        configControl.configJsonDoc["wpm_farnsworth_slow"] = configControl.configJsonDoc["wpm"].as<int>();
     }
 
-    timingControl.setWpm(configControl.configuration.wpm, configControl.configuration.wpm_farnsworth, configControl.configuration.wpm_farnsworth_slow);
+    timingControl.setWpm(configControl.configJsonDoc["wpm"].as<int>(), configControl.configJsonDoc["wpm_farnsworth"].as<int>(), configControl.configJsonDoc["wpm_farnsworth_slow"].as<int>());
 
     // have to play nice with the configControl and turn off
     // timers when saving to spiffs otherwise we get kernal panics
@@ -484,7 +489,10 @@ void processDitDahQueue()
 
 #if !defined REMOTE_KEYER
     /* webSocket.loop(); */
-    client.poll();
+    if (_timerStuffConfig->configJsonDoc["ws_connect"].as<int>() == 1 && _timerStuffConfig->configJsonDoc["ws_ip"].as<String>().length() > 0)
+    {
+        client.poll();
+    }
     if (!clientIntiialized)
     {
         connectWsClient();
@@ -572,7 +580,7 @@ void processDitDahQueue()
 
                 if (paddePress->Detected != DitOrDah::SPACE && paddePress->Detected != DitOrDah::FORCED_CHARSPACE)
                 {
-                    if (_timerStuffConfig->configuration.tx > 0)
+                    if (_timerStuffConfig->configJsonDoc["tx"].as<int>() > 0)
                     {
 #if defined TRANSMIT
                         transmitControl.key();
@@ -614,9 +622,9 @@ void processDitDahQueue()
                 ISR_Timer.enable(toneSilenceTimer);
             }
 #if !defined REMOTE_KEYER
-            convertDitsDahsToCharsAndSpaces(paddePress, &client);
+            convertDitsDahsToCharsAndSpaces(paddePress, &client,_timerStuffConfig);
 #else
-            convertDitsDahsToCharsAndSpaces(paddePress, nullptr);
+            convertDitsDahsToCharsAndSpaces(paddePress, nullptr,_timerStuffConfig);
 #endif
         }
         else

@@ -294,9 +294,9 @@ void KeyerWebServer::initializeServer()
             
             if (settingName.startsWith("wpm"))
             {
-                int wpm = _persistentConfig->configuration.wpm;
-                int wpmf = _persistentConfig->configuration.wpm_farnsworth;
-                int wpmfs = _persistentConfig->configuration.wpm_farnsworth_slow;
+                int wpm = _persistentConfig->configJsonDoc["wpm"].as<int>();
+                int wpmf = _persistentConfig->configJsonDoc["wpm_farnsworth"].as<int>();
+                int wpmfs = _persistentConfig->configJsonDoc["wpm_farnsworth_slow"].as<int>();
                 if (settingName=="wpm")
                 {
                     wpm=settingsObj["value"].as<int>();
@@ -321,7 +321,17 @@ void KeyerWebServer::initializeServer()
 
             if (settingName == "tx")
             {
-                this->_persistentConfig->configuration.tx = settingsObj["value"].as<int>();
+                this->_persistentConfig->configJsonDoc["tx"] = settingsObj["value"].as<int>();
+            }
+
+            if (settingName == "ws_connect")
+            {
+                this->_persistentConfig->configJsonDoc["ws_connect"] = settingsObj["value"].as<int>();
+            }
+
+            if (settingName == "ws_ip")
+            {
+                this->_persistentConfig->configJsonDoc["ws_ip"] = settingsObj["value"].as<String>();
             }
 
         }
