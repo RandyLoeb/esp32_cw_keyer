@@ -135,8 +135,8 @@ void setup()
   Serial.print("My MAC is:");
   Serial.println(wifiUtils.getMac());
 
-  Serial.println("Calling espnow initialization");
 #if defined ESPNOW
+  Serial.println("Calling espnow initialization");
   initialize_espnow_wireless();
   _ditdahCallBack = &ditdahCallBack;
 #endif
@@ -303,7 +303,6 @@ void send_char(byte cw_char, byte omit_letterspace, bool display = true)
         //send_the_dits_and_dahs(ditsanddahs.c_str());
       }
     }
-
   }
 }
 
