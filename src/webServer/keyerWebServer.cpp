@@ -9,7 +9,6 @@
 #include "timerStuff/paddlePress.h"
 #include "keyer_esp32.h"
 
-void (*_ditdahCallBack)(DitOrDah ditOrDah);
 std::queue<String> *txtQueue;
 
 #if defined REMOTE_KEYER
@@ -127,8 +126,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 }
 #endif
 
-KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, void (*ditCallback)(),
-                               void (*ditdahCB)(DitOrDah ditOrDah)) : server(80), ws("/ws")
+KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf) : server(80), ws("/ws")
 {
     Serial.println("got addr of wifi utils");
     //Serial.println(wifiUtils);
@@ -136,8 +134,7 @@ KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQue
     this->_textQueue = textQueue;
     txtQueue = textQueue;
     this->_persistentConfig = persistentConf;
-    this->ditCallbck = ditCallback;
-    _ditdahCallBack = ditdahCB;
+
 #if defined REMOTE_KEYER
     Serial.println("REMOTE_KEYER ok");
     this->ws.onEvent(onWsEvent);
@@ -342,11 +339,11 @@ void KeyerWebServer::initializeServer()
         String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();
         request->send(200, "application/json", scanJson); });
 
-    server.on("/dit", [this](AsyncWebServerRequest *request) {
+    /* server.on("/dit", [this](AsyncWebServerRequest *request) {
         Serial.println("got dit!");
         this->ditCallbck();
         request->send(200, "text/html", "");
-    });
+    }); */
     server.onNotFound([this](AsyncWebServerRequest *request) { request->redirect("http://" + WiFi.softAPIP().toString() + "/"); });
 }
 

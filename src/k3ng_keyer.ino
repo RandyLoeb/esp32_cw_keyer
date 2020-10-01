@@ -42,9 +42,6 @@ persistentConfig &configControl{persistConfig};
 
 #include "displays/keyerDisplay.h"
 
-// move this later
-void lcd_center_print_timed_wpm();
-
 #include "webServer/wifiUtils.h"
 WifiUtils wifiUtils{};
 
@@ -63,26 +60,6 @@ AsyncUDP udp;
 //todo move
 void send_char(byte cw_char, byte omit_letterspace, bool display);
 
-void ditCallBack()
-{
-  PaddlePressDetection *newPd;
-  newPd = new PaddlePressDetection();
-  newPd->Detected = DitOrDah::SPACE;
-  newPd->Display = true;
-  newPd->Source = PaddlePressSource::ARTIFICIAL;
-  ditsNdahQueue.push(newPd);
-}
-
-void ditdahCallBack(DitOrDah ditOrDah)
-{
-  PaddlePressDetection *newPd;
-  newPd = new PaddlePressDetection();
-  newPd->Detected = ditOrDah;
-  newPd->Display = true;
-  newPd->Source = PaddlePressSource::ARTIFICIAL;
-  ditsNdahQueue.push(newPd);
-}
-
 void setup()
 {
 
@@ -96,7 +73,7 @@ void setup()
 #if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
-  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl, &ditCallBack, &ditdahCallBack);
+  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl);
 
 #endif
 
@@ -180,7 +157,13 @@ void loop()
   wpmPot.checkPotentiometer(wpmSetCallBack);
 #endif
 
-  check_for_dirty_configuration();
+  if (configControl.config_dirty)
+  {
+    Serial.println("dirty config!");
+    configControl.save();
+
+    configControl.config_dirty = 0;
+  }
 
   displayControl.service_display();
 
@@ -203,39 +186,6 @@ void loop()
   }
 #endif
 }
-
-void check_for_dirty_configuration()
-{
-
-  if (configControl.config_dirty)
-  {
-    Serial.println("dirty config!");
-    save_persistent_configuration();
-  }
-}
-
-void save_persistent_configuration()
-{
-  configControl.save();
-
-  configControl.config_dirty = 0;
-}
-
-void speed_change(int change)
-{
-  if (((configControl.configJsonDoc["wpm"].as<int>() + change) > wpm_limit_low) && ((configControl.configJsonDoc["wpm"].as<int>() + change) < wpm_limit_high))
-  {
-    speed_set(configControl.configJsonDoc["wpm"].as<int>() + change);
-  }
-
-  lcd_center_print_timed_wpm();
-}
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------
 
 void send_char(byte cw_char, byte omit_letterspace, bool display = true)
 {
@@ -373,55 +323,4 @@ byte is_visible_character(byte char_in)
   {
     return 0;
   }
-}
-
-void lcd_center_print_timed_wpm()
-{
-
-#if defined(OPTION_ADVANCED_SPEED_DISPLAY)
-  displayControl.lcd_center_print_timed(String(configuration.wpm) + " wpm - " + (configuration.wpm * 5) + " cpm", 0, default_display_msg_delay);
-  displayControl.lcd_center_print_timed(String(1200 / configuration.wpm) + ":" + (((1200 / configuration.wpm) * configuration.dah_to_dit_ratio) / 100) + "ms 1:" + (float(configuration.dah_to_dit_ratio) / 100.00), 1, default_display_msg_delay);
-#else
-  displayControl.lcd_center_print_timed(String(configControl.configJsonDoc["wpm"].as<int>()) + " wpm", 0, default_display_msg_delay);
-#endif
-}
-
-void speed_set(int wpm_set)
-{
-
-  /* if ((wpm_set > 0) && (wpm_set < 1000))
-  {
-    configControl.configuration.wpm = wpm_set;
-    configControl.config_dirty = 1;
-
-#ifdef FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
-    if ((configuration.wpm >= DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_WPM) && (configuration.wpm <= DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_WPM))
-    {
-      int dynamicweightvalue = map(configuration.wpm, DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_WPM, DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_WPM, DYNAMIC_DAH_TO_DIT_RATIO_LOWER_LIMIT_RATIO, DYNAMIC_DAH_TO_DIT_RATIO_UPPER_LIMIT_RATIO);
-      configuration.dah_to_dit_ratio = dynamicweightvalue;
-    }
-#endif //FEATURE_DYNAMIC_DAH_TO_DIT_RATIO
-
-    lcd_center_print_timed_wpm();
-  } */
-}
-
-/* void command_speed_set(int wpm_set)
-{
-  if ((wpm_set > 0) && (wpm_set < 1000))
-  {
-    configControl.configuration.wpm_command_mode = wpm_set;
-    configControl.config_dirty = 1;
-
-    displayControl.lcd_center_print_timed("Cmd Spd " + String(configControl.configuration.wpm_command_mode) + " wpm", 0, default_display_msg_delay);
-
-  } // end if
-} // end command_speed_set */
-
-void wpmSetCallBack(byte pot_value_wpm_read)
-{
-  /* if (keyer_machine_mode == KEYER_COMMAND_MODE)
-    //command_speed_set(pot_value_wpm_read);
-  else
-    speed_set(pot_value_wpm_read); */
 }

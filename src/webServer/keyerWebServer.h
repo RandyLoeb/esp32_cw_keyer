@@ -89,8 +89,7 @@ public:
     WifiUtils *_wifiUtils;
     std::queue<String> *_textQueue;
     persistentConfig *_persistentConfig;
-    KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, void (*ditCallback)(),
-                   void (*ditdahCB)(DitOrDah ditOrDah));
+    KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf);
 
     void start()
     {
@@ -102,8 +101,6 @@ public:
     {
         this->_wifiUtils->showJson();
     }
-
-    void (*ditCallbck)();
 };
 
 #endif
