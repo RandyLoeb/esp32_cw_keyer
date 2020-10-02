@@ -14,10 +14,9 @@
 #if !defined M5CORE
 #include "potentiometer.h"
 #endif
-#include "cw_utils.h"
+
 
 #if defined(ESP32)
-void add_to_send_buffer(byte incoming_serial_byte);
 
 #if defined M5CORE
 #include <M5Stack.h>
@@ -47,8 +46,6 @@ WifiUtils wifiUtils{};
 
 #include "webServer/webServer.h"
 
-std::queue<String> injectedText;
-
 #include "timerStuff/timerStuff.h"
 #include "virtualPins/keyerPins.h"
 
@@ -57,9 +54,8 @@ std::queue<String> injectedText;
 AsyncUDP udp;
 #endif
 
-//todo move
-void send_char(byte cw_char, byte omit_letterspace, bool display);
-
+#include "cwControl/cw_utils.h"
+CwControl *cwControl;
 void setup()
 {
 
@@ -70,10 +66,11 @@ void setup()
   Serial.begin(115200);
   Serial.println("In setup()");
 
+  cwControl = new CwControl(&ditsNdahQueue);
 #if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
-  keyerWebServer = new KeyerWebServer(&wifiUtils, &injectedText, &configControl);
+  keyerWebServer = new KeyerWebServer(&wifiUtils, &cwControl->injectedText, &configControl);
 
 #endif
 
@@ -118,12 +115,12 @@ void setup()
   _ditdahCallBack = &ditdahCallBack;
 #endif
   Serial.println("Calling initializing timer");
-  initializeTimerStuff(&configControl);
+  initializeTimerStuff(&configControl, cwControl);
   detectInterrupts = true;
 
   Serial.println("Calling initializing display control");
   displayControl.initialize([](char x) {
-    send_char(x, KEYER_NORMAL, false);
+    cwControl->send_char(x, KEYER_NORMAL, false);
   });
 
 #if defined REMOTE_KEYER
@@ -173,7 +170,7 @@ void loop()
 #if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
   keyerWebServer->handleClient();
 #endif
-  service_injected_text();
+  cwControl->service_injected_text();
 
   processDitDahQueue();
 
@@ -182,97 +179,12 @@ void loop()
   {
     delay(5000);
     String testText = "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS. 1234567890";
-    injectedText.push(testText);
+    cwControl.injectedText.push(testText);
   }
 #endif
-}
-
-void send_char(byte cw_char, byte omit_letterspace, bool display = true)
-{
-  PaddlePressDetection *newPd;
-  if ((cw_char == 10) || (cw_char == 13))
-  {
-    return;
-  } // don't attempt to send carriage return or line feed
-
-  sending_mode = AUTOMATIC_SENDING;
-
-  if (char_send_mode == CW)
-  {
-    bool cwHandled = false;
-
-    //special cases
-    switch (cw_char)
-    {
-    case '\n':
-      cwHandled = true;
-      break;
-    case '\r':
-      cwHandled = true;
-      break;
-    case ' ':
-      //loop_element_lengths((configControl.configuration.length_wordspace - length_letterspace - 2), 0, configControl.configuration.wpm);
-      newPd = new PaddlePressDetection();
-      newPd->Detected = DitOrDah::SPACE;
-      newPd->Display = display;
-      newPd->Source = PaddlePressSource::ARTIFICIAL;
-      ditsNdahQueue.push(newPd);
-      cwHandled = true;
-      break;
-    case '|':
-#if !defined(OPTION_WINKEY_DO_NOT_SEND_7C_BYTE_HALF_SPACE)
-      //loop_element_lengths(0.5, 0, configControl.configuration.wpm);
-#endif
-      cwHandled = true;
-      break;
-    default:
-      cwHandled = false;
-      break;
-    }
-
-    //most cases
-    if (!cwHandled)
-    {
-      //get the dits and dahs
-      String ditsanddahs = "" + convertCharToDitsAndDahs(cw_char);
-      if (ditsanddahs.length() > 0)
-      {
-        for (int i = 0; i < ditsanddahs.length(); i++)
-        {
-          newPd = new PaddlePressDetection();
-          newPd->Detected = ditsanddahs.charAt(i) == '.' ? DitOrDah::DIT : DitOrDah::DAH;
-          newPd->Source = PaddlePressSource::ARTIFICIAL;
-          newPd->Display = display;
-          ditsNdahQueue.push(newPd);
-        }
-        newPd = new PaddlePressDetection();
-        newPd->Detected = DitOrDah::FORCED_CHARSPACE;
-        newPd->Source = PaddlePressSource::ARTIFICIAL;
-        newPd->Display = display;
-        ditsNdahQueue.push(newPd);
-        //send_the_dits_and_dahs(ditsanddahs.c_str());
-      }
-    }
-  }
 }
 
 //-------------------------------------------------------------------------------------------------------
-
-void service_injected_text()
-{
-  while (!injectedText.empty())
-  {
-    char x;
-    String s = injectedText.front();
-    s.toUpperCase();
-    for (int i = 0; i < s.length(); i++)
-    {
-      x = s.charAt(i);
-      send_char(x, KEYER_NORMAL);
-    }
-    injectedText.pop();
-  }
-}
 
 void initialize_keyer_state()
 {
@@ -310,17 +222,4 @@ void service_millis_rollover()
     millis_rollover++;
   }
   last_millis = millis();
-}
-
-byte is_visible_character(byte char_in)
-{
-
-  if ((char_in > 31) || (char_in == 9) || (char_in == 10) || (char_in == 13))
-  {
-    return 1;
-  }
-  else
-  {
-    return 0;
-  }
 }

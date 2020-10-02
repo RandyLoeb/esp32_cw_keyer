@@ -22,6 +22,7 @@ Is what it is for now
 #include "keyer_esp32.h"
 #include "keyer_esp32now.h"
 #include "persistentConfig/persistentConfig.h"
+#include "cwControl/cw_utils.h"
 
 #if defined TRANSMIT
 #include "transmitControl/transmitContol.h"
@@ -82,6 +83,7 @@ using namespace websockets;
 WebsocketsClient client;
 bool clientIntiialized = false;
 persistentConfig *_timerStuffConfig;
+CwControl *_cwControl;
 void connectWsClient()
 {
     if (_timerStuffConfig->configJsonDoc["ws_connect"].as<int>() == 1 && _timerStuffConfig->configJsonDoc["ws_ip"].as<String>().length() > 0)
@@ -370,10 +372,11 @@ void changeTimerWpm()
     ISR_Timer.enable(charSpaceTimer);
 }
 
-void initializeTimerStuff(persistentConfig *_config)
+void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
 {
 
     _timerStuffConfig = _config;
+    _cwControl = cwControl;
 #if defined TRANSMIT
     transmitControl.initialize(_timerStuffConfig);
 #endif
@@ -622,9 +625,9 @@ void processDitDahQueue()
                 ISR_Timer.enable(toneSilenceTimer);
             }
 #if !defined REMOTE_KEYER
-            convertDitsDahsToCharsAndSpaces(paddePress, &client,_timerStuffConfig);
+            convertDitsDahsToCharsAndSpaces(paddePress, &client, _timerStuffConfig, _cwControl);
 #else
-            convertDitsDahsToCharsAndSpaces(paddePress, nullptr,_timerStuffConfig);
+            convertDitsDahsToCharsAndSpaces(paddePress, nullptr, _timerStuffConfig);
 #endif
         }
         else

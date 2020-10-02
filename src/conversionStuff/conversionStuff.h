@@ -3,12 +3,13 @@
 #include <Arduino.h>
 #include <vector>
 #include <string>
-#include "cw_utils.h"
+#include "cwControl/cw_utils.h"
 #include "displays/keyerDisplay.h"
 #include "timerStuff/paddlePress.h"
 #include "timerStuff/timingControl.h"
 #include <ArduinoWebsockets.h>
 #include "persistentConfig/persistentConfig.h"
+
 //https://github.com/gilmaimon/ArduinoWebsockets?utm_source=platformio&utm_medium=piohome
 using namespace websockets;
 std::vector<PaddlePressDetection *> conversionQueue;
@@ -16,7 +17,7 @@ PaddlePressDetection *lastPress;
 bool cachedWordSpace = false;
 long lastWordLetterTimestamp = 0;
 //persistentConfig *_timerStuffConfig;
-void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, WebsocketsClient *client, persistentConfig *_timerStuffConfig)
+void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, WebsocketsClient *client, persistentConfig *_timerStuffConfig, CwControl *_cwControl)
 {
 
     if (ditDahOrSpace->Display)
@@ -120,7 +121,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             Serial.println("");
             conversionQueue.clear();
 
-            String cwCharacter = convert_cw_number_to_string(characterCode);
+            String cwCharacter = _cwControl->convert_cw_number_to_string(characterCode);
             if (cachedWordSpace)
             {
                 displayControl.displayUpdate(" ");
