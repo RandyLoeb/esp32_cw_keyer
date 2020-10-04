@@ -6,7 +6,7 @@
 #include <queue>
 #include "ArduinoJson.h"
 #define DEFAULT_CONFIG_JSON_DOC_SIZE 4096
-#define PRIMARY_SERIAL_CLS HardwareSerial
+//#define PRIMARY_SERIAL_CLS HardwareSerial
 class persistentConfig
 {
 
@@ -66,7 +66,7 @@ public:
     String IPAddress;
     String MacAddress;
 
-    virtual void initialize(PRIMARY_SERIAL_CLS *loggingPortToUse);
+    virtual void initialize();
 
     virtual void save();
 

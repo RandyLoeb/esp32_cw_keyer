@@ -256,14 +256,14 @@ void SpiffsPersistentConfig::writeConfigurationToFile()
     delay(200);
 }
 
-void SpiffsPersistentConfig::initializeSpiffs(PRIMARY_SERIAL_CLS *port_to_use)
+void SpiffsPersistentConfig::initializeSpiffs()
 {
-    esp32_port_to_use = port_to_use;
+    //esp32_port_to_use = port_to_use;
 }
 
-void SpiffsPersistentConfig::initialize(PRIMARY_SERIAL_CLS *loggingPortToUse)
+void SpiffsPersistentConfig::initialize()
 {
-    this->esp32_port_to_use = loggingPortToUse;
+    //this->esp32_port_to_use = loggingPortToUse;
     Serial.println("In initialize spiffs persistent");
     if (!configFileExists())
     {

@@ -65,9 +65,9 @@ byte send_buffer_status = SERIAL_SEND_BUFFER_NORMAL;
 byte primary_serial_port_mode = SERIAL_CLI;
 #endif //FEATURE_SERIAL
 
-PRIMARY_SERIAL_CLS *primary_serial_port;
+//PRIMARY_SERIAL_CLS *primary_serial_port;
 
-PRIMARY_SERIAL_CLS *debug_serial_port;
+//PRIMARY_SERIAL_CLS *debug_serial_port;
 
 #if defined(FEATURE_PADDLE_ECHO)
 byte paddle_echo = 0;

@@ -4,7 +4,7 @@
 #include "ArduinoJson.h"
 #include "keyer_settings.h"
 #include "keyer.h"
-persistentConfig::persistentConfig(): configJsonDoc(DEFAULT_CONFIG_JSON_DOC_SIZE)
+persistentConfig::persistentConfig() : configJsonDoc(DEFAULT_CONFIG_JSON_DOC_SIZE)
 {
     //this->configuration.wpm = initial_speed_wpm;
 
@@ -51,7 +51,7 @@ persistentConfig::persistentConfig(): configJsonDoc(DEFAULT_CONFIG_JSON_DOC_SIZE
 #endif
 }
 
-void persistentConfig::initialize(PRIMARY_SERIAL_CLS *loggingPortToUse)
+void persistentConfig::initialize()
 {
 }
 
@@ -67,14 +67,14 @@ persistentConfig::getJsonStringFromConfiguration()
     //const size_t capacity = 4096;
     //DynamicJsonDocument doc(capacity);
 
-   // doc["cli_mode"] = configuration.cli_mode;
-   // doc["ptt_buffer_hold_active"] = configuration.ptt_buffer_hold_active;
+    // doc["cli_mode"] = configuration.cli_mode;
+    // doc["ptt_buffer_hold_active"] = configuration.ptt_buffer_hold_active;
     /* if (SPIFFS_LOG_SERIAL)
     {
         esp32_port_to_use->print("Configuration.wpm is about to set json to:");
         esp32_port_to_use->println(configuration.wpm);
     } */
-   /*  doc["wpm"] = configuration.wpm;
+    /*  doc["wpm"] = configuration.wpm;
     doc["hz_sidetone"] = configuration.hz_sidetone;
     doc["dah_to_dit_ratio"] = configuration.dah_to_dit_ratio;
     doc["wpm_farnsworth"] = configuration.wpm_farnsworth;

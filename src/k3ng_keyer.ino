@@ -4,12 +4,10 @@
 #include <stdio.h>
 #include <queue>
 #include <string>
-#include "keyer_hardware.h"
 #include "keyer_features_and_options.h"
 #include "keyer.h"
 #include "keyer_pin_settings.h"
 #include "keyer_settings.h"
-#include "display.h"
 #include "config.h"
 #if !defined M5CORE
 #include "potentiometer.h"
@@ -77,7 +75,7 @@ void setup()
   initialize_virtualPins();
 
   initialize_keyer_state();
-  configControl.initialize(primary_serial_port);
+  configControl.initialize();
 
 #if !defined M5CORE && !defined REMOTE_KEYER
   // potentiometer
