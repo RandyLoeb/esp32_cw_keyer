@@ -204,7 +204,7 @@ volatile bool ditLocked = false;
 volatile bool dahLocked = false;
 
 // this is triggerd by hardware interrupt indirectly
-void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int lockTimer, int pin, DitOrDah message)
+void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int oppoTimer, int lockTimer, int pin, DitOrDah message)
 {
 
     // locker is our debouce variable, i.e. we'll ignore any changes
@@ -224,7 +224,10 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             // pressed?
             if (*pressed && !pressedBefore)
             {
-                //ISR_Timer.disable(charSpaceTimer);
+                
+                //for now iambic behavior is a press stops press of the other
+                ISR_Timer.disable(oppoTimer);
+
                 PaddlePressDetection *newPd = new PaddlePressDetection();
                 newPd->Detected = message;
                 ditsNdahQueue.push(newPd);
@@ -244,9 +247,7 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
                 // released so stop the timer
                 ISR_Timer.disable(timer);
 
-                /* ISR_Timer.changeInterval(charSpaceTimer, 60L);
-                ISR_Timer.restartTimer(charSpaceTimer);
-                ISR_Timer.enable(charSpaceTimer); */
+                
             }
         }
 
@@ -260,12 +261,12 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
 // these two are triggered by hardware interrupts
 void IRAM_ATTR detectDitPress()
 {
-    detectPress(&ditLocked, &ditPressed, ditTimer, debounceDitTimer, VIRTUAL_DITS, DitOrDah::DIT);
+    detectPress(&ditLocked, &ditPressed, ditTimer, dahTimer, debounceDitTimer, VIRTUAL_DITS, DitOrDah::DIT);
 }
 
 void IRAM_ATTR detectDahPress()
 {
-    detectPress(&dahLocked, &dahPressed, dahTimer, debounceDahTimer, VIRTUAL_DAHS, DitOrDah::DAH);
+    detectPress(&dahLocked, &dahPressed, dahTimer, ditTimer, debounceDahTimer, VIRTUAL_DAHS, DitOrDah::DAH);
 }
 
 // fired by the timer that unlocks the debouncer indirectly
@@ -462,7 +463,7 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     dahTimer = ISR_Timer.setInterval(1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms, doDahs);
 
     // debouncers, needs some tweaking
-    debounceDitTimer = ISR_Timer.setInterval(1L, unlockDit);
+    debounceDitTimer = ISR_Timer.setInterval(5L, unlockDit);
     debounceDahTimer = ISR_Timer.setInterval(10L, unlockDah);
 
     // timer to silence tone (could be used to unkey transmitter)
