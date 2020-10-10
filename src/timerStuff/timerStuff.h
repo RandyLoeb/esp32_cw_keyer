@@ -142,9 +142,6 @@ ESP32_ISR_Timer ISR_Timer;
 // this might be too low? 50 and 25 were too high for 20wpm
 #define HW_TIMER_INTERVAL_MS 1
 
-#define ditpin GPIO_NUM_2
-#define dahpin GPIO_NUM_5
-
 // sort of a a lockout
 volatile bool soundPlaying = false;
 
@@ -419,16 +416,27 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     keyerWebServer->postSPIFFSCallbacks.push_back(reEnableTimers);
 #endif
 
-#if defined M5CORE
-    pinMode(ditpin, INPUT_PULLUP);
-    pinMode(dahpin, INPUT_PULLUP);
+#if defined HAS_DITDAHPINS
+#if defined M5CORE && defined DITPIN1 && defined DAHPIN1
+    pinMode(DITPIN1, INPUT_PULLUP);
+    pinMode(DAHPIN1, INPUT_PULLUP);
+#endif
 
-    //seems like pin can only have one interrupt attached
-    attachInterrupt(digitalPinToInterrupt(ditpin), detectDitPress, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(GPIO_NUM_39), detectDitPress, CHANGE);
+//seems like pin can only have one interrupt attached
+#if defined DITPIN1
+    attachInterrupt(digitalPinToInterrupt(DITPIN1), detectDitPress, CHANGE);
+#endif
+#if defined DITPIN2
+    attachInterrupt(digitalPinToInterrupt(DITPIN2), detectDitPress, CHANGE);
+#endif
 
-    attachInterrupt(digitalPinToInterrupt(dahpin), detectDahPress, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(GPIO_NUM_37), detectDahPress, CHANGE);
+#if defined DAHPIN1
+    attachInterrupt(digitalPinToInterrupt(DAHPIN1), detectDahPress, CHANGE);
+#endif
+
+#if defined DAHPIN2
+    attachInterrupt(digitalPinToInterrupt(DAHPIN2), detectDahPress, CHANGE);
+#endif
 #endif
 
     // Using ESP32  => 80 / 160 / 240MHz CPU clock ,

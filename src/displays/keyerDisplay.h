@@ -2,12 +2,10 @@
 #define KEYERDISPLAY_H
 #include "keyer_esp32.h"
 
-#if defined M5CORE
+#if defined M5DISPLAY
 #include "displays/M5KeyerDisplay.h"
 M5KeyerDisplay disp;
-#endif
-
-#if defined REMOTE_KEYER
+#elif defined OLED64X128
 #include "displays/oled64x128.h"
 oled64x128 disp;
 #endif

@@ -1,26 +1,32 @@
 #ifndef KEYERPINS_H
 #define KEYERPINS_H
 #include <Arduino.h>
+#include "keyer_esp32.h"
 #include "virtualPins.h"
-VirtualPins virtualPins;
-/* #include "virtualPins/m5VirtualButtonPin.h"
-M5VirtualButtonPin btnA{M5Btnslist::A};
-M5VirtualButtonPin btnC{M5Btnslist::C}; */
 #include "virtualPins/virtualArduinoStyleInputPin.h"
-VirtualArduinoStyleInputPin p2(2, VitualArduinoPinPull::VAPP_HIGH);
-VirtualArduinoStyleInputPin p39(GPIO_NUM_39, VitualArduinoPinPull::VAPP_HIGH);
-
-VirtualArduinoStyleInputPin p5(5, VitualArduinoPinPull::VAPP_HIGH);
-VirtualArduinoStyleInputPin p37(GPIO_NUM_37, VitualArduinoPinPull::VAPP_HIGH);
-
-/* VirtualPin &vpA{btnA};
-VirtualPin &vpC{btnC}; */
-VirtualPin &vp2{p2};
-VirtualPin &vp5{p5};
-VirtualPin &vp39{p39};
-VirtualPin &vp37{p37};
-
 #include "virtualPins/virtualPinSet.h"
+VirtualPins virtualPins;
+
+#if defined DITPIN1
+VirtualArduinoStyleInputPin ditp1(DITPIN1, VitualArduinoPinPull::VAPP_HIGH);
+VirtualPin &vditp1{ditp1};
+#endif
+
+#if defined DITPIN2
+VirtualArduinoStyleInputPin ditp2(DITPIN2, VitualArduinoPinPull::VAPP_HIGH);
+VirtualPin &vditp2{ditp2};
+#endif
+
+#if defined DAHPIN1
+VirtualArduinoStyleInputPin dahp1(DAHPIN1, VitualArduinoPinPull::VAPP_HIGH);
+VirtualPin &vdahp1{dahp1};
+#endif
+
+#if defined DAHPIN2
+VirtualArduinoStyleInputPin dahp2(DAHPIN2, VitualArduinoPinPull::VAPP_HIGH);
+VirtualPin &vdahp2{dahp2};
+#endif
+
 VirtualPinSet ditPaddles;
 VirtualPinSet dahPaddles;
 
@@ -30,10 +36,18 @@ VirtualPinSet dahPaddles;
 void initialize_virtualPins()
 {
 
-    ditPaddles.pins.push_back(&vp39);
-    ditPaddles.pins.push_back(&vp2);
-    dahPaddles.pins.push_back(&vp37);
-    dahPaddles.pins.push_back(&vp5);
+#if defined DITPIN2
+    ditPaddles.pins.push_back(&vditp2);
+#endif
+#if defined DITPIN1
+    ditPaddles.pins.push_back(&vditp1);
+#endif
+#if defined DAHPIN2
+    dahPaddles.pins.push_back(&vdahp2);
+#endif
+#if defined DAHPIN1
+    dahPaddles.pins.push_back(&vdahp1);
+#endif
 
     virtualPins.pinsets.insert(std::make_pair(VIRTUAL_DITS, &ditPaddles));
     virtualPins.pinsets.insert(std::make_pair(VIRTUAL_DAHS, &dahPaddles));

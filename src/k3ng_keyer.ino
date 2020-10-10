@@ -1,5 +1,4 @@
 #include "keyer_esp32.h"
-//#define M5CORE
 
 #include <stdio.h>
 #include <queue>
@@ -9,10 +8,6 @@
 #include "keyer_pin_settings.h"
 #include "keyer_settings.h"
 #include "config.h"
-#if !defined M5CORE
-#include "potentiometer.h"
-#endif
-
 
 #if defined(ESP32)
 
@@ -76,12 +71,6 @@ void setup()
 
   initialize_keyer_state();
   configControl.initialize();
-
-#if !defined M5CORE && !defined REMOTE_KEYER
-  // potentiometer
-  wpmPot.initialize(potentiometer_pin);
-  configControl.configuration.pot_activated = 1;
-#endif
 
   initialize_default_modes();
 
@@ -147,10 +136,6 @@ void setup()
 
 void loop()
 {
-
-#if !defined M5CORE && !defined REMOTE_KEYER
-  wpmPot.checkPotentiometer(wpmSetCallBack);
-#endif
 
   if (configControl.config_dirty)
   {

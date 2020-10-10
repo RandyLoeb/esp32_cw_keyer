@@ -15,15 +15,7 @@ M5Tone m5Tone;
 
 #include "esp32pinTone.h"
 
-#if defined M5CORE
-// pins known to work on m5 = 26,25,17,16
-// not work on m5 = 35, 36,3,1 (works but screws up serial printlns?),
-ESP32PINTONE pinTone(GPIO_NUM_25);
-#endif
-
-#if defined REMOTE_KEYER
-ESP32PINTONE pinTone(GPIO_NUM_22);
-#endif
+ESP32PINTONE pinTone(TONE_PIN);
 
 toneBase &toneControl{toneCollection};
 
