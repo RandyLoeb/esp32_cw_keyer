@@ -28,9 +28,9 @@ Is what it is for now
 #include "transmitControl/transmitContol.h"
 TransmitControl transmitControl;
 #endif
+CwControl *_cwControl;
+persistentConfig *_timerStuffConfig;
 
-/* #include "HTTPClient.h"
-HTTPClient http; */
 #if !defined REMOTE_KEYER
 /* #include <WebSocketsClient.h>
 //https://github.com/Links2004/arduinoWebSockets
@@ -82,8 +82,7 @@ void webSocketClientEvent(WStype_t type, uint8_t *payload, size_t length)
 using namespace websockets;
 WebsocketsClient client;
 bool clientIntiialized = false;
-persistentConfig *_timerStuffConfig;
-CwControl *_cwControl;
+
 void connectWsClient()
 {
     if (_timerStuffConfig->configJsonDoc["ws_connect"].as<int>() == 1 && _timerStuffConfig->configJsonDoc["ws_ip"].as<String>().length() > 0)
@@ -159,9 +158,7 @@ void IRAM_ATTR TimerHandler(void)
 // has debugging to see if we are dead nuts accurate
 void IRAM_ATTR doDits()
 {
-    /* static unsigned long previousMillis = lastMillis;
-    unsigned long deltaMillis = millis() - previousMillis; */
-    //ditsNdahQueue.push("dit");
+
     PaddlePressDetection *newPd = new PaddlePressDetection();
     newPd->Detected = DitOrDah::DIT;
     ditsNdahQueue.push(newPd);
@@ -176,8 +173,7 @@ void IRAM_ATTR doDits()
 
 void IRAM_ATTR doDahs()
 {
-    /* static unsigned long previousMillis = lastMillis;
-    unsigned long deltaMillis = millis() - previousMillis; */
+
     PaddlePressDetection *newPd = new PaddlePressDetection();
     newPd->Detected = DitOrDah::DAH;
     ditsNdahQueue.push(newPd);
@@ -224,7 +220,7 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             // pressed?
             if (*pressed && !pressedBefore)
             {
-                
+
                 //for now iambic behavior is a press stops press of the other
                 ISR_Timer.disable(oppoTimer);
 
@@ -246,8 +242,6 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             {
                 // released so stop the timer
                 ISR_Timer.disable(timer);
-
-                
             }
         }
 
@@ -326,13 +320,7 @@ void IRAM_ATTR injectCharSpace()
 
 void disableAllTimers()
 {
-    /* ISR_Timer.disable(ditTimer);
-    ISR_Timer.disable(dahTimer);
-    ISR_Timer.disable(toneSilenceTimer);
-    ISR_Timer.disable(ditDahSpaceLockTimer);
-    ISR_Timer.disable(charSpaceTimer);
-    ISR_Timer.disable(debounceDitTimer);
-    ISR_Timer.disable(debounceDahTimer); */
+
     ISR_Timer.disableAll();
     Serial.println("disabled all timers");
 }
@@ -379,7 +367,9 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     _timerStuffConfig = _config;
     _cwControl = cwControl;
 #if defined TRANSMIT
+    Serial.println("initialzing transmit control");
     transmitControl.initialize(_timerStuffConfig);
+    Serial.println("transmit control initialized");
 #endif
 
 #if !defined REMOTE_KEYER
@@ -628,7 +618,7 @@ void processDitDahQueue()
 #if !defined REMOTE_KEYER
             convertDitsDahsToCharsAndSpaces(paddePress, &client, _timerStuffConfig, _cwControl);
 #else
-            convertDitsDahsToCharsAndSpaces(paddePress, nullptr, _timerStuffConfig);
+            convertDitsDahsToCharsAndSpaces(paddePress, nullptr, _timerStuffConfig, _cwControl);
 #endif
         }
         else

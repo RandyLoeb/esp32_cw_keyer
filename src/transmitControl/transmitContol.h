@@ -11,14 +11,19 @@ class TransmitControl
 public:
     void initialize(persistentConfig *config)
     {
+
         pinMode(TRANSMIT_PIN, OUTPUT);
-        this->unkey(true);
         this->_config = config;
+        this->unkey(true);
+        
+
+        Serial.print("checking this _config in transmit control:");
+        Serial.println(this->_config != nullptr);
     }
 
     void key()
     {
-        if (_config->configuration.tx > 0)
+        if (this->_config->configJsonDoc["tx"].as<int>() > 0)
         {
             digitalWrite(TRANSMIT_PIN, HIGH);
         }
@@ -26,7 +31,7 @@ public:
 
     void unkey(bool force = false)
     {
-        if (_config->configuration.tx > 0 || force)
+        if (this->_config->configJsonDoc["tx"].as<int>() > 0 || force)
         {
             digitalWrite(TRANSMIT_PIN, LOW);
         }

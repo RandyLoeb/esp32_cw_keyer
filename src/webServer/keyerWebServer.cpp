@@ -57,7 +57,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 //Serial.println(myData);
                 if (myData == "dit" || myData == "dah")
                 {
-                    _ditdahCallBack(myData == "dit" ? DitOrDah::DIT : DitOrDah::DAH);
+                //    _ditdahCallBack(myData == "dit" ? DitOrDah::DIT : DitOrDah::DAH);
                 }
                 else
                 {
