@@ -222,6 +222,36 @@
       </div>
     </div>
 
+
+    <div class="divTableHeading" id="otherHead">
+      <div class="divTableRow">
+        <div>&nbsp;&nbsp;toneHz:</div>
+      </div>
+    </div>
+    <div class="divTableRow" style="text-align: center">
+      <div class="divTableCell">
+        <input
+          id="toneHz"
+          class="myInput"
+          size="16"
+          type="text"
+          id="other"
+          data-bind="value: tone_hz"
+        />
+        <button
+          id="toneHzButton"
+          class="myButton"
+          data-unseenSSID="true"
+          data-networkType="type4"
+          data-isknown="false"
+          data-bind="click: onToneHz"
+        >
+          Set toneHz
+        </button>
+      </div>
+    </div>
+
+
     <br />
     <script>
       $(function () {

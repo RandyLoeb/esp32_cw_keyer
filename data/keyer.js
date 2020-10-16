@@ -8,6 +8,7 @@ var myViewModel = {
   tx: ko.observable(1),
   ws_connect: ko.observable(0),
   ws_ip: ko.observable(""),
+  tone_hz: ko.observable(0),
   onWpm: function () {
     this.setConfig([{ name: "wpm", value: this.wpm() }]);
   },
@@ -27,6 +28,9 @@ var myViewModel = {
   },
   onWsIp: function () {
     this.setConfig([{ name: "ws_ip", value: this.ws_ip() }]);
+  },
+  onToneHz: function () {
+    this.setConfig([{ name: "tone_hz", value: this.tone_hz() }]);
   },
   onSendText: function () {
     $.ajax({
@@ -74,5 +78,6 @@ var myViewModel = {
     myViewModel.tx(data.tx);
     myViewModel.ws_connect(data.ws_connect);
     myViewModel.ws_ip(data.ws_ip);
+    myViewModel.tone_hz(data.tone_hz);
   },
 };

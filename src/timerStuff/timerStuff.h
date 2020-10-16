@@ -589,8 +589,11 @@ void processDitDahQueue()
 #endif
                     }
 #if defined TONE_ON
-
-                    toneControl.tone(600);
+                    int hz = _timerStuffConfig->configJsonDoc["tone_hz"].as<int>();
+                    if (hz > 0)
+                    {
+                        toneControl.tone(hz);
+                    }
 #endif
                 }
                 // lock us up

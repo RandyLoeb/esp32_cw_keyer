@@ -57,7 +57,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 //Serial.println(myData);
                 if (myData == "dit" || myData == "dah")
                 {
-                //    _ditdahCallBack(myData == "dit" ? DitOrDah::DIT : DitOrDah::DAH);
+                    //    _ditdahCallBack(myData == "dit" ? DitOrDah::DIT : DitOrDah::DAH);
                 }
                 else
                 {
@@ -331,6 +331,10 @@ void KeyerWebServer::initializeServer()
                 this->_persistentConfig->configJsonDoc["ws_ip"] = settingsObj["value"].as<String>();
             }
 
+            if (settingName == "tone_hz")
+            {
+                this->_persistentConfig->configJsonDoc["tone_hz"] = settingsObj["value"].as<int>();
+            }
         }
         Serial.print("settings matched?"); Serial.println(debugMatched);
 

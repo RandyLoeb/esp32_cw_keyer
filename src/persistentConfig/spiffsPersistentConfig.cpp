@@ -272,6 +272,7 @@ void SpiffsPersistentConfig::initialize()
         this->configJsonDoc["wpm"] = 20;
         this->configJsonDoc["wpm_farnsworth"] = 20;
         this->configJsonDoc["wpm_farnsworth_slow"] = 20;
+        this->configJsonDoc["tone_hz"] = 600;
         writeConfigurationToFile();
     }
     else
@@ -285,6 +286,7 @@ void SpiffsPersistentConfig::initialize()
     }
 
     Serial.println("setting config from file");
+    this->configJsonDoc["tone_hz"] = 600;
     setConfigurationFromFile();
 
     //turn these off to start always
