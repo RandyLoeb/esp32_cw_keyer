@@ -126,7 +126,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 }
 #endif
 
-KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf) : server(80), ws("/ws")
+KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, DisplayCache *displayCache) : server(80), ws("/ws")
 {
     Serial.println("got addr of wifi utils");
     //Serial.println(wifiUtils);
@@ -134,6 +134,7 @@ KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQue
     this->_textQueue = textQueue;
     txtQueue = textQueue;
     this->_persistentConfig = persistentConf;
+    this->_displayCache = displayCache;
 
 #if defined REMOTE_KEYER
     Serial.println("REMOTE_KEYER ok");
@@ -275,6 +276,10 @@ void KeyerWebServer::initializeServer()
 
     server.on("/getconfig", [this](AsyncWebServerRequest *request) {
         String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();
+        request->send(200, "application/json", scanJson); });
+
+    server.on("/getdisplaycache", [this](AsyncWebServerRequest *request) {
+        String scanJson = _displayCache->getJsonAndClear();
         request->send(200, "application/json", scanJson); });
 
     server.on(

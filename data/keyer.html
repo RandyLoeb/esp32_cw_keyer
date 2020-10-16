@@ -26,6 +26,7 @@
         </div>
         <div class="divTableRow">
           <div><span data-bind="text: mac"></span></div>
+          
         </div>
       </div>
 
@@ -56,6 +57,28 @@
           </button>
         </div>
       </div>
+
+      <div class="divTableHeading" id="otherHead">
+        <div class="divTableRow">
+          <div>&nbsp;&nbsp;Poll:</div>
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center">
+        <div class="divTableCell">
+          <input type="checkbox" data-bind="checked: pollDisplay" /> Poll
+          
+        </div>
+      </div>
+      <div class="divTableRow" style="text-align: center">
+        <div class="divTableCell">
+          <textarea rows="5" cols="25" data-bind="textInput: displayCache"></textarea>
+          
+        </div>
+      </div>
+
+
+
+
       <div class="divTableHeading" id="otherHead">
         <div class="divTableRow">
           <div>&nbsp;&nbsp;WPM:</div>
@@ -258,6 +281,9 @@
         console.log("ready!");
         ko.applyBindings(myViewModel);
         myViewModel.getConfig();
+        myViewModel.pollDisplay.subscribe(function(newValue) {
+          myViewModel.handlePolling(newValue);
+        });
       });
     </script>
     <!-- <script type="text/javascript" src="wifiadmin.js"></script> -->

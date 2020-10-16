@@ -10,6 +10,53 @@ class CwControl
 {
   std::queue<PaddlePressDetection *> *_ditsNdahQueue;
 
+  char convert_prosign_to_char(String possibleProsign)
+  {
+    char ret = 0;
+    if (possibleProsign == "<AA>")
+    {
+      return PROSIGN_AA;
+    }
+    if (possibleProsign == "<AS>")
+    {
+      return PROSIGN_AS;
+    }
+    if (possibleProsign == "<BK>")
+    {
+      return PROSIGN_BK;
+    }
+    if (possibleProsign == "<CL>")
+    {
+      return PROSIGN_CL;
+    }
+    if (possibleProsign == "<CT>")
+    {
+      return PROSIGN_CT;
+    }
+    if (possibleProsign == "<KN>")
+    {
+      return PROSIGN_KN;
+    }
+    if (possibleProsign == "<NJ>")
+    {
+      return PROSIGN_NJ;
+    }
+    if (possibleProsign == "<SK>")
+    {
+      return PROSIGN_SK;
+    }
+    if (possibleProsign == "<SN>")
+    {
+      return PROSIGN_SN;
+    }
+    if (possibleProsign == "<HH>")
+    {
+      return PROSIGN_HH;
+    }
+
+    return ret;
+  }
+
   char *convert_prosign(byte prosign_code)
   {
 
@@ -859,12 +906,27 @@ public:
     while (!injectedText.empty())
     {
       char x;
+      bool isPro = false;
       String s = injectedText.front();
       s.toUpperCase();
-      for (int i = 0; i < s.length(); i++)
+      if (s.length() == 4 && s.startsWith("<") && s.endsWith(">"))
       {
-        x = s.charAt(i);
-        this->send_char(x, KEYER_NORMAL);
+        x = convert_prosign_to_char(s);
+        if (x > 0)
+        {
+          //it's a prosign
+          isPro = true;
+          this->send_char(x, KEYER_NORMAL);
+        }
+      }
+
+      if (!isPro)
+      {
+        for (int i = 0; i < s.length(); i++)
+        {
+          x = s.charAt(i);
+          this->send_char(x, KEYER_NORMAL);
+        }
       }
       injectedText.pop();
     }

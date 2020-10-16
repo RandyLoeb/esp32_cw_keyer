@@ -63,7 +63,7 @@ void setup()
 #if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
   //the web server needs a wifiutils object to handle wifi config
   //also needs place to inject text
-  keyerWebServer = new KeyerWebServer(&wifiUtils, &cwControl->injectedText, &configControl);
+  keyerWebServer = new KeyerWebServer(&wifiUtils, &cwControl->injectedText, &configControl, &displayCache);
 
 #endif
 

@@ -125,6 +125,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             if (cachedWordSpace)
             {
                 displayControl.displayUpdate(" ");
+                displayCache.add(" ");
                 cachedWordSpace = false;
             }
 
@@ -140,6 +141,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
 #endif
 
             displayControl.displayUpdate(cwCharacter);
+            displayCache.add(cwCharacter);
         }
 
         if (!isDummy && !isSpace & !isForcedCharSpace)

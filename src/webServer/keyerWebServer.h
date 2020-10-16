@@ -6,6 +6,7 @@
 #include "wifiUtils.h"
 #include "persistentConfig/persistentConfig.h"
 #include "timerStuff/paddlePress.h"
+#include "displays/displayCache.h"
 #include <queue>
 #include <string>
 #include <vector>
@@ -89,7 +90,8 @@ public:
     WifiUtils *_wifiUtils;
     std::queue<String> *_textQueue;
     persistentConfig *_persistentConfig;
-    KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf);
+    DisplayCache *_displayCache;
+    KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, DisplayCache *displayCache);
 
     void start()
     {

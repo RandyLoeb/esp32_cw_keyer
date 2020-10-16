@@ -9,6 +9,21 @@ var myViewModel = {
   ws_connect: ko.observable(0),
   ws_ip: ko.observable(""),
   tone_hz: ko.observable(0),
+  pollDisplay: ko.observable(false),
+  displayCache: ko.observable(""),
+  polling:0,
+  intervalHandle:0,
+  handlePolling: function(activate) {
+    if (!activate) {
+      if (this.polling) {
+        clearInterval(this.intervalHandle);
+      }
+      this.polling =0;
+    } else {
+      this.polling=1;
+      this.intervalHandle = setInterval(this.getDisplayCache, 2000);
+    }
+  },
   onWpm: function () {
     this.setConfig([{ name: "wpm", value: this.wpm() }]);
   },
@@ -66,6 +81,17 @@ var myViewModel = {
         myViewModel.updateFresh(data);
       },
       data: JSON.stringify({ settings: settings }),
+    });
+  },
+  getDisplayCache: function () {
+    $.ajax({
+      url: "/getdisplaycache",
+      type: "get",
+      dataType: "json",
+      contentType: "application/json",
+      success: function (data) {
+        myViewModel.displayCache(myViewModel.displayCache() + data.cache);
+      },
     });
   },
   updateFresh: function (data) {

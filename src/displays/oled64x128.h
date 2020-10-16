@@ -1,3 +1,5 @@
+#ifndef OLED64X128_H
+#define OLED64X128_H
 #include <string>
 #include <Wire.h>        // Only needed for Arduino 1.6.5 and earlier
 #include "SSD1306Wire.h" // legacy: #include "SSD1306.h"
@@ -28,3 +30,5 @@ public:
     virtual int getColsCount();
     virtual int getRowsCount();
 };
+
+#endif
