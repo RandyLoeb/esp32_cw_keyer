@@ -10,10 +10,22 @@ var myViewModel = {
   ws_ip: ko.observable(""),
   tone_hz: ko.observable(0),
   pollDisplay: ko.observable(false),
-  displayCache: ko.observable(""),
+  displayCache: ko.observable("Mark the poll checkbox to see the keyed characters here."),
+  firstPoll: 1,
   polling:0,
   intervalHandle:0,
+  showDisplay: ko.observable(true),
+  onHideDisplay: function() {
+    this.showDisplay(!this.showDisplay());
+  },
+  onClearDisplay: function() {
+    this.displayCache("");
+  },
   handlePolling: function(activate) {
+    if (this.firstPoll) {
+      this.displayCache("");
+      this.firstPoll=0;
+    }
     if (!activate) {
       if (this.polling) {
         clearInterval(this.intervalHandle);
@@ -91,6 +103,11 @@ var myViewModel = {
       contentType: "application/json",
       success: function (data) {
         myViewModel.displayCache(myViewModel.displayCache() + data.cache);
+        setTimeout(function() {
+          var elem = document.getElementById('displayCacheDiv');
+          elem.scrollTop = elem.scrollHeight;
+        },1000);
+        
       },
     });
   },
