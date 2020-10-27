@@ -278,8 +278,19 @@ void KeyerWebServer::initializeServer()
         String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();
         request->send(200, "application/json", scanJson); });
 
-    server.on("/getdisplaycache", [this](AsyncWebServerRequest *request) {
+    /* server.on("/getdisplaycache", [this](AsyncWebServerRequest *request) {
         String scanJson = _displayCache->getJsonAndClear();
+        request->send(200, "application/json", scanJson); }); */
+
+    server.on(
+        "/getdisplaycache", HTTP_POST, [this](AsyncWebServerRequest *request) {},
+        NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+        String jsonIn = String((const char*)data);
+        DynamicJsonDocument jBuffer(4096);
+        deserializeJson(jBuffer, jsonIn);
+
+        int lastPollIndex = jBuffer["lastPollIndex"].as<int>();
+        String scanJson = _displayCache->getJsonAndClear(lastPollIndex);
         request->send(200, "application/json", scanJson); });
 
     server.on(

@@ -32,51 +32,7 @@ CwControl *_cwControl;
 persistentConfig *_timerStuffConfig;
 
 #if !defined REMOTE_KEYER
-/* #include <WebSocketsClient.h>
-//https://github.com/Links2004/arduinoWebSockets
-WebSocketsClient webSocket;
 
-void webSocketClientEvent(WStype_t type, uint8_t *payload, size_t length)
-{
-
-    switch (type)
-    {
-    case WStype_DISCONNECTED:
-        Serial.println("ws client disconnected.");
-        //USE_SERIAL.printf("[WSc] Disconnected!\n");
-        break;
-    case WStype_CONNECTED:
-        Serial.println("ws client connected.");
-        //USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
-
-        // send message to server when Connected
-        //webSocket.sendTXT("Connected");
-        break;
-    case WStype_TEXT:
-        Serial.println("ws client text.");
-        //USE_SERIAL.printf("[WSc] get text: %s\n", payload);
-
-        // send message to server
-        // webSocket.sendTXT("message here");
-        break;
-    case WStype_BIN:
-        Serial.println("ws client bin.");
-        //USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
-        //hexdump(payload, length);
-
-        // send data to server
-        // webSocket.sendBIN(payload, length);
-        break;
-    case WStype_ERROR:
-        Serial.println("ws client error.");
-        break;
-    case WStype_FRAGMENT_TEXT_START:
-    case WStype_FRAGMENT_BIN_START:
-    case WStype_FRAGMENT:
-    case WStype_FRAGMENT_FIN:
-        break;
-    }
-} */
 #include <ArduinoWebsockets.h>
 //https://github.com/gilmaimon/ArduinoWebsockets?utm_source=platformio&utm_medium=piohome
 using namespace websockets;
@@ -122,12 +78,6 @@ void onEventsCallback(WebsocketsEvent event, String data)
 
 #endif
 
-#if defined REMOTE_UDP
-#if defined M5CORE
-#include "AsyncUDP.h"
-AsyncUDP udp;
-#endif
-#endif
 // queue to hold dits and dahs seen by the paddle monitorning,
 // sound loop will pull from here
 std::queue<PaddlePressDetection *> ditsNdahQueue;
@@ -540,10 +490,6 @@ void processDitDahQueue()
                 http.begin(target.c_str());
                 http.GET() */
                 //;
-
-#if defined REMOTE_UDP
-                udp.broadcastTo(isDit ? "dit" : "dah", 1234);
-#endif
 
 #if defined ESPNOW
                 Serial.println("Calling sendespnowditdah");

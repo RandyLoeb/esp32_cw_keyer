@@ -15,6 +15,7 @@ var myViewModel = {
   polling:0,
   intervalHandle:0,
   showDisplay: ko.observable(true),
+  lastPollIndex: 0,
   onHideDisplay: function() {
     this.showDisplay(!this.showDisplay());
   },
@@ -98,11 +99,13 @@ var myViewModel = {
   getDisplayCache: function () {
     $.ajax({
       url: "/getdisplaycache",
-      type: "get",
+      type: "post",
       dataType: "json",
+      data: JSON.stringify({lastPollIndex: myViewModel.lastPollIndex}),
       contentType: "application/json",
       success: function (data) {
         myViewModel.displayCache(myViewModel.displayCache() + data.cache);
+        myViewModel.lastPollIndex = data.lastPollIndex;
         setTimeout(function() {
           var elem = document.getElementById('displayCacheDiv');
           elem.scrollTop = elem.scrollHeight;
