@@ -1,5 +1,4 @@
 #include "keyer_esp32.h"
-
 #include <stdio.h>
 #include <queue>
 #include <string>
@@ -9,24 +8,19 @@
 #include "keyer_settings.h"
 #include "config.h"
 
-#if defined(ESP32)
-
 #if defined M5CORE
 #include <M5Stack.h>
 #endif
 
 #include "keyer_esp32now.h"
 
-#endif
-
 #include "tone/keyerTone.h"
 
 // Different ways to persist config
 // E.g. if you wanted sd card inherit from persitentConfig
-#if defined(ESP32)
+
 #include "persistentConfig/spiffsPersistentConfig.h"
 SpiffsPersistentConfig persistConfig;
-#endif
 
 // make sure your derived object is named persistConfig
 // and implements .initialize and .save
@@ -41,11 +35,6 @@ WifiUtils wifiUtils{};
 
 #include "timerStuff/timerStuff.h"
 #include "virtualPins/keyerPins.h"
-
-#if defined REMOTE_KEYER && defined REMOTE_UDP
-#include "AsyncUDP.h"
-AsyncUDP udp;
-#endif
 
 #include "cwControl/cw_utils.h"
 CwControl *cwControl;
@@ -109,27 +98,6 @@ void setup()
   displayControl.initialize([](char x) {
     cwControl->send_char(x, KEYER_NORMAL, false);
   });
-
-#if defined REMOTE_KEYER
-#if defined REMOTE_UDP
-  if (udp.listen(1234))
-  {
-    udp.onPacket([](AsyncUDPPacket packet) {
-      /* Serial.print("Received data: ");
-      Serial.write(packet.data(), packet.length());
-      Serial.println(); */
-      String myString = (const char *)packet.data();
-      //Serial.println(myString);
-      PaddlePressDetection *newPd;
-      newPd = new PaddlePressDetection();
-      newPd->Detected = myString == "dit" ? DitOrDah::DIT : DitOrDah::DAH;
-      newPd->Display = true;
-      newPd->Source = PaddlePressSource::ARTIFICIAL;
-      ditsNdahQueue.push(newPd);
-    });
-  }
-#endif
-#endif
 }
 
 // --------------------------------------------------------------------------------------------
@@ -150,9 +118,6 @@ void loop()
   service_millis_rollover();
   //wifiUtils.processNextDNSRequest();
 
-#if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER
-  keyerWebServer->handleClient();
-#endif
   cwControl->service_injected_text();
 
   processDitDahQueue();
@@ -174,10 +139,6 @@ void initialize_keyer_state()
 
   key_state = 0;
   key_tx = 1;
-
-#ifndef FEATURE_SO2R_BASE
-  //switch_to_tx_silent(1);
-#endif
 }
 
 void initialize_default_modes()
@@ -187,10 +148,6 @@ void initialize_default_modes()
   keyer_machine_mode = KEYER_NORMAL;
 
   char_send_mode = CW;
-
-#if defined(FEATURE_CMOS_SUPER_KEYER_IAMBIC_B_TIMING) && defined(OPTION_CMOS_SUPER_KEYER_IAMBIC_B_TIMING_ON_BY_DEFAULT) // DL1HTB initialize CMOS Super Keyer if feature is enabled
-  configControl.configuration.cmos_super_keyer_iambic_b_timing_on = 1;
-#endif //FEATURE_CMOS_SUPER_KEYER_IAMBIC_B_TIMING // #end DL1HTB initialize CMOS Super Keyer if feature is enabled
 
   delay(250); // wait a little bit for the caps to charge up on the paddle lines
 }

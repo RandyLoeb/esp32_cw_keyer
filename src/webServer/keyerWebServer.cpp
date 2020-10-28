@@ -143,61 +143,6 @@ KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQue
 #endif
 };
 
-void KeyerWebServer::handleRoot()
-{
-    Serial.println("hadnling root...");
-    //this->_wifiUtils->showJson();
-    //_MS_SINCE_LAST_WEB = 0;
-    //server.send(200, "text/html", getWifiAdminPage()); // Send HTTP status 200 (Ok) and send some text to the browser/client
-}
-
-void KeyerWebServer::handleRootCss()
-{
-    //_MS_SINCE_LAST_WEB = 0;
-    //server.send(200, "text/css", getWifiAdminCSS());
-}
-
-void KeyerWebServer::handleRootJS()
-{
-    //_MS_SINCE_LAST_WEB = 0;
-    //server.send(200, "text/javascript", getWifiAdminJS());
-}
-
-void KeyerWebServer::handleNotFound()
-{
-    //_MS_SINCE_LAST_WEB = 0;
-    Serial.println("Not found reached.");
-    //server.sendHeader("Location", "http://" + WiFi.softAPIP().toString() + "/");
-    //server.send(302, "text/plain", "");
-    //server.client().stop();
-}
-
-void KeyerWebServer::handleReboot()
-{
-    //_MS_SINCE_LAST_WEB = 0;
-    //server.send(200, "text/html", "rebooting");
-    //ESP.restart();
-}
-
-void KeyerWebServer::handleWiFiScan()
-{
-    //String scanJson = this->_wifiUtils->getWiFiScan();
-    //server.send(200, "application/json", scanJson);
-}
-
-void KeyerWebServer::handleUpdateAp()
-{
-    //Serial.println(server.arg(0));
-    //this->_wifiUtils->updateAp(server.arg(0));
-    //server.send(200, "text/html", "ok");
-}
-
-void KeyerWebServer::handleForgetAp()
-{
-    //this->_wifiUtils->forgetAp(server.arg(0));
-    //server.send(200, "text/html", "ok");
-}
-
 void KeyerWebServer::initializeServer()
 {
     //server.enableCORS(true);
@@ -278,10 +223,6 @@ void KeyerWebServer::initializeServer()
         String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();
         request->send(200, "application/json", scanJson); });
 
-    /* server.on("/getdisplaycache", [this](AsyncWebServerRequest *request) {
-        String scanJson = _displayCache->getJsonAndClear();
-        request->send(200, "application/json", scanJson); }); */
-
     server.on(
         "/getdisplaycache", HTTP_POST, [this](AsyncWebServerRequest *request) {},
         NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
@@ -359,11 +300,6 @@ void KeyerWebServer::initializeServer()
         String scanJson = this->_persistentConfig->getJsonStringFromConfiguration();
         request->send(200, "application/json", scanJson); });
 
-    /* server.on("/dit", [this](AsyncWebServerRequest *request) {
-        Serial.println("got dit!");
-        this->ditCallbck();
-        request->send(200, "text/html", "");
-    }); */
     server.onNotFound([this](AsyncWebServerRequest *request) { request->redirect("http://" + WiFi.softAPIP().toString() + "/"); });
 }
 
@@ -400,9 +336,4 @@ String KeyerWebServer::getWifiAdminCSS()
 String KeyerWebServer::getWifiAdminJS()
 {
     return getPage("/wifiadmin.js");
-}
-
-void KeyerWebServer::handleClient()
-{
-    //this->server.handleClient();
 }
