@@ -116,13 +116,27 @@ volatile int ditDahSpaceLockTimer;
 volatile int charSpaceTimer;
 #if defined IAMBIC_ALTERNATE
 volatile int iambicTimer;
-#endif
+volatile bool iambicMode;
+volatile DitOrDah lastInjection;
+volatile long baseIambicTiming;
 
+#endif
+volatile long currentDitTiming;
+volatile long currentDahTiming;
 volatile bool ditLocked = false;
 volatile bool dahLocked = false;
 volatile int ditReleaseCache = 0;
 volatile int dahReleaseCache = 0;
-;
+
+void IRAM_ATTR ditDahInjector(DitOrDah dd)
+{
+#if defined IAMBIC_ALTERNATE
+    lastInjection = dd;
+#endif
+    PaddlePressDetection *newPd = new PaddlePressDetection();
+    newPd->Detected = dd;
+    ditsNdahQueue.push(newPd);
+}
 
 // this is triggerd by hardware interrupt indirectly
 void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int oppoTimer, int lockTimer, int pin, DitOrDah message, bool calledFromInterrupt, bool calledFromLocker, bool calledFromIambic, volatile int *releaseCache, volatile int *oppoReleaseCache)
@@ -156,6 +170,14 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             *pressed = !virtualPins.pinsets[pin]->digRead();
             // pressed?
 
+#if defined IAMBIC_ALTERNATE
+            iambicMode = ditPressed && dahPressed;
+            /* if (!iambicMode)
+            {
+                ISR_Timer.disable(iambicTimer);
+            } */
+#endif
+
             if (*pressed && !pressedBefore)
 
             {
@@ -164,19 +186,23 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
 
                 ISR_Timer.disable(oppoTimer);
 
-                PaddlePressDetection *newPd = new PaddlePressDetection();
+                ditDahInjector(message);
+                /* PaddlePressDetection *newPd = new PaddlePressDetection();
                 newPd->Detected = message;
-                ditsNdahQueue.push(newPd);
-#if (TIMER_INTERRUPT_DEBUG > 0)
+                ditsNdahQueue.push(newPd); */
 
-                //Serial.println(message + "pressed");
-#endif
-
+#if !defined IAMBIC_ALTERNATE
                 //kickoff either the dit or dah timer passed in
                 //so it will keep injecting into the queue
 
                 ISR_Timer.restartTimer(timer);
                 ISR_Timer.enable(timer);
+#else
+                //reset iambic timer to above injection length plus an intracharacter
+                ISR_Timer.changeInterval(iambicTimer, message == DitOrDah::DIT ? currentDitTiming : currentDahTiming);
+                ISR_Timer.restartTimer(iambicTimer);
+                ISR_Timer.enable(iambicTimer);
+#endif
             }
             // released?
             else if (!*pressed && pressedBefore)
@@ -219,37 +245,40 @@ void IRAM_ATTR detectDahPress()
     //detectPress(&dahLocked, &dahPressed, dahTimer, ditTimer, debounceDahTimer, VIRTUAL_DAHS, DitOrDah::DAH);
 }
 
+void IRAM_ATTR ditDahDoer(DitOrDah dd)
+{
+    ditDahInjector(dd);
+#if defined IAMBIC_ALTERNATE
+    if (iambicMode)
+    {
+        //in iambic mode we hand things over to the iambic timer
+
+        ISR_Timer.disable(ditTimer);
+        ISR_Timer.disable(dahTimer);
+        ISR_Timer.changeInterval(iambicTimer, baseIambicTiming);
+        ISR_Timer.restartTimer(iambicTimer);
+        ISR_Timer.enable(iambicTimer);
+    }
+    else
+    {
+        ISR_Timer.disable(iambicTimer);
+    }
+#endif
+}
+
 // timers kick off these two funcs below.
 // has debugging to see if we are dead nuts accurate
+
 void IRAM_ATTR doDits()
 {
 
-    PaddlePressDetection *newPd = new PaddlePressDetection();
-    newPd->Detected = DitOrDah::DIT;
-    ditsNdahQueue.push(newPd);
-
-#if (TIMER_INTERRUPT_DEBUG > 0)
-
-    Serial.print("dit = ");
-    Serial.println(deltaMillis);
-#endif
-
-    //previousMillis = millis();
+    ditDahDoer(DitOrDah::DIT);
 }
 
 void IRAM_ATTR doDahs()
 {
 
-    PaddlePressDetection *newPd = new PaddlePressDetection();
-    newPd->Detected = DitOrDah::DAH;
-    ditsNdahQueue.push(newPd);
-
-#if (TIMER_INTERRUPT_DEBUG > 0)
-    Serial.print("dah = ");
-    Serial.println(deltaMillis);
-#endif
-
-    //previousMillis = millis();
+    ditDahDoer(DitOrDah::DAH);
 }
 // fired by the timer that unlocks the debouncer indirectly
 void IRAM_ATTR unlockDebouncer(void (*detectCallback)(bool, bool, bool), volatile bool *flagToFalse)
@@ -312,6 +341,40 @@ void IRAM_ATTR injectCharSpace()
 #if defined IAMBIC_ALTERNATE
 void IRAM_ATTR iambicAction()
 {
+    ISR_Timer.disable(iambicTimer);
+    DitOrDah toInject;
+    //in an iambic mode we arrive here after an intracharacter space
+    //are we still in iambic mode?
+    if (iambicMode)
+    {
+        //inject whomever's turn it is
+        DitOrDah lastBeforeInjection = lastInjection;
+        toInject = lastInjection == DitOrDah::DIT ? DitOrDah::DAH : DitOrDah::DIT;
+        ditDahInjector(toInject);
+
+        //reset iambic timer to above injection length plus an intracharacter
+        ISR_Timer.changeInterval(iambicTimer, toInject == DitOrDah::DIT ? currentDitTiming : currentDahTiming);
+        ISR_Timer.restartTimer(iambicTimer);
+        ISR_Timer.enable(iambicTimer);
+    }
+    else
+    {
+        //turn off and handover to whichever paddle is left standing
+        //we're here because we're not in iambic anymore, so see
+        //if anything is pressed
+        if (ditPressed || dahPressed)
+        {
+            //inject a survivor
+            toInject = ditPressed ? DitOrDah::DIT : DitOrDah::DAH;
+            ditDahInjector(toInject);
+
+            //hand over to that timer
+            int handOverTimer = toInject == DitOrDah::DIT ? ditTimer : dahTimer;
+            ISR_Timer.changeInterval(handOverTimer, toInject == DitOrDah::DIT ? currentDitTiming : currentDahTiming);
+            ISR_Timer.restartTimer(handOverTimer);
+            ISR_Timer.enable(handOverTimer);
+        }
+    }
 }
 #endif
 
@@ -348,14 +411,17 @@ void changeTimerWpm()
     ISR_Timer.disable(iambicTimer);
 #endif
 
-    ISR_Timer.changeInterval(ditTimer, 1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms);
-    ISR_Timer.changeInterval(dahTimer, 1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms);
+    currentDitTiming = 1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms;
+    currentDahTiming = 1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms;
+    ISR_Timer.changeInterval(ditTimer, currentDitTiming);
+    ISR_Timer.changeInterval(dahTimer, currentDahTiming);
     ISR_Timer.changeInterval(toneSilenceTimer, timingControl.Paddles.dit_ms);
     ISR_Timer.changeInterval(ditDahSpaceLockTimer, timingControl.Paddles.intraCharSpace_ms);
     ISR_Timer.changeInterval(charSpaceTimer, 10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms);
 
 #if defined IAMBIC_ALTERNATE
-    ISR_Timer.changeInterval(iambicTimer, timingControl.Paddles.intraCharSpace_ms);
+    baseIambicTiming = timingControl.Paddles.intraCharSpace_ms;
+    ISR_Timer.changeInterval(iambicTimer, baseIambicTiming);
 #endif
 
     ISR_Timer.disable(ditTimer);
@@ -465,10 +531,12 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     // Just to demonstrate, don't use too many ISR Timers if not absolutely necessary
 
     // this timer monitors the dit paddle held down
-    ditTimer = ISR_Timer.setInterval(1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms, doDits);
+    currentDitTiming = 1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms;
+    currentDahTiming = 1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms;
+    ditTimer = ISR_Timer.setInterval(currentDitTiming, doDits);
 
     // this timer monitors the dah paddle held down
-    dahTimer = ISR_Timer.setInterval(1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms, doDahs);
+    dahTimer = ISR_Timer.setInterval(currentDahTiming, doDahs);
 
     // debouncers, needs some tweaking
     debounceDitTimer = ISR_Timer.setInterval(5L, unlockDit);
@@ -486,7 +554,8 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     charSpaceTimer = ISR_Timer.setInterval(10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms, injectCharSpace);
 
 #if defined IAMBIC_ALTERNATE
-    iambicTimer = ISR_Timer.setInterval(timingControl.Paddles.intraCharSpace_ms, iambicAction);
+    baseIambicTiming = timingControl.Paddles.intraCharSpace_ms;
+    iambicTimer = ISR_Timer.setInterval(baseIambicTiming, iambicAction);
 #endif
 
     // not sure if disabled by default by do it
