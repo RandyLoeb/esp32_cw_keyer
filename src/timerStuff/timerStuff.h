@@ -31,7 +31,7 @@ TransmitControl transmitControl;
 CwControl *_cwControl;
 persistentConfig *_timerStuffConfig;
 
-//#define IAMBIC_ALTERNATE
+#define IAMBIC_ALTERNATE
 
 #if !defined REMOTE_KEYER
 
@@ -114,6 +114,9 @@ volatile int debounceDahTimer;
 volatile int toneSilenceTimer;
 volatile int ditDahSpaceLockTimer;
 volatile int charSpaceTimer;
+#if defined IAMBIC_ALTERNATE
+volatile int iambicTimer;
+#endif
 
 volatile bool ditLocked = false;
 volatile bool dahLocked = false;
@@ -346,6 +349,12 @@ void IRAM_ATTR injectCharSpace()
     //ISR_Timer.disable(charSpaceTimer);
 }
 
+#if defined IAMBIC_ALTERNATE
+void IRAM_ATTR iambicAction()
+{
+}
+#endif
+
 void disableAllTimers()
 {
 
@@ -375,6 +384,9 @@ void changeTimerWpm()
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.disable(ditDahSpaceLockTimer);
     ISR_Timer.disable(charSpaceTimer);
+#if defined IAMBIC_ALTERNATE
+    ISR_Timer.disable(iambicTimer);
+#endif
 
     ISR_Timer.changeInterval(ditTimer, 1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms);
     ISR_Timer.changeInterval(dahTimer, 1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms);
@@ -382,11 +394,18 @@ void changeTimerWpm()
     ISR_Timer.changeInterval(ditDahSpaceLockTimer, timingControl.Paddles.intraCharSpace_ms);
     ISR_Timer.changeInterval(charSpaceTimer, 10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms);
 
+#if defined IAMBIC_ALTERNATE
+    ISR_Timer.changeInterval(iambicTimer, timingControl.Paddles.intraCharSpace_ms);
+#endif
+
     ISR_Timer.disable(ditTimer);
     ISR_Timer.disable(dahTimer);
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.disable(ditDahSpaceLockTimer);
     ISR_Timer.enable(charSpaceTimer);
+#if defined IAMBIC_ALTERNATE
+    ISR_Timer.disable(iambicTimer);
+#endif
 }
 
 void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
@@ -506,6 +525,10 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
 
     charSpaceTimer = ISR_Timer.setInterval(10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms, injectCharSpace);
 
+#if defined IAMBIC_ALTERNATE
+    iambicTimer = ISR_Timer.setInterval(timingControl.Paddles.intraCharSpace_ms, iambicAction);
+#endif
+
     // not sure if disabled by default by do it
     ISR_Timer.disable(ditTimer);
     ISR_Timer.disable(dahTimer);
@@ -514,6 +537,9 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.disable(ditDahSpaceLockTimer);
     ISR_Timer.enable(charSpaceTimer);
+#if defined IAMBIC_ALTERNATE
+    ISR_Timer.disable(iambicTimer);
+#endif
 
     Serial.println("Timer stuff initialized.");
 }
