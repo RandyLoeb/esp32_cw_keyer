@@ -31,6 +31,8 @@ TransmitControl transmitControl;
 CwControl *_cwControl;
 persistentConfig *_timerStuffConfig;
 
+//#define IAMBIC_ALTERNATE
+
 #if !defined REMOTE_KEYER
 
 #include <ArduinoWebsockets.h>
@@ -101,37 +103,6 @@ void IRAM_ATTR TimerHandler(void)
     ISR_Timer.run();
 }
 
-// timers kick off these two funcs below.
-// has debugging to see if we are dead nuts accurate
-void IRAM_ATTR doDits()
-{
-
-    PaddlePressDetection *newPd = new PaddlePressDetection();
-    newPd->Detected = DitOrDah::DIT;
-    ditsNdahQueue.push(newPd);
-#if (TIMER_INTERRUPT_DEBUG > 0)
-
-    Serial.print("dit = ");
-    Serial.println(deltaMillis);
-#endif
-
-    //previousMillis = millis();
-}
-
-void IRAM_ATTR doDahs()
-{
-
-    PaddlePressDetection *newPd = new PaddlePressDetection();
-    newPd->Detected = DitOrDah::DAH;
-    ditsNdahQueue.push(newPd);
-#if (TIMER_INTERRUPT_DEBUG > 0)
-    Serial.print("dah = ");
-    Serial.println(deltaMillis);
-#endif
-
-    //previousMillis = millis();
-}
-
 // holds our flags and timer handles
 volatile bool detectInterrupts = false;
 volatile bool ditPressed = false;
@@ -143,17 +114,33 @@ volatile int debounceDahTimer;
 volatile int toneSilenceTimer;
 volatile int ditDahSpaceLockTimer;
 volatile int charSpaceTimer;
+
 volatile bool ditLocked = false;
 volatile bool dahLocked = false;
+volatile int ditReleaseCache = 0;
+volatile int dahReleaseCache = 0;
+;
 
 // this is triggerd by hardware interrupt indirectly
-void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int oppoTimer, int lockTimer, int pin, DitOrDah message)
+void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int oppoTimer, int lockTimer, int pin, DitOrDah message, bool calledFromInterrupt, bool calledFromLocker, bool calledFromIambic, volatile int *releaseCache, volatile int *oppoReleaseCache)
 {
 
     // locker is our debouce variable, i.e. we'll ignore any changes
     // to the pin during hte bounce
     if (!*locker)
     {
+        if (!calledFromLocker)
+        {
+            // lock and kickoff the debouncer
+            *locker = true;
+            ISR_Timer.restartTimer(lockTimer);
+            ISR_Timer.enable(lockTimer);
+        }
+        else
+        {
+            // also stop the lock timer
+            ISR_Timer.disable(lockTimer);
+        }
 
         // wait for interrupts to be turned on
         if (detectInterrupts)
@@ -165,11 +152,17 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             // get the pin
             *pressed = !virtualPins.pinsets[pin]->digRead();
             // pressed?
-            if (*pressed && !pressedBefore)
+
+            if (*pressed && (!pressedBefore || calledFromIambic))
+
             {
 
-                //for now iambic behavior is a press stops press of the other
+//for now iambic behavior is a press stops press of the other
+#if !defined IAMBIC_ALTERNATE
                 ISR_Timer.disable(oppoTimer);
+#else
+                *oppoReleaseCache = *oppoReleaseCache + 1;
+#endif
 
                 PaddlePressDetection *newPd = new PaddlePressDetection();
                 newPd->Detected = message;
@@ -181,6 +174,7 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
 
                 //kickoff either the dit or dah timer passed in
                 //so it will keep injecting into the queue
+                *releaseCache = 0;
                 ISR_Timer.restartTimer(timer);
                 ISR_Timer.enable(timer);
             }
@@ -188,44 +182,131 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             else if (!*pressed && pressedBefore)
             {
                 // released so stop the timer
+#if !defined IAMBIC_ALTERNATE
                 ISR_Timer.disable(timer);
+#else
+                //Serial.print("incrementing release cache:");
+                *releaseCache = *releaseCache + 1;
+#endif
+                //Serial.print(*releaseCache);
             }
         }
-
-        // lock and kickoff the debouncer
-        *locker = true;
-        ISR_Timer.restartTimer(lockTimer);
-        ISR_Timer.enable(lockTimer);
     }
 }
 
 // these two are triggered by hardware interrupts
+void IRAM_ATTR detectDitP(bool calledFromInterrupt, bool calledFromLocker, bool calledFromIambic)
+{
+    //Serial.print("detectDitPress called from locker:");
+    //Serial.println(calledFromLocker);
+    detectPress(&ditLocked, &ditPressed, ditTimer, dahTimer, debounceDitTimer, VIRTUAL_DITS, DitOrDah::DIT, calledFromInterrupt, calledFromLocker, calledFromIambic, &ditReleaseCache, &dahReleaseCache);
+}
+
+void IRAM_ATTR detectDahP(bool calledFromInterrupt, bool calledFromLocker, bool calledFromIambic)
+{
+    //Serial.print("detectDahPress called from locker:");
+    //Serial.println(calledFromLocker);
+    detectPress(&dahLocked, &dahPressed, dahTimer, ditTimer, debounceDahTimer, VIRTUAL_DAHS, DitOrDah::DAH, calledFromInterrupt, calledFromLocker, calledFromIambic, &dahReleaseCache, &ditReleaseCache);
+}
+
 void IRAM_ATTR detectDitPress()
 {
-    detectPress(&ditLocked, &ditPressed, ditTimer, dahTimer, debounceDitTimer, VIRTUAL_DITS, DitOrDah::DIT);
+    //Serial.println("dit change");
+    detectDitP(true, false, false);
+
+    //detectPress(&ditLocked, &ditPressed, ditTimer, dahTimer, debounceDitTimer, VIRTUAL_DITS, DitOrDah::DIT);
 }
 
 void IRAM_ATTR detectDahPress()
 {
-    detectPress(&dahLocked, &dahPressed, dahTimer, ditTimer, debounceDahTimer, VIRTUAL_DAHS, DitOrDah::DAH);
+    //Serial.println("dah change");
+    detectDahP(true, false, false);
+    //detectPress(&dahLocked, &dahPressed, dahTimer, ditTimer, debounceDahTimer, VIRTUAL_DAHS, DitOrDah::DAH);
 }
 
+// timers kick off these two funcs below.
+// has debugging to see if we are dead nuts accurate
+void IRAM_ATTR doDits()
+{
+#if defined IAMBIC_ALTERNATE
+    detectDahP(false, false, true);
+
+    Serial.print("releasecache:");
+    Serial.println(ditReleaseCache);
+
+    if (ditReleaseCache <= 0)
+    {
+        PaddlePressDetection *newPd = new PaddlePressDetection();
+        newPd->Detected = DitOrDah::DIT;
+        ditsNdahQueue.push(newPd);
+    }
+    else
+    {
+        //Serial.println("trying to disable dit timer");
+        ditReleaseCache = 0;
+        ISR_Timer.disable(ditTimer);
+    }
+
+#else
+    PaddlePressDetection *newPd = new PaddlePressDetection();
+    newPd->Detected = DitOrDah::DIT;
+    ditsNdahQueue.push(newPd);
+#endif
+#if (TIMER_INTERRUPT_DEBUG > 0)
+
+    Serial.print("dit = ");
+    Serial.println(deltaMillis);
+#endif
+
+    //previousMillis = millis();
+}
+
+void IRAM_ATTR doDahs()
+{
+#if defined IAMBIC_ALTERNATE
+    //Serial.println("detectDitPress to be called");
+    detectDitP(false, false, true);
+
+    if (dahReleaseCache <= 0)
+    {
+        PaddlePressDetection *newPd = new PaddlePressDetection();
+        newPd->Detected = DitOrDah::DAH;
+        ditsNdahQueue.push(newPd);
+    }
+    else
+    {
+        dahReleaseCache = 0;
+        ISR_Timer.disable(dahTimer);
+    }
+
+#else
+    PaddlePressDetection *newPd = new PaddlePressDetection();
+    newPd->Detected = DitOrDah::DAH;
+    ditsNdahQueue.push(newPd);
+#endif
+#if (TIMER_INTERRUPT_DEBUG > 0)
+    Serial.print("dah = ");
+    Serial.println(deltaMillis);
+#endif
+
+    //previousMillis = millis();
+}
 // fired by the timer that unlocks the debouncer indirectly
-void IRAM_ATTR unlockDebouncer(void (*detectCallback)(), volatile bool *flagToFalse)
+void IRAM_ATTR unlockDebouncer(void (*detectCallback)(bool, bool, bool), volatile bool *flagToFalse)
 {
     *flagToFalse = false;
-    detectCallback();
+    detectCallback(false, true, false);
 }
 
 // fired by timer for unlocker direclty
 void IRAM_ATTR unlockDit()
 {
-    unlockDebouncer(detectDitPress, &ditLocked);
+    unlockDebouncer(detectDitP, &ditLocked);
 }
 
 void IRAM_ATTR unlockDah()
 {
-    unlockDebouncer(detectDahPress, &dahLocked);
+    unlockDebouncer(detectDahP, &dahLocked);
 }
 
 // fired by timer that ends a sidetone segment
@@ -433,6 +514,7 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     ISR_Timer.disable(toneSilenceTimer);
     ISR_Timer.disable(ditDahSpaceLockTimer);
     ISR_Timer.enable(charSpaceTimer);
+
     Serial.println("Timer stuff initialized.");
 }
 
