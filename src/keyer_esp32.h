@@ -4,7 +4,7 @@
 
 #define GENERIC_CHARGRAB
 
-//#define M5CORE
+#define M5CORE
 
 #if !defined M5CORE
 #define REMOTE_KEYER
@@ -57,9 +57,9 @@
 
 #if defined HAS_DITDAHPINS
 #if defined M5CORE
-#define DITPIN1 GPIO_NUM_2
+#define DITPIN1 GPIO_NUM_16 //GPIO_NUM_2
 #define DITPIN2 GPIO_NUM_39
-#define DAHPIN1 GPIO_NUM_5
+#define DAHPIN1 GPIO_NUM_17 //GPIO_NUM_5
 #define DAHPIN2 GPIO_NUM_37
 #endif
 

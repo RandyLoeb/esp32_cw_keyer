@@ -10,6 +10,8 @@
 
 #if defined M5CORE
 #include <M5Stack.h>
+//https://github.com/m5stack/M5Stack/issues/97
+#undef min
 #endif
 
 #include "keyer_esp32now.h"
