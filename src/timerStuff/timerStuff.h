@@ -156,16 +156,13 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             *pressed = !virtualPins.pinsets[pin]->digRead();
             // pressed?
 
-            if (*pressed && (!pressedBefore || calledFromIambic))
+            if (*pressed && !pressedBefore)
 
             {
 
-//for now iambic behavior is a press stops press of the other
-#if !defined IAMBIC_ALTERNATE
+                //for now iambic behavior is a press stops press of the other
+
                 ISR_Timer.disable(oppoTimer);
-#else
-                *oppoReleaseCache = *oppoReleaseCache + 1;
-#endif
 
                 PaddlePressDetection *newPd = new PaddlePressDetection();
                 newPd->Detected = message;
@@ -177,7 +174,7 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
 
                 //kickoff either the dit or dah timer passed in
                 //so it will keep injecting into the queue
-                *releaseCache = 0;
+
                 ISR_Timer.restartTimer(timer);
                 ISR_Timer.enable(timer);
             }
@@ -185,13 +182,8 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             else if (!*pressed && pressedBefore)
             {
                 // released so stop the timer
-#if !defined IAMBIC_ALTERNATE
+
                 ISR_Timer.disable(timer);
-#else
-                //Serial.print("incrementing release cache:");
-                *releaseCache = *releaseCache + 1;
-#endif
-                //Serial.print(*releaseCache);
             }
         }
     }
@@ -231,30 +223,11 @@ void IRAM_ATTR detectDahPress()
 // has debugging to see if we are dead nuts accurate
 void IRAM_ATTR doDits()
 {
-#if defined IAMBIC_ALTERNATE
-    detectDahP(false, false, true);
 
-    Serial.print("releasecache:");
-    Serial.println(ditReleaseCache);
-
-    if (ditReleaseCache <= 0)
-    {
-        PaddlePressDetection *newPd = new PaddlePressDetection();
-        newPd->Detected = DitOrDah::DIT;
-        ditsNdahQueue.push(newPd);
-    }
-    else
-    {
-        //Serial.println("trying to disable dit timer");
-        ditReleaseCache = 0;
-        ISR_Timer.disable(ditTimer);
-    }
-
-#else
     PaddlePressDetection *newPd = new PaddlePressDetection();
     newPd->Detected = DitOrDah::DIT;
     ditsNdahQueue.push(newPd);
-#endif
+
 #if (TIMER_INTERRUPT_DEBUG > 0)
 
     Serial.print("dit = ");
@@ -266,27 +239,11 @@ void IRAM_ATTR doDits()
 
 void IRAM_ATTR doDahs()
 {
-#if defined IAMBIC_ALTERNATE
-    //Serial.println("detectDitPress to be called");
-    detectDitP(false, false, true);
 
-    if (dahReleaseCache <= 0)
-    {
-        PaddlePressDetection *newPd = new PaddlePressDetection();
-        newPd->Detected = DitOrDah::DAH;
-        ditsNdahQueue.push(newPd);
-    }
-    else
-    {
-        dahReleaseCache = 0;
-        ISR_Timer.disable(dahTimer);
-    }
-
-#else
     PaddlePressDetection *newPd = new PaddlePressDetection();
     newPd->Detected = DitOrDah::DAH;
     ditsNdahQueue.push(newPd);
-#endif
+
 #if (TIMER_INTERRUPT_DEBUG > 0)
     Serial.print("dah = ");
     Serial.println(deltaMillis);
@@ -298,6 +255,9 @@ void IRAM_ATTR doDahs()
 void IRAM_ATTR unlockDebouncer(void (*detectCallback)(bool, bool, bool), volatile bool *flagToFalse)
 {
     *flagToFalse = false;
+
+    //this is here so a release is seen in case it was swallowed by
+    //a debounce lock
     detectCallback(false, true, false);
 }
 
