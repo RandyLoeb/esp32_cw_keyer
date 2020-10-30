@@ -339,6 +339,10 @@ void IRAM_ATTR injectCharSpace()
 }
 
 #if defined IAMBIC_ALTERNATE
+
+//TODO: probably this can take over for both the dit and dah timers,
+//      even in "single lever" mode, but not sure if mentally that is
+//      easier to follow/maintain. something to think about.
 void IRAM_ATTR iambicAction()
 {
     ISR_Timer.disable(iambicTimer);
