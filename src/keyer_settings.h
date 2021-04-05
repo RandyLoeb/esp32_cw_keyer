@@ -96,7 +96,7 @@
 #define qlf_on_by_default 0
 #endif //FEATURE_QLF
 
-#ifdef FEATURE_WINKEY_EMULATION
+//#ifdef FEATURE_WINKEY_EMULATION
 #if defined(OPTION_WINKEY_UCXLOG_9600_BAUD) || defined(FEATURE_SO2R_BASE)
 #define WINKEY_DEFAULT_BAUD 9600
 #else
@@ -140,7 +140,7 @@
 #define WINKEY_RETURN_THIS_FOR_ADMIN_PADDLE_A2D 0xEE
 #define WINKEY_RETURN_THIS_FOR_ADMIN_SPEED_A2D 0x00
 
-#endif //FEATURE_WINKEY_EMULATION
+//#endif //FEATURE_WINKEY_EMULATION
 
 #define PRIMARY_SERIAL_PORT &Serial
 #define PRIMARY_SERIAL_PORT_BAUD 115200 // This applies only when the port is in Command Line Interface mode.  In Winkey mode it will default to 1200.

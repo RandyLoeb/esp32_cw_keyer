@@ -36,19 +36,19 @@ std::vector<String> WifiUtils::getLocalWifiAps()
     std::vector<int> RSSI;
     std::vector<int> isOpen;
 
-    Serial.println("scan start");
+    //Serial.println("scan start");
     //String list = "";
     // WiFi.scanNetworks will return the number of networks found
     int n = WiFi.scanNetworks();
-    Serial.println("scan done");
+    //Serial.println("scan done");
     if (n == 0)
     {
-        Serial.println("no networks found");
+        //Serial.println("no networks found");
     }
     else
     {
-        Serial.print(n);
-        Serial.println(" networks found");
+        //Serial.print(n);
+        //Serial.println(" networks found");
         for (int i = 0; i < n; ++i)
         {
 
@@ -71,7 +71,7 @@ std::vector<String> WifiUtils::getLocalWifiAps()
 
     for (int i = 0; i < listPlus.size(); i++)
     {
-        Serial.println(listPlus.at(i));
+        //Serial.println(listPlus.at(i));
     }
     return listPlus;
 }
@@ -94,8 +94,8 @@ String WifiUtils::getWiFiScan()
     JsonArray apsStored;
     int apsCount;
     apsStored = getApsStored();
-    Serial.print("Aps count:");
-    Serial.println(apsStored.size());
+    //Serial.print("Aps count:");
+    //Serial.println(apsStored.size());
     apsCount = apsStored.size();
     String knownApJsonList = "";
 
@@ -127,12 +127,12 @@ String WifiUtils::getWiFiScan()
             {
 
                 String aptemp = knownAps.at(i);
-                Serial.print("apTemp:");
-                Serial.println(aptemp);
-                Serial.print("apName:");
-                Serial.println(apName);
-                Serial.print("i:");
-                Serial.println(i);
+                //Serial.print("apTemp:");
+                //Serial.println(aptemp);
+                //Serial.print("apName:");
+                //Serial.println(apName);
+                //Serial.print("i:");
+                //Serial.println(i);
 
                 if (aptemp == apName)
                 {
@@ -165,20 +165,20 @@ int WifiUtils::connectToWifi(char *apName, char *pass)
     //server.stop();
     WiFi.mode(WIFI_MODE_STA);
     delay(500);
-    Serial.print("About to connect with:");
-    Serial.print(apName);
-    Serial.println(" ");
-    Serial.println(pass);
+    //Serial.print("About to connect with:");
+    //Serial.print(apName);
+    //Serial.println(" ");
+    //Serial.println(pass);
     WiFi.begin(apName, pass); // Connect to the network
 
-    Serial.println("Connecting from within connectToWifi...");
+    //Serial.println("Connecting from within connectToWifi...");
     int delayCount = 0;
     int delayThresh = 30;
 
     while (WiFi.status() != WL_CONNECTED && delayCount <= delayThresh)
     { // Wait for the Wi-Fi to connect
         delay(1000);
-        Serial.print('.');
+        //Serial.print('.');
         delayCount++;
     }
 
@@ -233,10 +233,10 @@ bool WifiUtils::tryWifis()
 
         if (found == 1)
         {
-            Serial.print("ap and pwd were: ");
-            Serial.print(apToTry);
-            Serial.print(" ");
-            Serial.println(pwdToTry);
+            //Serial.print("ap and pwd were: ");
+            //Serial.print(apToTry);
+            //Serial.print(" ");
+            //Serial.println(pwdToTry);
             char apx[50];
             char passx[50];
             apToTry.toCharArray(apx, apToTry.length() + 1);
@@ -255,14 +255,14 @@ bool WifiUtils::tryWifis()
     if (connected == 0)
     {
 
-        Serial.println("No Connection established");
+        //Serial.println("No Connection established");
     }
     else
     {
-        Serial.println('\n');
-        Serial.println("Connection established!");
-        Serial.print("IP address:\t");
-        Serial.println(WiFi.localIP());
+        //Serial.println('\n');
+        //Serial.println("Connection established!");
+        //Serial.print("IP address:\t");
+        //Serial.println(WiFi.localIP());
     }
 
     return connected;
@@ -283,17 +283,17 @@ void WifiUtils::writeToApFile(String out)
     File newfile = SPIFFS.open(WIFI_FILE_NAME, FILE_WRITE);
     if (!newfile)
     {
-        Serial.println("- failed to open file for writing");
+        //Serial.println("- failed to open file for writing");
         //return;
     }
     if (newfile.print(out))
     {
-        Serial.println("- file written");
+        //Serial.println("- file written");
         newfile.close();
     }
     else
     {
-        Serial.println("- write failed");
+        //Serial.println("- write failed");
     }
     delay(200);
 }
@@ -330,8 +330,8 @@ void WifiUtils::initializeGlobalJsonConfig(String strJson)
     deserializeJson(this->_WIFI_CONFIG_JSON, strJson);
     String outstr;
     serializeJsonPretty(this->_WIFI_CONFIG_JSON, outstr);
-    Serial.println("now the json variable:");
-    Serial.println(outstr);
+    //Serial.println("now the json variable:");
+    //Serial.println(outstr);
 }
 
 void WifiUtils::readConfigFileIntoGlobalJson(File file)
@@ -340,7 +340,7 @@ void WifiUtils::readConfigFileIntoGlobalJson(File file)
     while (file.available())
     {
         wifiJson = wifiJson + file.readString();
-        Serial.println(wifiJson);
+        //Serial.println(wifiJson);
     }
     file.close();
 
@@ -353,7 +353,7 @@ void WifiUtils::initialize()
     File file = this->getConfigFile();
     if (!file || file.isDirectory())
     {
-        Serial.println("- failed to open wifi file for reading");
+        //Serial.println("- failed to open wifi file for reading");
         this->initWifiFile();
         file = this->getConfigFile();
     }
@@ -372,9 +372,9 @@ void WifiUtils::startupWifiConfigSites()
     WiFi.mode(WIFI_AP);
     WiFi.softAP("K3NG Keyer");
 
-    Serial.print("WIFI AP IP address:\t");
+    //Serial.print("WIFI AP IP address:\t");
     //Serial.println(WiFi.localIP());
-    Serial.println(WiFi.softAPIP());
+    //Serial.println(WiFi.softAPIP());
     this->_ipAddr = String(WiFi.softAPIP());
     // if DNSServer is started with "*" for domain name, it will reply with
     // provided IP to all DNS request
@@ -391,8 +391,8 @@ void WifiUtils::updateAp(String jsonIn)
 
     String outstr;
     serializeJsonPretty(this->_WIFI_CONFIG_JSON, outstr);
-    Serial.println("in update ap:");
-    Serial.println(outstr);
+    //Serial.println("in update ap:");
+    //Serial.println(outstr);
     //_MS_SINCE_LAST_WEB = 0;
     //Serial.println(server.args());
     //Serial.println(server.arg(0));
@@ -402,12 +402,12 @@ void WifiUtils::updateAp(String jsonIn)
     String apName = jBuffer["ap"];
     String pass = jBuffer["pass"];
 
-    Serial.println("got apname as: " + apName);
+    //Serial.println("got apname as: " + apName);
 
     int apsCount;
     JsonArray apsStored = this->_WIFI_CONFIG_JSON["aps"].as<JsonArray>();
-    Serial.print("Aps count:");
-    Serial.println(apsStored.size());
+    //Serial.print("Aps count:");
+    //Serial.println(apsStored.size());
     apsCount = apsStored.size();
 
     bool replaced = false;
@@ -431,9 +431,9 @@ void WifiUtils::updateAp(String jsonIn)
     }
 
     serializeJsonPretty(this->_WIFI_CONFIG_JSON, outstr);
-    Serial.println("in update ap2:");
-    Serial.println(outstr);
-    Serial.print("saving wifi:");
+    //Serial.println("in update ap2:");
+    //Serial.println(outstr);
+    //Serial.print("saving wifi:");
 
     // not 100% sure apsStored is not just a copy that needs to be set
     // back to global object, so if this isn't saving right might need
@@ -475,7 +475,7 @@ void WifiUtils::forgetAp(String jsonIn)
         apsStored.remove(target);
     }
 
-    Serial.print("saving wifi:");
+    //Serial.print("saving wifi:");
     // not 100% sure apsStored is not just a copy that needs to be set
     // back to global object, so if this isn't saving right might need
     // to check
@@ -487,8 +487,8 @@ void WifiUtils::writeJsonConfigToFile(DynamicJsonDocument doc)
 {
     String outstr;
     serializeJsonPretty(doc, outstr);
-    Serial.println("in writejsonconfigtofile");
-    Serial.println(outstr);
+    //Serial.println("in writejsonconfigtofile");
+    //Serial.println(outstr);
     if (outstr != "null")
     {
         this->writeToApFile(outstr);
@@ -496,7 +496,7 @@ void WifiUtils::writeJsonConfigToFile(DynamicJsonDocument doc)
     }
     else
     {
-        Serial.println("Something wrong in writejsonconfigtofile...it was null");
+        //Serial.println("Something wrong in writejsonconfigtofile...it was null");
     }
 }
 
@@ -504,6 +504,6 @@ void WifiUtils::showJson()
 {
     String outstr;
     serializeJsonPretty(this->_WIFI_CONFIG_JSON, outstr);
-    Serial.println("now the json variable:");
-    Serial.println(outstr);
+    //Serial.println("now the json variable:");
+    //Serial.println(outstr);
 }

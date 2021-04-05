@@ -19,18 +19,18 @@ void VirtualArduinoStyleInputPin::initialize(int pinNumber, VitualArduinoPinPull
     {
         mode = INPUT_PULLDOWN;
     }
-    Serial.print("pin:");
-    Serial.print(this->_pinNumber);
-    Serial.print(" pullup:");
-    Serial.print(mode == INPUT_PULLUP);
+    //Serial.print("pin:");
+    //Serial.print(this->_pinNumber);
+    //Serial.print(" pullup:");
+    //Serial.print(mode == INPUT_PULLUP);
     pinMode(this->_pinNumber, mode);
 
     //testing
     /* int testRead = digitalRead(this->_pinNumber);
-    Serial.print("testread on pin:");
-    Serial.print(this->_pinNumber);
-    Serial.print(" ");
-    Serial.println(testRead);
+    //Serial.print("testread on pin:");
+    //Serial.print(this->_pinNumber);
+    //Serial.print(" ");
+    //Serial.println(testRead);
     delay(5000); */
 };
 

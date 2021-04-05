@@ -17,8 +17,8 @@ public:
         this->unkey(true);
         
 
-        Serial.print("checking this _config in transmit control:");
-        Serial.println(this->_config != nullptr);
+        //Serial.print("checking this _config in transmit control:");
+        //Serial.println(this->_config != nullptr);
     }
 
     void key()

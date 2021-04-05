@@ -55,14 +55,14 @@ int SpiffsPersistentConfig::configFileExists()
     {
 
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_LOG_FILE_EXISTS
-        Serial.println("Config file doesn't exist");
+        //Serial.println("Config file doesn't exist");
 #endif
         exists = 0;
     }
     else
     {
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_LOG_FILE_EXISTS
-        Serial.println("Config file was found.");
+        //Serial.println("Config file was found.");
 #endif
     }
     file.close();
@@ -75,11 +75,11 @@ String SpiffsPersistentConfig::getConfigFileJsonString()
         makeSpiffsReady();
     }
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_GET_FILE_JSON
-    Serial.println("About to open config file");
+    //ln("About to open config file");
 #endif
     File file = SPIFFS.open(CONFIG_JSON_FILENAME, FILE_READ);
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_GET_FILE_JSON
-    Serial.println("config file contents:");
+    //Serial.println("config file contents:");
 #endif
     String jsonReturn = "";
     while (file.available())
@@ -88,7 +88,7 @@ String SpiffsPersistentConfig::getConfigFileJsonString()
     }
     file.close();
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_GET_FILE_JSON
-    Serial.println(jsonReturn);
+    //Serial.println(jsonReturn);
 #endif
     return jsonReturn;
 }
@@ -96,7 +96,7 @@ void SpiffsPersistentConfig::setConfigurationFromFile()
 {
     String jsonString = getConfigFileJsonString();
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_SET_CONFIG_FROM_FILE
-    Serial.println(jsonString);
+    //Serial.println(jsonString);
 #endif
 
     deserializeJson(this->configJsonDoc, jsonString);
@@ -113,21 +113,21 @@ void SpiffsPersistentConfig::writeConfigurationToFile()
     if (!newfile)
     {
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_WRITE_CONFIG
-        Serial.println("- failed to open file for writing");
+        //Serial.println("- failed to open file for writing");
 #endif
         //return;
     }
     if (newfile.print(jsonToWrite))
     {
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_WRITE_CONFIG
-        Serial.println("- file written");
+        //Serial.println("- file written");
 #endif
         newfile.close();
     }
     else
     {
 #ifdef DEBUG_SPIFFS_PERSISTENT_CONFIG_WRITE_CONFIG
-        Serial.println("- write failed");
+        //Serial.println("- write failed");
 #endif
     }
     delay(200);
@@ -141,10 +141,10 @@ void SpiffsPersistentConfig::initializeSpiffs()
 void SpiffsPersistentConfig::initialize()
 {
     //this->esp32_port_to_use = loggingPortToUse;
-    Serial.println("In initialize spiffs persistent");
+    //Serial.println("In initialize spiffs persistent");
     if (!configFileExists())
     {
-        Serial.println("did not find config file");
+        //Serial.println("did not find config file");
         //barebones to start
         this->configJsonDoc["wpm"] = 20;
         this->configJsonDoc["wpm_farnsworth"] = 20;
@@ -157,12 +157,12 @@ void SpiffsPersistentConfig::initialize()
         String s = getConfigFileJsonString();
         if (s.length() == 0)
         {
-            Serial.println("config string was empty, initialize");
+            //Serial.println("config string was empty, initialize");
             writeConfigurationToFile();
         }
     }
 
-    Serial.println("setting config from file");
+    //Serial.println("setting config from file");
     this->configJsonDoc["tone_hz"] = 600;
     setConfigurationFromFile();
 

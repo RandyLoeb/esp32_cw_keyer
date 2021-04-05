@@ -14,7 +14,7 @@ void persistentConfig::initialize()
 
 void persistentConfig::save()
 {
-    Serial.println("in base save...bad!");
+    //Serial.println("in base save...bad!");
 };
 
 String

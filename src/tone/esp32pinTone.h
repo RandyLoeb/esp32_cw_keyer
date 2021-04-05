@@ -35,7 +35,7 @@ public:
     bool enabled;
     void initialize()
     {
-        Serial.println("got pin speaker begin");
+        //Serial.println("got pin speaker begin");
         this->begin();
     }
     void noTone()

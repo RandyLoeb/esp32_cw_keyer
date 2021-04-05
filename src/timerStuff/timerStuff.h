@@ -52,29 +52,29 @@ void connectWsClient()
 
 void onMessageCallback(WebsocketsMessage message)
 {
-    Serial.print("Got Message: ");
-    Serial.println(message.data());
+    //Serial.print("Got Message: ");
+    //Serial.println(message.data());
 }
 
 void onEventsCallback(WebsocketsEvent event, String data)
 {
     if (event == WebsocketsEvent::ConnectionOpened)
     {
-        Serial.println("Connnection Opened");
+        //Serial.println("Connnection Opened");
         clientIntiialized = true;
     }
     else if (event == WebsocketsEvent::ConnectionClosed)
     {
-        Serial.println("Connnection Closed");
+        //Serial.println("Connnection Closed");
         clientIntiialized = false;
     }
     else if (event == WebsocketsEvent::GotPing)
     {
-        Serial.println("Got a Ping!");
+        //Serial.println("Got a Ping!");
     }
     else if (event == WebsocketsEvent::GotPong)
     {
-        Serial.println("Got a Pong!");
+        //Serial.println("Got a Pong!");
     }
 }
 
@@ -386,17 +386,17 @@ void disableAllTimers()
 {
 
     ISR_Timer.disableAll();
-    Serial.println("disabled all timers");
+    //Serial.println("disabled all timers");
 }
 
 void reEnableTimers()
 {
-    Serial.println("reenabling timers");
+    //Serial.println("reenabling timers");
     ISR_Timer.enable(charSpaceTimer);
 
 //not sure these need to be re-enabled, but maybe causing problem with slave that doesn't have pin interrupts?
 #if !defined REMOTE_KEYER
-    Serial.println("re-enabling debouncers");
+    //Serial.println("re-enabling debouncers");
     ISR_Timer.enable(debounceDitTimer);
     ISR_Timer.enable(debounceDahTimer);
 #endif
@@ -444,9 +444,9 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     _timerStuffConfig = _config;
     _cwControl = cwControl;
 #if defined TRANSMIT
-    Serial.println("initialzing transmit control");
+    //Serial.println("initialzing transmit control");
     transmitControl.initialize(_timerStuffConfig);
-    Serial.println("transmit control initialized");
+    //Serial.println("transmit control initialized");
 #endif
 
 #if !defined REMOTE_KEYER
@@ -527,11 +527,12 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     if (ITimer.attachInterruptInterval(HW_TIMER_INTERVAL_MS * 1000, TimerHandler))
     {
         lastMillis = millis();
-        Serial.println("Starting  ITimer OK, millis() = " + String(lastMillis));
+        //Serial.println("Starting  ITimer OK, millis() = " + String(lastMillis));
     }
     else
-        Serial.println("Can't set ITimer correctly. Select another freq. or interval");
-
+    {
+        //Serial.println("Can't set ITimer correctly. Select another freq. or interval");
+    }
     // Just to demonstrate, don't use too many ISR Timers if not absolutely necessary
 
     // this timer monitors the dit paddle held down
@@ -601,7 +602,7 @@ void processDitDahQueue()
         //maybe it can go lower....
         if ((millis() - keyerWebServer->safeToTurnTimersBackOn) > 1000)
         {
-            Serial.println("about to reenable timers");
+            //Serial.println("about to reenable timers");
             reEnableTimers();
             keyerWebServer->safeToTurnTimersBackOn = -1;
         }
@@ -633,7 +634,7 @@ void processDitDahQueue()
                 //;
 
 #if defined ESPNOW
-                Serial.println("Calling sendespnowditdah");
+                //Serial.println("Calling sendespnowditdah");
                 sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
 #endif
 

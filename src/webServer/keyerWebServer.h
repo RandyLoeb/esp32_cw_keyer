@@ -42,8 +42,8 @@ public:
 
         this->safeToTurnTimersBackOn = -1;
         this->_openSpiffs++;
-        Serial.print("open web spiffs:");
-        Serial.println(this->_openSpiffs);
+        //Serial.print("open web spiffs:");
+        //Serial.println(this->_openSpiffs);
 
         // we expect callbacks to turn off timers here
         for (std::vector<void (*)()>::iterator it = preSPIFFSCallbacks.begin(); it != preSPIFFSCallbacks.end(); ++it)
@@ -56,8 +56,8 @@ public:
     {
 
         this->_openSpiffs--;
-        Serial.print("open web spiffs:");
-        Serial.println(this->_openSpiffs);
+        //Serial.print("open web spiffs:");
+        //Serial.println(this->_openSpiffs);
         if (this->_openSpiffs == 0)
         {
             this->safeToTurnTimersBackOn = millis();

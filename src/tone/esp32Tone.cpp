@@ -17,11 +17,11 @@ void esp32Tone::tone(unsigned short freq,
                      unsigned duration)
 {
     /* Serial.print("Tone:");
-    Serial.print(freq);
-    Serial.print(" Duration:");
-    Serial.print(duration);
-    Serial.print(" Pin:");
-    Serial.println(pin); */
+    //Serial.print(freq);
+    //Serial.print(" Duration:");
+    //Serial.print(duration);
+    //Serial.print(" Pin:");
+    //Serial.println(pin); */
 
     if (this->enabled)
     {

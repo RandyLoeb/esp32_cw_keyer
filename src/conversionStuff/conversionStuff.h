@@ -25,7 +25,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
         bool charSpaceDetected = false;
         //bool wordSpaceDetected = false;
         bool isDummy = ditDahOrSpace->Detected == DitOrDah::DUMMY;
-        //if (isDummy) {Serial.println("is dummy");}
+        
         bool isSpace = ditDahOrSpace->Detected == DitOrDah::SPACE;
         bool isForcedCharSpace = ditDahOrSpace->Detected == DitOrDah::FORCED_CHARSPACE;
 
@@ -34,14 +34,13 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
 
             /* if (lastPress->TimeStamp > ditDahOrSpace->TimeStamp)
             {
-                Serial.println("ROLLOVER! ROLLOVER!");
+               
             } */
             long timeDiff = ditDahOrSpace->TimeStamp - lastPress->TimeStamp;
 
             if (isSpace)
             {
-                //Serial.print("Caching a wordspace:");
-                //Serial.println(timeDiff);
+                
                 //wordSpaceDetected = true;
                 cachedWordSpace = true;
             }
@@ -50,8 +49,8 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             {
                 if (conversionQueue.size() > 0)
                 {
-                    Serial.print("after dit time:");
-                    Serial.println(timeDiff);
+                    //Serial.print("after dit time:");
+                    //Serial.println(timeDiff);
                 }
                 charSpaceDetected = true;
             }
@@ -60,8 +59,8 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             {
                 if (conversionQueue.size() > 0)
                 {
-                    Serial.print("after dah time:");
-                    Serial.println(timeDiff);
+                   //Serial.print("after dah time:");
+                   //Serial.println(timeDiff);
                 }
                 charSpaceDetected = true;
             }
@@ -92,33 +91,33 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
                 }
 
                 String sdord = ((*it)->Detected == DitOrDah::DIT) ? "DIT" : "DAH";
-                Serial.print(sdord + ":");
-                Serial.print((*it)->TimeStamp);
+                //Serial.print(sdord + ":");
+                //Serial.print((*it)->TimeStamp);
                 if (lastTimeStamp > 0)
                 {
-                    Serial.print("(");
-                    Serial.print((*it)->TimeStamp - lastTimeStamp);
-                    Serial.print(")");
+                    //Serial.print("(");
+                    //Serial.print((*it)->TimeStamp - lastTimeStamp);
+                    //Serial.print(")");
                 }
                 else if (lastWordLetterTimestamp > 0)
                 {
-                    Serial.print("(");
+                    //Serial.print("(");
 
                     long lastWordDiff = (*it)->TimeStamp - lastWordLetterTimestamp;
-                    Serial.print(lastWordDiff);
+                    //Serial.print(lastWordDiff);
                     if (lastWordDiff > timingControl.Paddles.wordSpace_ms)
                     {
                         cachedWordSpace = true;
                     }
-                    Serial.print(")");
+                    //Serial.print(")");
                 }
                 lastTimeStamp = (*it)->TimeStamp;
-                Serial.print(" ");
+                //Serial.print(" ");
                 delete (*it);
                 //}
             }
             lastWordLetterTimestamp = lastTimeStamp;
-            Serial.println("");
+            //Serial.println("");
             conversionQueue.clear();
 
             String cwCharacter = _cwControl->convert_cw_number_to_string(characterCode);

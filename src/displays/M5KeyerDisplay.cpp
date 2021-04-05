@@ -45,9 +45,9 @@ void M5KeyerDisplay::displayUpdate(String character, bool safeScroll)
                     // put the current line into the queue
 
                     /* Serial.println("here's what I'm putting into the screen queue:");
-                    Serial.print("'");
-                    Serial.print(cpy);
-                    Serial.println("'"); */
+                    //Serial.print("'");
+                    //Serial.print(cpy);
+                    //Serial.println("'"); */
                     this->_lines.push_back(cpy);
                 }
 
@@ -180,11 +180,11 @@ void M5KeyerDisplay::service_display()
 void M5KeyerDisplay::lcd_center_print_timed(String lcd_print_string, byte row_number, unsigned int duration)
 {
     /* Serial.print("oled center print:'");
-    Serial.print(lcd_print_string);
-    Serial.print("' line:");
-    Serial.print(row_number);
-    Serial.print(" duration:");
-    Serial.println(duration); */
+    //Serial.print(lcd_print_string);
+    //Serial.print("' line:");
+    //Serial.print(row_number);
+    //Serial.print(" duration:");
+    //Serial.println(duration); */
 
     if (row_number == 0)
     {

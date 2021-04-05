@@ -49,11 +49,11 @@ public:
             this->interCharSpace_ms = this->farnsworthUnit_ms * 3;
         }
 
-        Serial.print("dit_ms:" + String(this->dit_ms) + " ");
-        Serial.print("ddah_ms:" + String(this->dah_ms) + " ");
-        Serial.print("intra_ms:" + String(this->intraCharSpace_ms) + " ");
-        Serial.print("inter_ms:" + String(this->interCharSpace_ms) + " ");
-        Serial.println("wordspace_ms:" + String(this->wordSpace_ms) + " ");
+        //Serial.print("dit_ms:" + String(this->dit_ms) + " ");
+        //Serial.print("ddah_ms:" + String(this->dah_ms) + " ");
+        //Serial.print("intra_ms:" + String(this->intraCharSpace_ms) + " ");
+        //Serial.print("inter_ms:" + String(this->interCharSpace_ms) + " ");
+        //Serial.println("wordspace_ms:" + String(this->wordSpace_ms) + " ");
     }
 };
 

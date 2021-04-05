@@ -17,7 +17,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     // handling code
     if (type == WS_EVT_CONNECT)
     {
-        Serial.println("ws connected");
+        //Serial.println("ws connected");
         //client connected
         //os_printf("ws[%s][%u] connect\n", server->url(), client->id());
         client->printf("Hello Client %u :)", client->id());
@@ -25,19 +25,19 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     }
     else if (type == WS_EVT_DISCONNECT)
     {
-        Serial.println("ws disconnected");
+        //Serial.println("ws disconnected");
         //client disconnected
         //os_printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
     }
     else if (type == WS_EVT_ERROR)
     {
-        Serial.println("ws error");
+        //Serial.println("ws error");
         //error was received from the other end
         //os_printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t *)arg), (char *)data);
     }
     else if (type == WS_EVT_PONG)
     {
-        Serial.println("ws pong");
+        //Serial.println("ws pong");
         //pong message was received (in response to a ping request maybe)
         //os_printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len) ? (char *)data : "");
     }
@@ -74,7 +74,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                     //os_printf("%02x ", data[i]);
                     mydata += data[i];
                 }
-                Serial.println(mydata);
+                //Serial.println(mydata);
                 //os_printf("\n");
             }
             /* if (info->opcode == WS_TEXT)
@@ -128,7 +128,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
 KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQueue, persistentConfig *persistentConf, DisplayCache *displayCache) : server(80), ws("/ws")
 {
-    Serial.println("got addr of wifi utils");
+    //Serial.println("got addr of wifi utils");
     //Serial.println(wifiUtils);
     this->_wifiUtils = wifiUtils;
     this->_textQueue = textQueue;
@@ -137,7 +137,7 @@ KeyerWebServer::KeyerWebServer(WifiUtils *wifiUtils, std::queue<String> *textQue
     this->_displayCache = displayCache;
 
 #if defined REMOTE_KEYER
-    Serial.println("REMOTE_KEYER ok");
+    //Serial.println("REMOTE_KEYER ok");
     this->ws.onEvent(onWsEvent);
     this->server.addHandler(&this->ws);
 #endif
@@ -238,7 +238,7 @@ void KeyerWebServer::initializeServer()
         "/setconfig", HTTP_POST, [this](AsyncWebServerRequest *request) {},
         NULL, [this](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
         String jsonIn = String((const char*)data);
-        Serial.println(jsonIn);
+        //Serial.println(jsonIn);
         DynamicJsonDocument jBuffer(4096);
         deserializeJson(jBuffer, jsonIn);
         bool debugMatched = false;
@@ -293,7 +293,7 @@ void KeyerWebServer::initializeServer()
                 this->_persistentConfig->configJsonDoc["tone_hz"] = settingsObj["value"].as<int>();
             }
         }
-        Serial.print("settings matched?"); Serial.println(debugMatched);
+        //Serial.print("settings matched?"); Serial.println(debugMatched);
 
         this->_persistentConfig->config_dirty=1;
         //send the config
@@ -309,7 +309,7 @@ String KeyerWebServer::getPage(String page)
     File f = SPIFFS.open(page, FILE_READ);
     if (!f)
     {
-        Serial.println("problem opening " + page);
+        //Serial.println("problem opening " + page);
     }
     else
     {

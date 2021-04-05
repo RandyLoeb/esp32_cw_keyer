@@ -82,12 +82,12 @@ void oled64x128::displayUpdate(char character)
 }
 void oled64x128::initialize()
 {
-    Serial.println("In oled initialize...");
+    //Serial.println("In oled initialize...");
     initDisplay();
 }
 void oled64x128::initDisplay()
 {
-    Serial.println("In oled initDisplay");
+    //Serial.println("In oled initDisplay");
     //esp32_port_to_use->println("displayinitcalled");
     display.init();
 
@@ -128,7 +128,7 @@ void oled64x128::service_display()
 
         if ((millis() - millisDelayStarted) > timedDelay)
         {
-            Serial.println("Ending timed display...");
+            //Serial.println("Ending timed display...");
             delayMode = false;
             display.clear();
             
@@ -138,12 +138,12 @@ void oled64x128::service_display()
 };
 void oled64x128::lcd_center_print_timed(String lcd_print_string, byte row_number, unsigned int duration)
 {
-    Serial.print("oled center print:'");
-    Serial.print(lcd_print_string);
-    Serial.print("' line:");
-    Serial.print(row_number);
-    Serial.print(" duration:");
-    Serial.println(duration);
+    //Serial.print("oled center print:'");
+    //Serial.print(lcd_print_string);
+    //Serial.print("' line:");
+    //Serial.print(row_number);
+    //Serial.print(" duration:");
+    //Serial.println(duration);
 
     if (row_number == 0)
     {

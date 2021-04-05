@@ -19,7 +19,7 @@ public:
     virtual void tone(unsigned short freq,
                       unsigned duration = 0)
     {
-        Serial.println("Sending tone from base...no good...");
+        //Serial.println("Sending tone from base...no good...");
     };
 };
 #endif
