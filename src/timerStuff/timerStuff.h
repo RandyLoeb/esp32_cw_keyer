@@ -139,12 +139,10 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
 
                 //for now iambic behavior is a press stops press of the other
 
-                ISR_Timer.disable(oppoTimer);
+                //04/08/21
+                //ISR_Timer.disable(oppoTimer);
 
                 ditDahInjector(message);
-                /* PaddlePressDetection *newPd = new PaddlePressDetection();
-                newPd->Detected = message;
-                ditsNdahQueue.push(newPd); */
 
 #if !defined IAMBIC_ALTERNATE
                 //kickoff either the dit or dah timer passed in
@@ -164,7 +162,8 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
             {
                 // released so stop the timer
 
-                ISR_Timer.disable(timer);
+                //04/08/21
+                //ISR_Timer.disable(timer);
             }
         }
     }
@@ -247,11 +246,24 @@ void IRAM_ATTR iambicAction()
             toInject = ditPressed ? DitOrDah::DIT : DitOrDah::DAH;
             ditDahInjector(toInject);
 
+            // added 04/08/21
+            //reset iambic timer to above injection length plus an intracharacter
+            ISR_Timer.changeInterval(iambicTimer, toInject == DitOrDah::DIT ? currentDitTiming : currentDahTiming);
+            ISR_Timer.restartTimer(iambicTimer);
+            ISR_Timer.enable(iambicTimer);
+
+            /* REL 04/08/21
             //hand over to that timer
             int handOverTimer = toInject == DitOrDah::DIT ? ditTimer : dahTimer;
             ISR_Timer.changeInterval(handOverTimer, toInject == DitOrDah::DIT ? currentDitTiming : currentDahTiming);
             ISR_Timer.restartTimer(handOverTimer);
             ISR_Timer.enable(handOverTimer);
+            */
+        }
+        else
+        {
+            // 04/08/21
+            ISR_Timer.disable(iambicTimer);
         }
     }
 }
