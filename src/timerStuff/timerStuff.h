@@ -62,8 +62,8 @@ void IRAM_ATTR TimerHandler(void)
 volatile bool detectInterrupts = false;
 volatile bool ditPressed = false;
 volatile bool dahPressed = false;
-volatile int ditTimer;
-volatile int dahTimer;
+//volatile int ditTimer;
+//volatile int dahTimer;
 volatile int debounceDitTimer;
 volatile int debounceDahTimer;
 volatile int toneSilenceTimer;
@@ -94,7 +94,7 @@ void IRAM_ATTR ditDahInjector(DitOrDah dd)
 }
 
 // this is triggerd by hardware interrupt indirectly
-void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int timer, int oppoTimer, int lockTimer, int pin, DitOrDah message, bool calledFromInterrupt, bool calledFromLocker, bool calledFromIambic, volatile int *releaseCache, volatile int *oppoReleaseCache)
+void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed,  int lockTimer, int pin, DitOrDah message, bool calledFromInterrupt, bool calledFromLocker, bool calledFromIambic, volatile int *releaseCache, volatile int *oppoReleaseCache)
 {
 
     // locker is our debouce variable, i.e. we'll ignore any changes
@@ -171,6 +171,7 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int ti
 
 #include <timerStuff/hardwareDitDahHandlers.h>
 
+/*
 void IRAM_ATTR ditDahDoer(DitOrDah dd)
 {
     ditDahInjector(dd);
@@ -206,6 +207,7 @@ void IRAM_ATTR doDahs()
 
     ditDahDoer(DitOrDah::DAH);
 }
+*/
 
 #include <timerStuff/debouncerUnlocks.h>
 #include <timerStuff/silence.h>
