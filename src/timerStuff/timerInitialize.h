@@ -100,13 +100,8 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     }
     // Just to demonstrate, don't use too many ISR Timers if not absolutely necessary
 
-    // this timer monitors the dit paddle held down
     currentDitTiming = 1 + timingControl.Paddles.dit_ms + timingControl.Paddles.intraCharSpace_ms;
     currentDahTiming = 1 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms;
-    //ditTimer = ISR_Timer.setInterval(currentDitTiming, doDits);
-
-    // this timer monitors the dah paddle held down
-    //dahTimer = ISR_Timer.setInterval(currentDahTiming, doDahs);
 
     // debouncers, needs some tweaking
     debounceDitTimer = ISR_Timer.setInterval(5L, unlockDit);

@@ -62,8 +62,6 @@ void IRAM_ATTR TimerHandler(void)
 volatile bool detectInterrupts = false;
 volatile bool ditPressed = false;
 volatile bool dahPressed = false;
-//volatile int ditTimer;
-//volatile int dahTimer;
 volatile int debounceDitTimer;
 volatile int debounceDahTimer;
 volatile int toneSilenceTimer;
@@ -94,7 +92,7 @@ void IRAM_ATTR ditDahInjector(DitOrDah dd)
 }
 
 // this is triggerd by hardware interrupt indirectly
-void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed,  int lockTimer, int pin, DitOrDah message, bool calledFromInterrupt, bool calledFromLocker, bool calledFromIambic, volatile int *releaseCache, volatile int *oppoReleaseCache)
+void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int lockTimer, int pin, DitOrDah message, bool calledFromInterrupt, bool calledFromLocker, bool calledFromIambic, volatile int *releaseCache, volatile int *oppoReleaseCache)
 {
 
     // locker is our debouce variable, i.e. we'll ignore any changes
@@ -170,45 +168,6 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed,  int l
 }
 
 #include <timerStuff/hardwareDitDahHandlers.h>
-
-/*
-void IRAM_ATTR ditDahDoer(DitOrDah dd)
-{
-    ditDahInjector(dd);
-#if defined IAMBIC_ALTERNATE
-    if (iambicMode)
-    {
-        //in iambic mode we hand things over to the iambic timer
-
-        ISR_Timer.disable(ditTimer);
-        ISR_Timer.disable(dahTimer);
-        ISR_Timer.changeInterval(iambicTimer, baseIambicTiming);
-        ISR_Timer.restartTimer(iambicTimer);
-        ISR_Timer.enable(iambicTimer);
-    }
-    else
-    {
-        ISR_Timer.disable(iambicTimer);
-    }
-#endif
-}
-
-// timers kick off these two funcs below.
-// has debugging to see if we are dead nuts accurate
-
-void IRAM_ATTR doDits()
-{
-
-    ditDahDoer(DitOrDah::DIT);
-}
-
-void IRAM_ATTR doDahs()
-{
-
-    ditDahDoer(DitOrDah::DAH);
-}
-*/
-
 #include <timerStuff/debouncerUnlocks.h>
 #include <timerStuff/silence.h>
 #include <timerStuff/releaseLockForDitDahSpace.h>
@@ -248,23 +207,13 @@ void IRAM_ATTR iambicAction()
             toInject = ditPressed ? DitOrDah::DIT : DitOrDah::DAH;
             ditDahInjector(toInject);
 
-            // added 04/08/21
             //reset iambic timer to above injection length plus an intracharacter
             ISR_Timer.changeInterval(iambicTimer, toInject == DitOrDah::DIT ? currentDitTiming : currentDahTiming);
             ISR_Timer.restartTimer(iambicTimer);
             ISR_Timer.enable(iambicTimer);
-
-            /* REL 04/08/21
-            //hand over to that timer
-            int handOverTimer = toInject == DitOrDah::DIT ? ditTimer : dahTimer;
-            ISR_Timer.changeInterval(handOverTimer, toInject == DitOrDah::DIT ? currentDitTiming : currentDahTiming);
-            ISR_Timer.restartTimer(handOverTimer);
-            ISR_Timer.enable(handOverTimer);
-            */
         }
         else
         {
-            // 04/08/21
             ISR_Timer.disable(iambicTimer);
         }
     }
