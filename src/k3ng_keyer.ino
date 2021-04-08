@@ -143,6 +143,7 @@ void loop()
   }
 #endif
 
+#ifdef ESP32WINKEYER
   if (isSerialSafe() && Serial.available() > 0)
   {
     // read the incoming byte:
@@ -175,6 +176,7 @@ void loop()
   {
     service_winkey(WINKEY_HOUSEKEEPING);
   }
+#endif
 }
 
 //-------------------------------------------------------------------------------------------------------
