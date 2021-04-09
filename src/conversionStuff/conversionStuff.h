@@ -92,6 +92,7 @@ bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
 
             long characterCode = 0;
             long lastTimeStamp = 0;
+            String failOver = "";
             //we got a space, time to analyze
             for (std::vector<PaddlePressDetection *>::iterator it = conversionQueue.begin(); it != conversionQueue.end(); ++it)
             {
@@ -100,10 +101,12 @@ bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
                 if ((*it)->Detected == DitOrDah::DIT)
                 {
                     characterCode += 1;
+                    failOver+="E";
                 }
                 if ((*it)->Detected == DitOrDah::DAH)
                 {
                     characterCode += 2;
+                    failOver+="T";
                 }
 
                 String sdord = ((*it)->Detected == DitOrDah::DIT) ? "DIT" : "DAH";
@@ -137,6 +140,10 @@ bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             conversionQueue.clear();
 
             String cwCharacter = _cwControl->convert_cw_number_to_string(characterCode);
+            if (cwCharacter=="*") 
+            {
+                cwCharacter=failOver;
+            }
             if (cachedWordSpace)
             {
                 displayControl.displayUpdate(" ");
