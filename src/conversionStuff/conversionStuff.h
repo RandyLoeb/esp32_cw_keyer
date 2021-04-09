@@ -17,17 +17,22 @@ PaddlePressDetection *lastPress;
 bool cachedWordSpace = false;
 long lastWordLetterTimestamp = 0;
 //persistentConfig *_timerStuffConfig;
-void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, WebsocketsClient *client, persistentConfig *_timerStuffConfig, CwControl *_cwControl)
+bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, WebsocketsClient *client, persistentConfig *_timerStuffConfig, CwControl *_cwControl)
 {
+
+    bool charSpaceDetected = false;
+    bool charInjected = false;
+    bool isSpace = false;
+    bool isForcedCharSpace = false;
 
     if (ditDahOrSpace->Display)
     {
-        bool charSpaceDetected = false;
+
         //bool wordSpaceDetected = false;
         bool isDummy = ditDahOrSpace->Detected == DitOrDah::DUMMY;
-        
-        bool isSpace = ditDahOrSpace->Detected == DitOrDah::SPACE;
-        bool isForcedCharSpace = ditDahOrSpace->Detected == DitOrDah::FORCED_CHARSPACE;
+
+        isSpace = ditDahOrSpace->Detected == DitOrDah::SPACE;
+        isForcedCharSpace = ditDahOrSpace->Detected == DitOrDah::FORCED_CHARSPACE;
 
         if (!(lastPress == nullptr))
         {
@@ -40,10 +45,11 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
 
             if (isSpace)
             {
-                
+
                 //wordSpaceDetected = true;
                 cachedWordSpace = true;
             }
+
             //was dit(60) + 60 + 30
             if (lastPress->Detected == DitOrDah::DIT && (timeDiff > (timingControl.Paddles.dit_ms + timingControl.Paddles.interCharSpace_ms)))
             {
@@ -52,6 +58,8 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
                     //Serial.print("after dit time:");
                     //Serial.println(timeDiff);
                 }
+
+                //if (lastPress->Detected)
                 charSpaceDetected = true;
             }
 
@@ -59,8 +67,8 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             {
                 if (conversionQueue.size() > 0)
                 {
-                   //Serial.print("after dah time:");
-                   //Serial.println(timeDiff);
+                    //Serial.print("after dah time:");
+                    //Serial.println(timeDiff);
                 }
                 charSpaceDetected = true;
             }
@@ -69,6 +77,14 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             {
                 charSpaceDetected = true;
             }
+
+            /*
+            if (isDummy)
+            {
+                Serial.println("dummycharspace");
+                charSpaceDetected = true;
+            }
+            */
         }
 
         if (charSpaceDetected && conversionQueue.size() > 0)
@@ -141,6 +157,7 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
 
             displayControl.displayUpdate(cwCharacter);
             displayCache.add(cwCharacter);
+            charInjected = true;
         }
 
         if (!isDummy && !isSpace & !isForcedCharSpace)
@@ -157,6 +174,8 @@ void convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
     {
         delete ditDahOrSpace;
     }
+
+    return charInjected || isSpace || isForcedCharSpace;
 }
 
 #endif

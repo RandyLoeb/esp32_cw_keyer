@@ -47,8 +47,8 @@ void setup()
   M5.begin();
 
 #endif
-  //Serial.begin(115200);
-  Serial.begin(1200);
+  Serial.begin(115200);
+  //Serial.begin(1200);
 
   cwControl = new CwControl(&ditsNdahQueue);
 #if !defined ESPNOW_ONLY && defined KEYER_WEBSERVER

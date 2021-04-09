@@ -65,7 +65,8 @@ volatile bool dahPressed = false;
 volatile int debounceDitTimer;
 volatile int debounceDahTimer;
 volatile int toneSilenceTimer;
-volatile int ditDahSpaceLockTimer;
+volatile int toneSilenceIntraLockMode = 0;
+//volatile int ditDahSpaceLockTimer;
 volatile int charSpaceTimer;
 #if defined IAMBIC_ALTERNATE
 volatile int iambicTimer;
@@ -80,6 +81,7 @@ volatile bool ditLocked = false;
 volatile bool dahLocked = false;
 volatile int ditReleaseCache = 0;
 volatile int dahReleaseCache = 0;
+volatile int charSpaceInjects = 0;
 
 void IRAM_ATTR ditDahInjector(DitOrDah dd)
 {
@@ -180,12 +182,13 @@ void IRAM_ATTR detectPress(volatile bool *locker, volatile bool *pressed, int lo
 //      easier to follow/maintain. something to think about.
 void IRAM_ATTR iambicAction()
 {
-    ISR_Timer.disable(iambicTimer);
+    //ISR_Timer.disable(iambicTimer);
     DitOrDah toInject;
     //in an iambic mode we arrive here after an intracharacter space
     //are we still in iambic mode?
     if (iambicMode)
     {
+        charSpaceInjects = 0;
         //inject whomever's turn it is
         DitOrDah lastBeforeInjection = lastInjection;
         toInject = lastInjection == DitOrDah::DIT ? DitOrDah::DAH : DitOrDah::DIT;
@@ -203,6 +206,7 @@ void IRAM_ATTR iambicAction()
         //if anything is pressed
         if (ditPressed || dahPressed)
         {
+            charSpaceInjects = 0;
             //inject a survivor
             toInject = ditPressed ? DitOrDah::DIT : DitOrDah::DAH;
             ditDahInjector(toInject);
@@ -215,6 +219,32 @@ void IRAM_ATTR iambicAction()
         else
         {
             ISR_Timer.disable(iambicTimer);
+
+            /*
+            if (charSpaceInjects > 0)
+            {
+                Serial.print(charSpaceInjects);
+                Serial.print(" ");
+                Serial.println("injecting space");
+                //injectCharSpace();
+                charSpaceInjects++;
+
+                if (charSpaceInjects == 2)
+                {
+                    ISR_Timer.disable(iambicTimer);
+
+                    charSpaceInjects = 0;
+                }
+                //10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms, injectCharSpace
+            }
+            else
+            {
+                ISR_Timer.changeInterval(iambicTimer, 10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms);
+                ISR_Timer.restartTimer(iambicTimer);
+                ISR_Timer.enable(iambicTimer);
+                charSpaceInjects = 1;
+            }
+            */
         }
     }
 }

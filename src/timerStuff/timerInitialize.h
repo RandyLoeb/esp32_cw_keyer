@@ -114,10 +114,8 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
 
     // timer to unlock the sidetone (could be transmitter key)
     // another way to think of this is as intra-character timer?
-    ditDahSpaceLockTimer = ISR_Timer.setInterval(timingControl.Paddles.intraCharSpace_ms, releaseLockForDitDahSpace);
-
+    //ditDahSpaceLockTimer = ISR_Timer.setInterval(timingControl.Paddles.intraCharSpace_ms, releaseLockForDitDahSpace);
     charSpaceTimer = ISR_Timer.setInterval(10 + timingControl.Paddles.dah_ms + timingControl.Paddles.intraCharSpace_ms, injectCharSpace);
-
 #if defined IAMBIC_ALTERNATE
     baseIambicTiming = timingControl.Paddles.intraCharSpace_ms;
     iambicTimer = ISR_Timer.setInterval(baseIambicTiming, iambicAction);
@@ -129,7 +127,7 @@ void initializeTimerStuff(persistentConfig *_config, CwControl *cwControl)
     ISR_Timer.disable(debounceDitTimer);
     ISR_Timer.disable(debounceDahTimer);
     ISR_Timer.disable(toneSilenceTimer);
-    ISR_Timer.disable(ditDahSpaceLockTimer);
+    //ISR_Timer.disable(ditDahSpaceLockTimer);
     ISR_Timer.enable(charSpaceTimer);
 #if defined IAMBIC_ALTERNATE
     ISR_Timer.disable(iambicTimer);

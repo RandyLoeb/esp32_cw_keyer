@@ -2,8 +2,16 @@
 #define PROCESSDITDAHQUEUE_H
 #include <timerStuff/timerStuff.h>
 
+bool needDummies = false;
+
 void processDitDahQueue()
 {
+
+    bool convertDetectedCharSpace = true;
+    bool lastWasDitOrDah = false;
+    bool lastWasDummy = false;
+    bool isDit = false;
+    bool isDah = false;
 
 #if !defined REMOTE_KEYER
     /* webSocket.loop(); */
@@ -43,11 +51,13 @@ void processDitDahQueue()
             PaddlePressDetection *paddePress = ditsNdahQueue.front();
             ditsNdahQueue.pop();
 
-            bool isDit = paddePress->Detected == DitOrDah::DIT;
-            bool isDah = paddePress->Detected == DitOrDah::DAH;
+            isDit = paddePress->Detected == DitOrDah::DIT;
+            isDah = paddePress->Detected == DitOrDah::DAH;
+            lastWasDummy = paddePress->Detected == DitOrDah::DUMMY;
 
             if (isDit || isDah)
             {
+                lastWasDitOrDah = true;
 #if defined REMOTE_DITDAHMODE
 #if defined M5CORE
                 //sendEspNowDitDah(isDit ? ESPNOW_DIT : ESPNOW_DAH);
@@ -139,7 +149,7 @@ void processDitDahQueue()
                 ISR_Timer.enable(toneSilenceTimer);
             }
 #if !defined REMOTE_KEYER
-            convertDitsDahsToCharsAndSpaces(paddePress, &client, _timerStuffConfig, _cwControl);
+            convertDetectedCharSpace = convertDitsDahsToCharsAndSpaces(paddePress, &client, _timerStuffConfig, _cwControl);
 #else
             convertDitsDahsToCharsAndSpaces(paddePress, nullptr, _timerStuffConfig, _cwControl);
 #endif
@@ -149,6 +159,19 @@ void processDitDahQueue()
             //just wait until sound ends
         }
     }
+    /*
+    if (!convertDetectedCharSpace )
+    {
+        //TODO:This could be throttled, but I would rather do this
+        //than use a timer
+        //Serial.println("inserting dummy");
+        //add dummies so characters can end
+        PaddlePressDetection *newPd = new PaddlePressDetection();
+        //newPd->Detected = DitOrDah::DUMMY;
+        newPd->Detected = DitOrDah::DUMMY;
+        ditsNdahQueue.push(newPd);
+    }
+    */
 }
 
 #endif

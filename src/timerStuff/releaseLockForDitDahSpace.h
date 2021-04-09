@@ -7,6 +7,6 @@ void IRAM_ATTR releaseLockForDitDahSpace()
 {
 
     soundPlaying = false;
-    ISR_Timer.disable(ditDahSpaceLockTimer);
+    //ISR_Timer.disable(ditDahSpaceLockTimer);
 }
 #endif
