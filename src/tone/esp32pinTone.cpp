@@ -5,15 +5,15 @@ ESP32PINTONE::ESP32PINTONE(int pnum)
     this->pin = pnum;
     this->tone_pin_channel = 0;
     _volume = 100;
-    
+
     _begun = false;
 }
 
 void ESP32PINTONE::begin()
 {
     _begun = true;
-    Serial.print("tonepin is:");
-    Serial.println(this->pin);
+    //Serial.print("tonepin is:");
+    //Serial.println(this->pin);
     ledcSetup(this->tone_pin_channel, 0, 8); //13);
     ledcAttachPin(this->pin, this->tone_pin_channel);
     setBeep(1000, 100);

@@ -13,6 +13,7 @@
 //https://github.com/gilmaimon/ArduinoWebsockets?utm_source=platformio&utm_medium=piohome
 using namespace websockets;
 std::vector<PaddlePressDetection *> conversionQueue;
+std::vector<int> failOverTiming;
 PaddlePressDetection *lastPress;
 bool cachedWordSpace = false;
 long lastWordLetterTimestamp = 0;
@@ -24,6 +25,7 @@ bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
     bool charInjected = false;
     bool isSpace = false;
     bool isForcedCharSpace = false;
+    bool isFailOver = false;
 
     if (ditDahOrSpace->Display)
     {
@@ -93,20 +95,23 @@ bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             long characterCode = 0;
             long lastTimeStamp = 0;
             String failOver = "";
+            failOverTiming.clear();
+            bool failOverDit = false;
             //we got a space, time to analyze
             for (std::vector<PaddlePressDetection *>::iterator it = conversionQueue.begin(); it != conversionQueue.end(); ++it)
             {
-
+                failOverDit = false;
                 characterCode *= 10;
                 if ((*it)->Detected == DitOrDah::DIT)
                 {
                     characterCode += 1;
-                    failOver+="E";
+                    failOver += ".";
+                    failOverDit = true;
                 }
                 if ((*it)->Detected == DitOrDah::DAH)
                 {
                     characterCode += 2;
-                    failOver+="T";
+                    failOver += "-";
                 }
 
                 String sdord = ((*it)->Detected == DitOrDah::DIT) ? "DIT" : "DAH";
@@ -130,6 +135,16 @@ bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
                     }
                     //Serial.print(")");
                 }
+
+                if (lastTimeStamp > 0)
+                {
+                    failOverTiming.push_back(((*it)->TimeStamp - lastTimeStamp) * (failOverDit ? 1 : -1));
+                }
+                else
+                {
+                    failOverTiming.push_back(1 * (failOverDit ? 1 : -1));
+                }
+
                 lastTimeStamp = (*it)->TimeStamp;
                 //Serial.print(" ");
                 delete (*it);
@@ -140,10 +155,12 @@ bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             conversionQueue.clear();
 
             String cwCharacter = _cwControl->convert_cw_number_to_string(characterCode);
-            if (cwCharacter=="*") 
+
+            if (cwCharacter == "*")
             {
-                cwCharacter=failOver;
+                isFailOver = true;
             }
+
             if (cachedWordSpace)
             {
                 displayControl.displayUpdate(" ");
@@ -152,18 +169,37 @@ bool convertDitsDahsToCharsAndSpaces(PaddlePressDetection *ditDahOrSpace, Websoc
             }
 
 #if !defined REMOTE_KEYER && defined REMOTE_CHARMODE
-            //Serial.print("about to send sendTXT:");
-            /*  Serial.println(webSocket.isConnected());
-                webSocket.sendTXT(isDit ? "dit" : "dah"); */
+
             if (_timerStuffConfig->configJsonDoc["ws_connect"].as<int>() == 1 && _timerStuffConfig->configJsonDoc["ws_ip"].as<String>().length() > 0)
             {
-                client->send(cwCharacter);
+                String remoteSend = "";
+                if (isFailOver)
+                {
+                    remoteSend += "#";
+                    bool first = true;
+                    for (std::vector<int>::iterator iter2 = failOverTiming.begin(); iter2 != failOverTiming.end(); ++iter2)
+                    {
+                        if (!first)
+                        {
+                            remoteSend += ",";
+                        }
+                        first = false;
+                        remoteSend += String(*iter2);
+                    }
+                    remoteSend += "#";
+                    //Serial.println(remoteSend);
+                }
+                else 
+                {
+                    remoteSend = cwCharacter;
+                }
+                client->send(remoteSend);
             }
 
 #endif
 
-            displayControl.displayUpdate(cwCharacter);
-            displayCache.add(cwCharacter);
+            displayControl.displayUpdate(!isFailOver ? cwCharacter : failOver);
+            displayCache.add(!isFailOver ? cwCharacter : failOver);
             charInjected = true;
         }
 

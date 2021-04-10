@@ -903,6 +903,7 @@ public:
 
   void service_injected_text()
   {
+    PaddlePressDetection *newPd;
     while (!injectedText.empty())
     {
       char x;
@@ -919,6 +920,52 @@ public:
           this->send_char(x, KEYER_NORMAL);
         }
       }
+
+      if (s.startsWith("#") && s.endsWith("#"))
+      {
+        isPro = true;
+        String numbers = s.substring(1, s.length() - 1);
+
+        if (numbers.length() > 0)
+        {
+          int commaPointer = -1;
+
+          int commaAt = numbers.indexOf(",", commaPointer + 1);
+
+          String numString = numbers.substring(commaPointer + 1, commaAt > 0 ? commaAt : numbers.length());
+          int lastMillis = 0;
+
+          do
+          {
+
+            int numInt = numString.toInt();
+            while (millis() - lastMillis < abs(numInt))
+            {
+            }
+
+            newPd = new PaddlePressDetection();
+            newPd->Detected = (numInt > 0) ? DitOrDah::DIT : DitOrDah::DAH;
+            newPd->Source = PaddlePressSource::ARTIFICIAL;
+            newPd->Display = true;
+            _ditsNdahQueue->push(newPd);
+            lastMillis = millis();
+            numString = "";
+            if (commaAt > 0)
+            {
+              commaPointer = commaAt;
+              commaAt = numbers.indexOf(",", commaPointer + 1);
+
+              numString = numbers.substring(commaPointer + 1, commaAt > 0 ? commaAt : numbers.length());
+            }
+
+          } while (numString.length() > 0);
+          newPd = new PaddlePressDetection();
+          newPd->Detected = DitOrDah::FORCED_CHARSPACE;
+          newPd->Source = PaddlePressSource::ARTIFICIAL;
+          newPd->Display = true;
+          _ditsNdahQueue->push(newPd);
+        }
+            }
 
       if (!isPro)
       {
